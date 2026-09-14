@@ -89,8 +89,8 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **7.4** Prise en charge RTL, responsive mobile, navigation clavier et gestion des cas sans audio publié.
 
 ### Lot 8 — Industrialiser l’ingestion et la qualité
-- [ ] **8.1** Inventaire et ingestion automatisée des 114 sourates Archive.org.
-- [ ] **8.2** Tableaux de bord de couverture et rapports de cohérence (trous, chevauchements, dépendances).
+- [x] **8.1** Inventaire et ingestion automatisée des 114 sourates Archive.org.
+- [x] **8.2** Tableaux de bord de couverture et rapports de cohérence (trous, chevauchements, dépendances).
 
 ### Lot 9 — Nettoyer le projet et rendre l’exécution reproductible
 - [ ] **9.1** Nettoyage des contrôleurs, vues d'essai et scripts obsolètes.

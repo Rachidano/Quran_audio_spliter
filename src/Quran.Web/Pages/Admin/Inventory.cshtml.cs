@@ -47,4 +47,20 @@ public class InventoryModel : PageModel
 
         return RedirectToPage();
     }
+
+    public async Task<IActionResult> OnPostDownloadMissingAsync(CancellationToken cancellationToken)
+    {
+        var items = await _inventoryService.GetLocalInventoryStatusAsync(cancellationToken);
+        var missingSurahNumbers = items.Where(x => !x.IsDownloaded).Select(x => x.SurahNumber).Take(5).ToList();
+
+        if (missingSurahNumbers.Count == 0)
+        {
+            StatusMessage = "جميع ملفات السور الـ 114 محملة بالفعل.";
+            return RedirectToPage();
+        }
+
+        var downloadedCount = await _inventoryService.DownloadBatchAsync(missingSurahNumbers, cancellationToken);
+        StatusMessage = $"تم تنزيل وجرد دفعة من {downloadedCount} سور من أصل {missingSurahNumbers.Count} بنجاح.";
+        return RedirectToPage();
+    }
 }

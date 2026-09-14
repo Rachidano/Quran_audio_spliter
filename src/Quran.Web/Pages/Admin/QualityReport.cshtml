@@ -1,0 +1,262 @@
+@page
+@model QualityReportModel
+@{
+    ViewData["Title"] = "لوحة الجودة والتدقيق — تغطية الصوت وسلامة البيانات";
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="/Index">الرئيسية</a></li>
+        <li class="breadcrumb-item"><a asp-page="/Admin/Index">لوحة التحكم</a></li>
+        <li class="breadcrumb-item active" aria-current="page">تقرير الجودة والتدقيق</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">تقرير الجودة ومراقبة التغطية الصوتية</h2>
+        <p class="text-muted mb-0">كشف الفواصل الزمنية غير المسجلة (Gaps)، التداخلات، الملفات المفقودة، وحالة النشر</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="/Admin/Inventory" class="btn btn-outline-success">
+            📁 مستودع المصادر (Archive.org)
+        </a>
+        <a asp-page="/Admin/ReviewQueue" class="btn btn-outline-primary">
+            ⏳ file de revue (Review Queue)
+        </a>
+    </div>
+</div>
+
+<!-- Cartes KPIs globales -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 rounded-4 border-0 shadow-sm text-center bg-white">
+            <span class="text-muted small">نسبة التغطية المنشورة</span>
+            <h3 class="fw-bold text-success mt-1">@Model.Report.GlobalAyahCoveragePercentage %</h3>
+            <span class="badge bg-success-subtle text-success">@Model.Report.TotalPublishedAyahs / @Model.Report.TotalAyahs آية</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 rounded-4 border-0 shadow-sm text-center bg-white">
+            <span class="text-muted small">المصادر الأصلية المكتملة</span>
+            <h3 class="fw-bold text-primary mt-1">@Model.Report.SurahsWithSourceAudio / 114</h3>
+            <span class="badge @(Model.Report.SurahsWithSourceAudio == 114 ? "bg-success" : "bg-warning")">
+                @(Model.Report.SurahsWithSourceAudio == 114 ? "مكتمل ✓" : "قيد الاستكمال")
+            </span>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 rounded-4 border-0 shadow-sm text-center bg-white">
+            <span class="text-muted small">المقاطع الصوتية المسجلة</span>
+            <h3 class="fw-bold text-dark mt-1">@Model.Report.TotalSegments</h3>
+            <span class="badge bg-info text-dark">منها @Model.Report.TotalPublishedSegments منشور</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 rounded-4 border-0 shadow-sm text-center bg-white">
+            <span class="text-muted small">الملاحظات والشذوذ (Anomalies)</span>
+            <h3 class="fw-bold @(Model.Report.Anomalies.Count > 0 ? "text-warning" : "text-success") mt-1">
+                @Model.Report.Anomalies.Count
+            </h3>
+            <span class="small text-muted">
+                @Model.Report.TotalGaps فواصل · @Model.Report.TotalOverlaps تداخل · @Model.Report.TotalMissingMedia ملفات
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Section des Anomalies / Écarts détectés -->
+<div class="card rounded-4 border-0 shadow-sm p-4 bg-white mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="fw-bold mb-0">⚠️ تقرير الملاحظات والفجوات المكتشفة (@Model.FilteredAnomalies.Count)</h4>
+        
+        <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+            <select name="SeverityFilter" class="form-select form-select-sm" style="width: 140px;" onchange="this.form.submit()">
+                <option value="">جميع المستويات</option>
+                <option value="Error" selected="@(Model.SeverityFilter == "Error")">خطأ (Error)</option>
+                <option value="Warning" selected="@(Model.SeverityFilter == "Warning")">تحذير (Warning)</option>
+                <option value="Info" selected="@(Model.SeverityFilter == "Info")">معلومة (Info)</option>
+            </select>
+
+            <select name="AnomalyTypeFilter" class="form-select form-select-sm" style="width: 160px;" onchange="this.form.submit()">
+                <option value="">جميع أنواع الفجوات</option>
+                <option value="Gap" selected="@(Model.AnomalyTypeFilter == "Gap")">فاصل زمني (Gap)</option>
+                <option value="Overlap" selected="@(Model.AnomalyTypeFilter == "Overlap")">تداخل زمني (Overlap)</option>
+                <option value="MissingMediaFile" selected="@(Model.AnomalyTypeFilter == "MissingMediaFile")">ملف وسائط مفقود</option>
+                <option value="UnmappedReference" selected="@(Model.AnomalyTypeFilter == "UnmappedReference")">مرجعية غير مؤكدة</option>
+                <option value="MissingGeometryRegion" selected="@(Model.AnomalyTypeFilter == "MissingGeometryRegion")">رسم مصحف غير محدد</option>
+            </select>
+
+            @if (!string.IsNullOrEmpty(Model.SeverityFilter) || !string.IsNullOrEmpty(Model.AnomalyTypeFilter))
+            {
+                <a asp-page="/Admin/QualityReport" class="btn btn-sm btn-outline-secondary">إلغاء التصفية</a>
+            }
+        </form>
+    </div>
+
+    @if (Model.FilteredAnomalies.Count == 0)
+    {
+        <div class="alert alert-success text-center py-4 mb-0">
+            <span class="fs-4">🎉</span>
+            <p class="mb-0 mt-2 fw-bold">لا توجد ملاحظات أو فجوات مطابقة لمعايير البحث الحالية.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 90px;">المستوى</th>
+                        <th style="width: 120px;">النوع</th>
+                        <th style="width: 100px;">السورة / الآية</th>
+                        <th>الوصف والتفاصيل</th>
+                        <th class="text-center" style="width: 150px;">الإجراء المقترح</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var anomaly in Model.FilteredAnomalies)
+                    {
+                        var badgeClass = anomaly.Severity switch
+                        {
+                            Quran.Application.DTOs.QualityAnomalySeverity.Error => "bg-danger",
+                            Quran.Application.DTOs.QualityAnomalySeverity.Warning => "bg-warning text-dark",
+                            _ => "bg-info text-dark"
+                        };
+                        var severityLabel = anomaly.Severity switch
+                        {
+                            Quran.Application.DTOs.QualityAnomalySeverity.Error => "خطأ",
+                            Quran.Application.DTOs.QualityAnomalySeverity.Warning => "تحذير",
+                            _ => "ملاحظة"
+                        };
+                        var typeLabel = anomaly.Type switch
+                        {
+                            Quran.Application.DTOs.QualityAnomalyType.Gap => "فاصل زمني (Gap)",
+                            Quran.Application.DTOs.QualityAnomalyType.Overlap => "تداخل (Overlap)",
+                            Quran.Application.DTOs.QualityAnomalyType.MissingMediaFile => "وسائط مفقودة",
+                            Quran.Application.DTOs.QualityAnomalyType.StalePublication => "نشر معلق",
+                            Quran.Application.DTOs.QualityAnomalyType.UnmappedReference => "مرجعية غير مؤكدة",
+                            Quran.Application.DTOs.QualityAnomalyType.MissingGeometryRegion => "رسم غير مقطع",
+                            _ => anomaly.Type.ToString()
+                        };
+
+                        <tr>
+                            <td><span class="badge @badgeClass">@severityLabel</span></td>
+                            <td><span class="badge bg-light text-dark border">@typeLabel</span></td>
+                            <td>
+                                <span class="fw-bold">سورة @anomaly.SurahNumber</span>
+                                @if (!string.IsNullOrEmpty(anomaly.AyahReference))
+                                {
+                                    <br /><span class="badge bg-secondary-subtle text-secondary">@anomaly.AyahReference</span>
+                                }
+                            </td>
+                            <td>
+                                <strong class="d-block">@anomaly.Description</strong>
+                                <small class="text-muted">@anomaly.Details</small>
+                            </td>
+                            <td class="text-center">
+                                <a href="@anomaly.SuggestedActionUrl" class="btn btn-sm btn-outline-primary">
+                                    @anomaly.ActionLabel ←
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Section de la Matrice de Couverture par Sourate -->
+<div class="card rounded-4 border-0 shadow-sm p-4 bg-white">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="fw-bold mb-0">📊 مصفوفة التغطية الإجمالية للسور (114 سورة)</h4>
+        <input type="text" id="coverageSearch" class="form-control form-control-sm w-auto" placeholder="🔍 تصفية بالاسم أو الرقم..." onkeyup="filterCoverageTable()">
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="coverageTable">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 60px;">الرقم</th>
+                    <th>السورة</th>
+                    <th>الآيات المنشورة</th>
+                    <th>نسبة التغطية</th>
+                    <th>المقاطع (Draft / Rev / App / Pub)</th>
+                    <th>المصدر الصوتي</th>
+                    <th class="text-center" style="width: 140px;">إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.Report.SurahCoverages)
+                {
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">@c.SurahNumber.ToString("D3")</span></td>
+                        <td>
+                            <strong>@c.SurahNameArabic</strong>
+                            <small class="text-muted d-block">@c.SurahNameLatin</small>
+                        </td>
+                        <td>
+                            <span class="fw-bold">@c.PublishedAyahs</span> / @c.TotalAyahs
+                        </td>
+                        <td style="min-width: 140px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 6px;">
+                                    <div class="progress-bar @(c.CoveragePercentage >= 100 ? "bg-success" : c.CoveragePercentage > 0 ? "bg-info" : "bg-secondary")"
+                                         role="progressbar" style="width: @c.CoveragePercentage%;" aria-valuenow="@c.CoveragePercentage" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <span class="small text-muted" style="width: 40px;">@c.CoveragePercentage%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary" title="مسودة">@c.DraftSegments</span> ·
+                            <span class="badge bg-warning text-dark" title="قيد المراجعة">@c.ReviewedSegments</span> ·
+                            <span class="badge bg-info text-dark" title="معتمد">@c.ApprovedSegments</span> ·
+                            <span class="badge bg-success" title="منشور">@c.PublishedSegments</span>
+                        </td>
+                        <td>
+                            @if (c.HasSourceAudio)
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    ✓ متوفر (@((c.SourceSizeBytes / (1024.0 * 1024.0)).ToString("0.0")) Mo)
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-secondary border">غير محمل</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="/Admin/AudioEditor?surah=@c.SurahNumber" class="btn btn-sm btn-outline-primary" title="فتح المحرر">
+                                    🎙️ محرر
+                                </a>
+                                <a href="/surah/@c.SurahNumber" class="btn btn-sm btn-outline-secondary" target="_blank" title="عرض الصفحة العامة">
+                                    🌐
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function filterCoverageTable() {
+        const input = document.getElementById('coverageSearch');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('coverageTable');
+        if (!table) return;
+
+        const trs = table.getElementsByTagName('tr');
+        for (let i = 1; i < trs.length; i++) {
+            const row = trs[i];
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        }
+    }
+</script>
+}

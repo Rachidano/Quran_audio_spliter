@@ -257,11 +257,38 @@ Relevé effectué le 14/09/2026 à 13:00 :
 
 ---
 
-## 12. État des Tests Automatisés
+---
+
+## 12. Industrialisation de l'Ingestion et Contrôle Qualité (Lot 8)
+
+- **Ingestion automatisée et inventaire des 114 sourates Archive.org (`ArchiveOrgInventoryService`) :**
+  - Rapprochement explicite nom de fichier / sourate / empreinte MD5.
+  - Téléchargements atomiques reprenables avec fichier temporaire `.tmp`, vérification de taille non vide et vérification d'empreinte.
+  - Ingestion par lot (`DownloadBatchAsync`) et synchronisation du catalogue de référence (`archive_org_114_inventory.json`).
+  - Déclenchement direct du workflow d'annotation pour n'importe quelle sourate téléchargée via bouton `🎙️ تدقيق` dans `/Admin/Inventory` sans aucune constante figée dans le code.
+- **Service d'audit et de détection d'anomalies (`IQuranQualityAuditService` / `QuranQualityAuditService`) :**
+  - Détection des trous temporels (gaps > 500 ms) entre segments consécutifs d'une même source (ex: trou documenté de 16,606 s dans Al-Baqarah).
+  - Détection des chevauchements temporels (overlaps) entre segments.
+  - Contrôle d'existence physique des assets générés (`StorageKey`) pour les segments `Rendered` ou `Published` avec alerte `MissingMediaFile` en cas de divergence disque.
+  - Contrôle des correspondances de décompte non confirmées (`ReferenceMapping.ReviewStatus != "Approved"`).
+  - Détection des versets sans région vectorielle MARW (`MissingGeometryRegion`).
+  - Calcul de la couverture réelle à partir des données en base (pourcentage de versets avec récitation publiée / 6 236 ayat canoniques).
+- **Tableau de bord qualité administratif (`/Admin/QualityReport`) :**
+  - KPIs globaux : taux de couverture réelle, sourates avec source locale, volume de segments, total des anomalies.
+  - Table filtrable des anomalies par niveau de sévérité (`Error`, `Warning`, `Info`) et par type (`Gap`, `Overlap`, `MissingMediaFile`, `UnmappedReference`, `MissingGeometryRegion`).
+  - Liens d'action directs contextuels vers `/Admin/AudioEditor`, `/Admin/ReviewQueue` ou `/Admin/CorpusMapping`.
+  - Matrice complète des 114 sourates avec barres de progression, répartition par statut (`Draft`, `Reviewed`, `Approved`, `Published`) et accès public / éditeur.
+- **Tests unitaires et d'intégration :**
+  - `QuranQualityAuditServiceTests` : validation de la détection de trous, chevauchements, médias manquants et calcul des métriques de couverture (culture-invariant).
+  - `QualityReportIntegrationTests` : protection d'accès de la page et rendu réussi pour les administrateurs/relecteurs.
+
+---
+
+## 13. État des Tests Automatisés
 
 - Commande : `dotnet test`
-- Résultat actuel : **104 tests exécutés, 104 réussis (0 échec, 1 ignoré documenté)**
-  - `Quran.UnitTests` : 74/74 réussis.
-  - `Quran.IntegrationTests` : 30/30 réussis sur `quran_db_test` (dont `PublicSiteIntegrationTests`, `ReviewWorkflowIntegrationTests`, `AudioEditorEndToEndIntegrationTests`, `AwjuhEndToEndIntegrationTests`, `SecurityAccessIntegrationTests`).
+- Résultat actuel : **110 tests exécutés, 110 réussis (0 échec, 1 ignoré documenté)**
+  - `Quran.UnitTests` : 78/78 réussis (dont `QuranQualityAuditServiceTests`).
+  - `Quran.IntegrationTests` : 32/32 réussis sur `quran_db_test` (dont `QualityReportIntegrationTests`, `PublicSiteIntegrationTests`, `ReviewWorkflowIntegrationTests`, `AudioEditorEndToEndIntegrationTests`, `AwjuhEndToEndIntegrationTests`, `SecurityAccessIntegrationTests`).
 
 

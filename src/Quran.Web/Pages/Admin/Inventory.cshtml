@@ -18,11 +18,21 @@
         <p class="text-muted mb-0">جرد وتنزيل ملفات MP3 الأصلية بصوت القارئ الشيخ صابر عبد الحكم من منصة Archive.org</p>
     </div>
 
-    <form method="post" asp-page-handler="Sync">
-        <button type="submit" class="btn btn-outline-success">
-            🔄 تحديث بيانات الأرشيف (Sync Metadata)
-        </button>
-    </form>
+    <div class="d-flex gap-2">
+        <a asp-page="/Admin/QualityReport" class="btn btn-outline-primary">
+            📊 تقرير الجودة والتدقيق (Audit)
+        </a>
+        <form method="post" asp-page-handler="DownloadMissing" class="d-inline">
+            <button type="submit" class="btn btn-outline-info" title="تنزيل دفعة من السور غير المحملة">
+                ⬇ تنزيل دفعة ناقصة
+            </button>
+        </form>
+        <form method="post" asp-page-handler="Sync" class="d-inline">
+            <button type="submit" class="btn btn-outline-success">
+                🔄 تحديث بيانات الأرشيف (Sync)
+            </button>
+        </form>
+    </div>
 </div>
 
 @if (!string.IsNullOrEmpty(Model.StatusMessage))
@@ -156,6 +166,12 @@
                             </td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-1">
+                                    @if (item.IsDownloaded)
+                                    {
+                                        <a href="/Admin/AudioEditor?surah=@item.SurahNumber" class="btn btn-sm btn-primary" title="الانتقال لمحرر الصوت والتقطيع">
+                                            🎙️ تدقيق
+                                        </a>
+                                    }
                                     <form method="post" asp-page-handler="Download" asp-route-surahNumber="@item.SurahNumber" class="d-inline">
                                         <button type="submit" class="btn btn-sm @(item.IsDownloaded ? "btn-outline-secondary" : "btn-outline-success")">
                                             @(item.IsDownloaded ? "إعادة تنزيل" : "⬇ تنزيل")
