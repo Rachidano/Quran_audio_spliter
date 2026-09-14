@@ -1,0 +1,920 @@
+{
+  "Revision": "20260913-full",
+  "ReviewVersion": "openings-v1",
+  "Scope": "First ayah only: visual line coverage and end marker; not textual or religious certification.",
+  "Reviewer": "Codex visual inspection",
+  "Entries": [
+    {
+      "Surah": 1,
+      "Page": 1,
+      "LineCount": 7,
+      "FirstTextLine": 1,
+      "MapSha256": "04df3ce15fb817bf8014c3da27ef3fac55bf80ed1c2e8f03322ab67ff6a75dde",
+      "ImageSha256": "e37112e5a3f925e572bdf2436e3f56f0d49b6178d691dc09ec6bda1158105feb"
+    },
+    {
+      "Surah": 2,
+      "Page": 2,
+      "LineCount": 7,
+      "FirstTextLine": 1,
+      "MapSha256": "120845b9e997930e35dabbe3743a133b732ed55b7d92ce8f7c4dde4cab81824d",
+      "ImageSha256": "189b55c51e492747b3d3af194243010e44dae9ac52e8a516e6a8105f9110443d"
+    },
+    {
+      "Surah": 3,
+      "Page": 50,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "4323ed80641a628c7e52d79574f1737d607e61bb7bd7762fbcb3e0d7526fe47a",
+      "ImageSha256": "abbe923d4de5c49e438038c2216081aeba43b3d22ea0dd27f3fd8860c7ded9d0"
+    },
+    {
+      "Surah": 4,
+      "Page": 77,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "95dcc368202355535070e4ad58a461f619b19512ad7ee6e1e60031b27962ce3a",
+      "ImageSha256": "f9a9379b5f4798f08882e14583ec3706e50e6c3e38bab608408cd33b58b53f1d"
+    },
+    {
+      "Surah": 5,
+      "Page": 106,
+      "LineCount": 15,
+      "FirstTextLine": 7,
+      "MapSha256": "6c0915c44df4273584578d80b2b4f1d1fb8257135ae6ae6230d8c4700d09bfaa",
+      "ImageSha256": "74415862ae404ebfcc6d7602ac6d28ec6c0478af641761e3cb1019b7e6bef649"
+    },
+    {
+      "Surah": 6,
+      "Page": 128,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "23cf7b51ccc73c75042369939f31f63bd896fcc252992b9e5e854c19fc0ecbf4",
+      "ImageSha256": "0d2d2395bffe1134d3f3cad4ab32a36491a35afa40b934c7a80f27fce463f7db"
+    },
+    {
+      "Surah": 7,
+      "Page": 151,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "3965e6902fb4948e699eb2172acd23d0c87ff03658d3f2dc29ba90b66e771f91",
+      "ImageSha256": "540a402b73085cd5deae85bc59fc6d4483b6e0dd22498a84dc54744e754143f3"
+    },
+    {
+      "Surah": 8,
+      "Page": 177,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "92f905eac526346cc52f2c2c7e4dc8239f611a2c9b8fe804ce8165e955b4061d",
+      "ImageSha256": "bdbfebd072eb82a97a7b488cd3337024d3142f55b333fafca16bde7989f67126"
+    },
+    {
+      "Surah": 9,
+      "Page": 187,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "a1c6e8d4c9c1206173c18f7c056724ab08c45cf7d58f18b0762bb5be06e10311",
+      "ImageSha256": "b020dd207b105d403eb44cb1415e9a0d2fe0f47f0a820849fa1ea26566d43bcf"
+    },
+    {
+      "Surah": 10,
+      "Page": 208,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "114265e552fab706239fcde915c4ea0caa4852ef5e1d7eb872132df54ed1d761",
+      "ImageSha256": "7582dfc3e7b143e964c3c179650b594860a40ebe53c5fcffc0cce58566db5ee5"
+    },
+    {
+      "Surah": 11,
+      "Page": 221,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "e2abc19b8f19fb2a1cd6608df35aedbdfbc0bf5410bbe59ceab0a42efdbef6ea",
+      "ImageSha256": "ebdd024f614b135cf04c621d78d9684081712217259e1d6f21686ca4e43d89b4"
+    },
+    {
+      "Surah": 12,
+      "Page": 235,
+      "LineCount": 15,
+      "FirstTextLine": 10,
+      "MapSha256": "c736d1f549a5e8c7916d0c7b576aeb6e98f179d7b07293e1bf07a4f1125f49a4",
+      "ImageSha256": "0880e69a021276544b6e4c8128b86db48ebe869208e8547fb2fdd77105a1bfc7"
+    },
+    {
+      "Surah": 13,
+      "Page": 249,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "96f269dc14040111e579f8214e5229fd84c32c4fba5ca28b0b095c0540508645",
+      "ImageSha256": "2072f0bfcd01b072641355fb428edceeb215cbc05edcb4dd2d2d9335ba3a1708"
+    },
+    {
+      "Surah": 14,
+      "Page": 255,
+      "LineCount": 15,
+      "FirstTextLine": 4,
+      "MapSha256": "ce4a1f85d14153b8b38a9261f53708db1e45a090c84e19398d7b9aa6a9a28740",
+      "ImageSha256": "438d6422aadf2fe80d2242c9a4d1035b1d2bd964b21fcab07d1ed28717a8370c"
+    },
+    {
+      "Surah": 15,
+      "Page": 262,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "058ed714b95451e874ef070ef9d506c3817ed07c7dde1338349352bffe4716b6",
+      "ImageSha256": "24eeb8dceffafd8d363cb0477725defa6af8ebd2d225c33c4e0b423019ceb39e"
+    },
+    {
+      "Surah": 16,
+      "Page": 267,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "7431c2b675e86b8f270c90f373451d2e9b81733085ba09f393e5fbbabfb417a9",
+      "ImageSha256": "80eb6b7ab67a8d29ec2518373e60ec0ad0ffe06b55eee1c0ee004c2ae0369ed9"
+    },
+    {
+      "Surah": 17,
+      "Page": 282,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "1e4d0ac8ca0693a6ed919f68750c005237acad234e1e090bfc5768fe8ec03e27",
+      "ImageSha256": "cdfd5cafa12d8a365b6e9610bb6fb142d680c51bf960598d485dedae63f374ad"
+    },
+    {
+      "Surah": 18,
+      "Page": 293,
+      "LineCount": 15,
+      "FirstTextLine": 11,
+      "MapSha256": "eb136828985ad1f6cf5d1d66a25ee382d96c35b6b1bee9ea3d94bd4b9e44cc31",
+      "ImageSha256": "19b9ef0936ca9c701d9737cd810a9f4e656121a9fa3d6c266996895476792ff7"
+    },
+    {
+      "Surah": 19,
+      "Page": 305,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "f6703354d411e22b5a64a83fff2f2f76ae61ead514e54463ca075bdb250fd2dd",
+      "ImageSha256": "aef8808e5c4e856982d9a4df118f092f6e5cedd37b17406694d050bcf904c8e8"
+    },
+    {
+      "Surah": 20,
+      "Page": 312,
+      "LineCount": 15,
+      "FirstTextLine": 6,
+      "MapSha256": "e4b980e0d2d9d2e2ed923e34c5838ebca51c43d077b8266dda721a7eefffa3e2",
+      "ImageSha256": "f4ab38f5aff25b7296c12c5007a6de19fc329744923bbb44f20dced628a5640d"
+    },
+    {
+      "Surah": 21,
+      "Page": 322,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "0005c43b3d241ace80b6a8d5e3d01b0c30938d2a2b318be1cbc46011112766c8",
+      "ImageSha256": "b49d7fa6bef82611f2caecf8b681fc6cf94ed6bb429c1d1cd7fbbd53b77468b4"
+    },
+    {
+      "Surah": 22,
+      "Page": 332,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "86b3f07b171c216feb1775254a2e3cb51faeeb997d450ded3c88c33f66171b00",
+      "ImageSha256": "e09ddfc180cca5ec9d41bf61860e1982e0d5d98222befeca5f9aa32872a2b937"
+    },
+    {
+      "Surah": 23,
+      "Page": 342,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "13b077460adb6c4fca8454f1e65cde819398a799626c25419edb872373e0345e",
+      "ImageSha256": "50878adfffbc611cbe8b8b89a9f5b39499a4f4d61631129b8cb8c060a8ea1643"
+    },
+    {
+      "Surah": 24,
+      "Page": 350,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "43483dc7f2987c8a5340f12588bdacf9a275efdd92b0e49c5484c3d0c1ee8f5e",
+      "ImageSha256": "496ac32b452bcdaf3418021fdef9d96e56a570a0888811017cd5ead8923da9ed"
+    },
+    {
+      "Surah": 25,
+      "Page": 359,
+      "LineCount": 15,
+      "FirstTextLine": 12,
+      "MapSha256": "87645e580dfd555b1cc42cb51bf3cc3f8a3141105a51d25e248599c73baaec14",
+      "ImageSha256": "736b3805fe0a61f67060a2ee9af0335079793def92ce0abe0c36f270cf20a186"
+    },
+    {
+      "Surah": 26,
+      "Page": 367,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "2772c2224f0dcfe71c88073c8e2505ef22331d256e86a9bee01f666217ee115d",
+      "ImageSha256": "8842d4f8aee3be1ef81732152f51f9930db24bffb4bdc54ca8783b4dd0d35c5d"
+    },
+    {
+      "Surah": 27,
+      "Page": 377,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "189a3a96705ddc904eca7c643942924f4dec0148cfdf6569275f085720122d85",
+      "ImageSha256": "f82f806d3a81d84848743c4c1322d63365f2e2810a2a1ac8c362705677126fd0"
+    },
+    {
+      "Surah": 28,
+      "Page": 385,
+      "LineCount": 15,
+      "FirstTextLine": 9,
+      "MapSha256": "59bed2aa4f0b8271d118589bc31b90acf8ba69bd1956d4c76d376e2254c2f5bc",
+      "ImageSha256": "c1202a2ef00eb1b5b4a26c534f1d3bfdbd2afc5339fd03ae46989080dd9fd19f"
+    },
+    {
+      "Surah": 29,
+      "Page": 396,
+      "LineCount": 15,
+      "FirstTextLine": 9,
+      "MapSha256": "8d6dca8c78a38854af38c96d3cd08eda2f5f8a266beb6adf579ad350027d47f3",
+      "ImageSha256": "a9d5e993635a35ff6f9af04ee8c7a7a2ed866f283f51f41c727a7b2debe04538"
+    },
+    {
+      "Surah": 30,
+      "Page": 404,
+      "LineCount": 15,
+      "FirstTextLine": 12,
+      "MapSha256": "3ccca9395de93495ecb07980794d30e9e9100021a1a97d19aa42748255975cc4",
+      "ImageSha256": "f46d2da5ab6c935d4e78f34aa4cb79055d4c9d245069ce4c3fab4edbd36719e0"
+    },
+    {
+      "Surah": 31,
+      "Page": 411,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "09f29095491bd02e3edef9ecae4199c1795918f67f6265fa6a46a4dfacd4008f",
+      "ImageSha256": "1bb5e82b6c01dbc032abd729067aadbfcb8225c9797b5bf1d5724f9d335997e3"
+    },
+    {
+      "Surah": 32,
+      "Page": 415,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "57889df07d8261926072688cbaea5a4a7f7af5168c95b6b2ab387d5115b15521",
+      "ImageSha256": "89f3b1999b3ff41083c249c02d43373abc91a1f0c2a64aacecd62a66b90a1267"
+    },
+    {
+      "Surah": 33,
+      "Page": 418,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "74930fd46c7bc23ebd841725ee864f967c4e2ce0570dc16134d725f268028e48",
+      "ImageSha256": "9c9808a1ad228094779995586888ba3c370aa73338264540b8cbbe1f8e976e32"
+    },
+    {
+      "Surah": 34,
+      "Page": 428,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "e31b6cf6be23a726c4739e5a4cefb36d88a8085a7f32ce4e2422b2d17b922abf",
+      "ImageSha256": "bfe45cd98af26c4fb6e8edbdcd6926af0dc9e1796fc118d0800b821643c20fed"
+    },
+    {
+      "Surah": 35,
+      "Page": 434,
+      "LineCount": 15,
+      "FirstTextLine": 9,
+      "MapSha256": "05e4fd3a8d53d108286017f811553689d370bd9a50d9c574c2b873c457b702f2",
+      "ImageSha256": "c8c6f250498a17a1c61959f387916dafff3c808865787933b66cc40fb44960c9"
+    },
+    {
+      "Surah": 36,
+      "Page": 440,
+      "LineCount": 15,
+      "FirstTextLine": 5,
+      "MapSha256": "23bf27946ce181cf9ffedc606e73d6b4cb78aa8b7f9ca67567b1d449567f4408",
+      "ImageSha256": "12fd73bd0c78b343b0b64fe514dfdbb208dce65847865975fdeabd7aa5b4a2f4"
+    },
+    {
+      "Surah": 37,
+      "Page": 446,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "e6bc1561cd2eb565b82809644c61eee973b7d32f4ae4f1a32ec0268d2d94e95a",
+      "ImageSha256": "f44724f0384831b603df214b8986767688662a0d2184f9d58834ad1d19cfdb39"
+    },
+    {
+      "Surah": 38,
+      "Page": 453,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "e71d25127056277f61c975c3b48a7dac9f646435ac139fbe95ac5de912c0de2e",
+      "ImageSha256": "5c3718d5335a3d10448b4c935689dfde2622c432b37f173f8d01cf2950cd05e6"
+    },
+    {
+      "Surah": 39,
+      "Page": 458,
+      "LineCount": 15,
+      "FirstTextLine": 6,
+      "MapSha256": "c9938ddc7bdb885b22e7ce58a096a4eccce4802f9c4492c4c2ec68ef7995210c",
+      "ImageSha256": "18a141bf39d364c29ee1d489db60c09958cf6be70b468d66342b5b80da5cdb77"
+    },
+    {
+      "Surah": 40,
+      "Page": 467,
+      "LineCount": 15,
+      "FirstTextLine": 4,
+      "MapSha256": "8d64c92374f671d99cb064f01e2334610e354d00e7c3a869a6b598a1c702ddb0",
+      "ImageSha256": "60c9a1e4ac4dd32f2550e8dc41626732d56055a76eae47a1eca19f39c0716c53"
+    },
+    {
+      "Surah": 41,
+      "Page": 477,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "7eb4cd85353db37aeb69305a954be4579f1a1cf7d48584fe9ab501f40828f867",
+      "ImageSha256": "4ebc92d24595a14ad0c4105f67db4f688626a0dc119461227c67c1e4ef8165cf"
+    },
+    {
+      "Surah": 42,
+      "Page": 483,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "0d58c55d31b7be94693a0588be4ecfd3bf951f9bed77831e98080d74996118f5",
+      "ImageSha256": "6c98e22316aa3db08c41e7d568713cdd7fb29ffed7e9e27fb5e6487b67e1cb7a"
+    },
+    {
+      "Surah": 43,
+      "Page": 489,
+      "LineCount": 15,
+      "FirstTextLine": 6,
+      "MapSha256": "c32611eb22d39713d4dd4f581148e276c1d2bd2c4023a08347b3e3ed8413510e",
+      "ImageSha256": "6d6467e17a03108a98275f041a9ed6853ced325aea97b5020a661f06f7c1f08b"
+    },
+    {
+      "Surah": 44,
+      "Page": 496,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "2fc2184fa9b6cd203916b2d7866c8124ccfbc120e33be2acdfaf98ec25fdb64f",
+      "ImageSha256": "743ed0107634d013a1ababc40e65e5f52d7ff76fcdae44e54a98f0c6ec892676"
+    },
+    {
+      "Surah": 45,
+      "Page": 499,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "eeedba997634d3f3bb7c4d001bbd7419e42c8ffec76895ea791575fdbb1d84bc",
+      "ImageSha256": "4653debcfb2f79f54b6c9d995ca2136a7a91cc5d0adafeab7ba43f04fec53174"
+    },
+    {
+      "Surah": 46,
+      "Page": 502,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "128b4cac7350111d4ed168153c0a3146489892fe085fff034a908e7663ddced7",
+      "ImageSha256": "e17a8ec5e9d19ab82a072defb20c2f2f73e52e38bcc2589f7aa88a7c0441ca53"
+    },
+    {
+      "Surah": 47,
+      "Page": 507,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "9cf5c86a0182faee4eb8227288745917e7ec7fb22ef6468703560556b715a804",
+      "ImageSha256": "e56ca020d1d8be31f271fb726a19b88b3c52fd5f5742ad9af1c3a88a1aecc22f"
+    },
+    {
+      "Surah": 48,
+      "Page": 511,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "97b38bfeb177fd435a016be8a81ed2aa5f113ede8f8a790d572d2a79122b6b19",
+      "ImageSha256": "51f040d505fe2caa123a9a5eb2b98c7b00041c457c6cc2c3bed33be2f27a9956"
+    },
+    {
+      "Surah": 49,
+      "Page": 515,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "486cf354830c34c49b65401d2d80258654c2b189a566a641a63ad6aab987e221",
+      "ImageSha256": "b91965754e9539587c6268fdfe596af352a091f069600ed377e12b1e2cd45948"
+    },
+    {
+      "Surah": 50,
+      "Page": 518,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "730af2aacbe878f2532a38d6d1168c18e9467046789c8c3affa99090a6e4ecd6",
+      "ImageSha256": "b76e9a94a5a573b67ea05b76027b97f7bb888708b57bec4f84ff01a945cca5ea"
+    },
+    {
+      "Surah": 51,
+      "Page": 520,
+      "LineCount": 15,
+      "FirstTextLine": 13,
+      "MapSha256": "f0fb3dc92b2dc83333956a0d3e610ad74bc69b69147cd5fe6fc02633c4947cd6",
+      "ImageSha256": "3cbbda6e09f22f2153ed32788c5e8494c9223e7ffa6dba911d619da864e43983"
+    },
+    {
+      "Surah": 52,
+      "Page": 523,
+      "LineCount": 15,
+      "FirstTextLine": 9,
+      "MapSha256": "25f5a8358288d0a7da077349bfb1d4409cd0723fcbc28404b5f3a22d80e1142c",
+      "ImageSha256": "f65fca9f003b2e090c99fe8ccdf224867b28fa5527cf904dfe5a4bc0c55b1675"
+    },
+    {
+      "Surah": 53,
+      "Page": 526,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "d191dabb52a3a44d966c4cf8e6a3fa5bc3c722c92c8d1b27d90d99d9f1bc880f",
+      "ImageSha256": "380933a891dc180838c89e227cb0466c08b96e22219ebf1c794628491afbfdc5"
+    },
+    {
+      "Surah": 54,
+      "Page": 528,
+      "LineCount": 15,
+      "FirstTextLine": 11,
+      "MapSha256": "9f2c9b4baab248ce05ec01a30982834b77e3a4bb0509e748bb7da5eb80d0ec98",
+      "ImageSha256": "8fe814607edd55ea1336f412b2f8d4f17e1a8761acfbfeac770229c3a255c48d"
+    },
+    {
+      "Surah": 55,
+      "Page": 531,
+      "LineCount": 15,
+      "FirstTextLine": 6,
+      "MapSha256": "8c533e924ed17ffcb5b51cb5cb1b6a4e891f986e28ee1964574e40c2f15ade1e",
+      "ImageSha256": "a1845bb028cf3d9222de89158fc07a245cdf9cf041c7d1c0beb69111836a5089"
+    },
+    {
+      "Surah": 56,
+      "Page": 534,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "782078b6760b999e20ac4b5c3fd035fc24f9d51326a484b2c7b7b620f48c1754",
+      "ImageSha256": "697f5063f0fac5d440933058e2d3218c5f59e2632abb7bb84b195836a93a2764"
+    },
+    {
+      "Surah": 57,
+      "Page": 537,
+      "LineCount": 15,
+      "FirstTextLine": 12,
+      "MapSha256": "9ef8ffe181583d9660c0ae1ba825c97d80c759170e87b3d22e785f08a9989dbb",
+      "ImageSha256": "30c2032abacbed473622f693541db9dfed0fafdf4d1acab18bd727c96139bfca"
+    },
+    {
+      "Surah": 58,
+      "Page": 542,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "c649bf9b986028d873bb18b77f4af1855bfff184920e123497fc2bbb4179c1ed",
+      "ImageSha256": "3bf2a2823eb359203e2c98beaf27cff400cef51e800ac0442e950079552179c6"
+    },
+    {
+      "Surah": 59,
+      "Page": 545,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "abd5597a4d50d9ff4246551f51a5ec20ceacc362a84dcf3e7aa435c1e0270094",
+      "ImageSha256": "06bae2ec5b1470cc7e2768078c24104cb199fda7847cf5cb1ba5c43d72248115"
+    },
+    {
+      "Surah": 60,
+      "Page": 549,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "72039044436fd8b482326be5956435e388637144b56f6d10e52ea7c8c10c72da",
+      "ImageSha256": "79911e07215ce77999e9bbb93b7d197fbd2d7658ca11c3c6d7af882666febcb3"
+    },
+    {
+      "Surah": 61,
+      "Page": 551,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "ca3903c05a066a8c8ca2dee4fa55e4a9df69207fe90170bf39c78767350c5496",
+      "ImageSha256": "66405f19d4425ff2683ea681c5aca9981667f1a5665cb81f75dfb28044271aa2"
+    },
+    {
+      "Surah": 62,
+      "Page": 553,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "4cf069b985fa2176ff4780c09cfcd7a8972ccc37bbd4b401bceb4f5dcc068c2e",
+      "ImageSha256": "2e033fb70720c7e9aedb68f6705831aa5636983d35cc3d208a9e5e500f376140"
+    },
+    {
+      "Surah": 63,
+      "Page": 554,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "010362bc1389b72cc68089edc6f369efe5df635600c46c4e4fa3566417b57dac",
+      "ImageSha256": "b01608830950b9b14f3eeee15c19f838ad76326d3944da10ce8571e39ffa7680"
+    },
+    {
+      "Surah": 64,
+      "Page": 556,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "fa553d36fdb675213c9088ac9b87611d895c346de5c7a9840ebf0dc5c24e98c3",
+      "ImageSha256": "fdc10f4f620a316c90cacef7962c4de731702148426a42a8038761ea04fd0ae7"
+    },
+    {
+      "Surah": 65,
+      "Page": 558,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "c644479ad4d94e3ebff11ae1185ba0c3087c5c857f0f2b4423e4e716a721b283",
+      "ImageSha256": "4d8d86cacd9e9a91894ecc39938fba352e729d7fd86d33f5c7007f5dbe9d18a7"
+    },
+    {
+      "Surah": 66,
+      "Page": 560,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "aeb1122876f208bbc341891f9a01c5cb02e06c15b9f2d56a9f939b5ca72b3e69",
+      "ImageSha256": "7232b61298d564e3fdbe91b59d275f02026a60236ae0cb056ba53c23894cf0e1"
+    },
+    {
+      "Surah": 67,
+      "Page": 562,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "607b12725387df215a38bebb1e47acd962673e4091fa6287335d48209c17b67e",
+      "ImageSha256": "b6e8d549878822b60336e7fe53d6c2a9774ea1353bd3ba974c13208172bb9885"
+    },
+    {
+      "Surah": 68,
+      "Page": 564,
+      "LineCount": 15,
+      "FirstTextLine": 7,
+      "MapSha256": "c5150031fb203815fe3d955e2afc3e13cde6890b821b52b863f4f4deac0f0f23",
+      "ImageSha256": "f13ed94e1c3d39fab5a90cf7a22d8c2fe21581b28681de30971bc7412355a670"
+    },
+    {
+      "Surah": 69,
+      "Page": 566,
+      "LineCount": 15,
+      "FirstTextLine": 10,
+      "MapSha256": "bf94f3f229975d1bee035298de130fd84395158c8cf3d1d5bc83538068457b8e",
+      "ImageSha256": "540a19cfc1873497be413fd05e4a284deea7d9506696b50ec51ea6fc208a3c5a"
+    },
+    {
+      "Surah": 70,
+      "Page": 568,
+      "LineCount": 15,
+      "FirstTextLine": 10,
+      "MapSha256": "e423cc9ddacbb31e409f95c2bc01489f832f359b3b9c1ff76511ef00135a501d",
+      "ImageSha256": "5cbf0f8ef9cf2c49f8c3ba6dadbff3e589fe89bacaf460eb03ca9988ab0a2058"
+    },
+    {
+      "Surah": 71,
+      "Page": 570,
+      "LineCount": 15,
+      "FirstTextLine": 7,
+      "MapSha256": "2390b95d18a4c1d62941ebde7129fcedceef83ad97cc789d65d98f1d1bd6f7de",
+      "ImageSha256": "fbdff7eee8f18bf7846f3229dad13683f08c71885f796960c50f12407b0a2917"
+    },
+    {
+      "Surah": 72,
+      "Page": 572,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "449975ac3ee4ec2f0112fb2f30597177864fca9abc682e369ffc694e2ce60cf2",
+      "ImageSha256": "91fed6fd8f2530553089fa28a32f581c6f629fc0a7840f9b90133cbca9b7c1b5"
+    },
+    {
+      "Surah": 73,
+      "Page": 574,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "f7709b9880b71486c0275429e54d23b8b52995585325fd1a7b0fc5badb77f87f",
+      "ImageSha256": "1007dfce44cf86ade85803de944a9034541a288a9afebcc0addbfd6785262b04"
+    },
+    {
+      "Surah": 74,
+      "Page": 575,
+      "LineCount": 15,
+      "FirstTextLine": 9,
+      "MapSha256": "95789fd52bc2eb04a1810c16b4b61314ad6453417d4d8c6cbe45b9f0da57c2d3",
+      "ImageSha256": "d133c699a12d3b62aa738d881e65b87c2a06915bff6ba0ebf0918cc7834bba8d"
+    },
+    {
+      "Surah": 75,
+      "Page": 577,
+      "LineCount": 15,
+      "FirstTextLine": 7,
+      "MapSha256": "54dcaa96017ca60d54ca8fb00ffd6025ac7b76d4858ff8d569479273113c109e",
+      "ImageSha256": "2766f8da9d3ad942c9668c24bb63c417ab05351287a6a7d44faf35a93aa55a91"
+    },
+    {
+      "Surah": 76,
+      "Page": 578,
+      "LineCount": 15,
+      "FirstTextLine": 11,
+      "MapSha256": "adc3ba60f8fcd143bba9a4247f76d1b0834510b10ebe5ce35d224d3e045357d3",
+      "ImageSha256": "8b764b761ea146c2160e271853ad3457c45c19f83e22320c71cb72dca86595ca"
+    },
+    {
+      "Surah": 77,
+      "Page": 580,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "392a632047a6d79e2bced8647529f4233cab1d280a71dc6fc400b9fe186e3c1d",
+      "ImageSha256": "cd7e3ec579ec0bb51042c0bb354170d478b38cedef89cdf6a1931b07ef8ff6d9"
+    },
+    {
+      "Surah": 78,
+      "Page": 582,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "3da1d63ba406d1cab1614698f4e5069ebc8b24593282b4655b4b3319c4aea58d",
+      "ImageSha256": "1091bc66b2ce6600e04d2f47d26baff210265e2d1e2ad422842c8f17fe379530"
+    },
+    {
+      "Surah": 79,
+      "Page": 583,
+      "LineCount": 15,
+      "FirstTextLine": 9,
+      "MapSha256": "50db3b86cce417076a2ada3e0811a4bb04272724dc1ae41933bd57b4faaf7088",
+      "ImageSha256": "923a2dfbe4e333bd1c76e4791efaf91923ad79f97c3e189a06ca97f87bd771f4"
+    },
+    {
+      "Surah": 80,
+      "Page": 585,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "6a7792957844f784d13872fcb02e9c0febb098254c4f7f4203552b6529380c8f",
+      "ImageSha256": "5ed5d820e38fb1f62e5ed03d84467a4b5f0640fc92cd0319d3cdfde4d51f485b"
+    },
+    {
+      "Surah": 81,
+      "Page": 586,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "72c00aa7c1acbb12d764d1cb24a3e8f2c2603fa4d05f1f2b4e5b0d94b9a99694",
+      "ImageSha256": "1d99667296843229b023bfdce0e5b5efc94560b1f3a6902f4d9c9de0ec53bdeb"
+    },
+    {
+      "Surah": 82,
+      "Page": 587,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "dd713ee7f68d9386d3202c39dbdbe406be0a567ab7b924b8af61d352cabe99e9",
+      "ImageSha256": "9dd203762d715d141cd6373eff39dac4a1913e3ffec215240ee28c96f68000e4"
+    },
+    {
+      "Surah": 83,
+      "Page": 587,
+      "LineCount": 15,
+      "FirstTextLine": 12,
+      "MapSha256": "dd713ee7f68d9386d3202c39dbdbe406be0a567ab7b924b8af61d352cabe99e9",
+      "ImageSha256": "9dd203762d715d141cd6373eff39dac4a1913e3ffec215240ee28c96f68000e4"
+    },
+    {
+      "Surah": 84,
+      "Page": 589,
+      "LineCount": 15,
+      "FirstTextLine": 3,
+      "MapSha256": "3bff549ef3c64ec3079a55a4df4afb05a5d0864f5688b7f5be19520df3caed3b",
+      "ImageSha256": "3d336d52b30ff06c8274fb8fda23289af7dd2a4bd367adee0e6bd30b18bfbfc0"
+    },
+    {
+      "Surah": 85,
+      "Page": 590,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "ea8dfcc30bff26cd20a9f9b55c8130a4a67d3ee8b963869c45af9fed1af65b4a",
+      "ImageSha256": "dfda0f6ed70baa326c0720e42550ca7b22ab0f90e9956c41c6529362f8f67766"
+    },
+    {
+      "Surah": 86,
+      "Page": 591,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "6249e65dca58fb2a3edd1a7c5aa8de953b1071710b0dec1559a36e8504b5fa20",
+      "ImageSha256": "0a1ab9579f2ce26c7b6bd58f1e65458f4adb972a8c076ee6ae73f8f219c4fddf"
+    },
+    {
+      "Surah": 87,
+      "Page": 591,
+      "LineCount": 15,
+      "FirstTextLine": 9,
+      "MapSha256": "6249e65dca58fb2a3edd1a7c5aa8de953b1071710b0dec1559a36e8504b5fa20",
+      "ImageSha256": "0a1ab9579f2ce26c7b6bd58f1e65458f4adb972a8c076ee6ae73f8f219c4fddf"
+    },
+    {
+      "Surah": 88,
+      "Page": 592,
+      "LineCount": 15,
+      "FirstTextLine": 4,
+      "MapSha256": "417024c479212b0eca83f49bf88fbdd33a6d96e067e611463cf32f9d808b55af",
+      "ImageSha256": "ef6c1008cda6e5be76e52872c84866e39ed01f83a242706db90ba49ddd4f87f1"
+    },
+    {
+      "Surah": 89,
+      "Page": 593,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "f561d014ac384375edca519b16616077593bc22d75dcb38da17a6e4485db25c1",
+      "ImageSha256": "6114665820d83fa68775846210633c26fe0d1e010db2f55d3cc0efb0fc0541e7"
+    },
+    {
+      "Surah": 90,
+      "Page": 594,
+      "LineCount": 15,
+      "FirstTextLine": 5,
+      "MapSha256": "1afa8d8336053f047945545547f3c4f33087af29eaf1e6ed0dc89bd5c2448049",
+      "ImageSha256": "82eee1000d72391be5a5ce36daa29569d57e9c3658cf05d210768a73d4018a1a"
+    },
+    {
+      "Surah": 91,
+      "Page": 595,
+      "LineCount": 15,
+      "FirstTextLine": 1,
+      "MapSha256": "18157727fb652a7ac93ebd42af8562be8190ec26574e2e144c45afea93b02103",
+      "ImageSha256": "7d42460bc5338f2124f8a90ea1f71f561c0c2b48f07f1196420dfc2efe634228"
+    },
+    {
+      "Surah": 92,
+      "Page": 595,
+      "LineCount": 15,
+      "FirstTextLine": 10,
+      "MapSha256": "18157727fb652a7ac93ebd42af8562be8190ec26574e2e144c45afea93b02103",
+      "ImageSha256": "7d42460bc5338f2124f8a90ea1f71f561c0c2b48f07f1196420dfc2efe634228"
+    },
+    {
+      "Surah": 93,
+      "Page": 596,
+      "LineCount": 15,
+      "FirstTextLine": 5,
+      "MapSha256": "34c945dc972c513b37dc2f2f53bee7a9055402433a414eb61e055ae4ed92b0e9",
+      "ImageSha256": "dd87943911a19b2bcac1aaaccdf526a7429d212c16ee78bb32735894cc3e2568"
+    },
+    {
+      "Surah": 94,
+      "Page": 596,
+      "LineCount": 15,
+      "FirstTextLine": 12,
+      "MapSha256": "34c945dc972c513b37dc2f2f53bee7a9055402433a414eb61e055ae4ed92b0e9",
+      "ImageSha256": "dd87943911a19b2bcac1aaaccdf526a7429d212c16ee78bb32735894cc3e2568"
+    },
+    {
+      "Surah": 95,
+      "Page": 597,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "50ff274b2f162d8242de75c5c0e8722165fa0ed1253a1bdb2a6de19ecc1c2882",
+      "ImageSha256": "f27e06298cc0ea2d68606b7934b2af6f5377c81b9bb8f9913fb112334d340d7f"
+    },
+    {
+      "Surah": 96,
+      "Page": 597,
+      "LineCount": 15,
+      "FirstTextLine": 8,
+      "MapSha256": "50ff274b2f162d8242de75c5c0e8722165fa0ed1253a1bdb2a6de19ecc1c2882",
+      "ImageSha256": "f27e06298cc0ea2d68606b7934b2af6f5377c81b9bb8f9913fb112334d340d7f"
+    },
+    {
+      "Surah": 97,
+      "Page": 598,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "95d6cb9eb5b146e9ecafdcc6f4e580a48a7d58ec4eab6fca3fa9777ca7493123",
+      "ImageSha256": "d130f583a9a7e111d2bf7f0360ba30c9643b74777aba3c77c09b50e003c2a292"
+    },
+    {
+      "Surah": 98,
+      "Page": 598,
+      "LineCount": 15,
+      "FirstTextLine": 7,
+      "MapSha256": "95d6cb9eb5b146e9ecafdcc6f4e580a48a7d58ec4eab6fca3fa9777ca7493123",
+      "ImageSha256": "d130f583a9a7e111d2bf7f0360ba30c9643b74777aba3c77c09b50e003c2a292"
+    },
+    {
+      "Surah": 99,
+      "Page": 599,
+      "LineCount": 15,
+      "FirstTextLine": 4,
+      "MapSha256": "d9e7115a27e3a0571756781013d78d1b25cdb168965af68ec74df36e5c111605",
+      "ImageSha256": "9bffdb5a720f44db72ac8b782b326421512c5d93df88365ed3a752824e4fdfbf"
+    },
+    {
+      "Surah": 100,
+      "Page": 599,
+      "LineCount": 15,
+      "FirstTextLine": 11,
+      "MapSha256": "d9e7115a27e3a0571756781013d78d1b25cdb168965af68ec74df36e5c111605",
+      "ImageSha256": "9bffdb5a720f44db72ac8b782b326421512c5d93df88365ed3a752824e4fdfbf"
+    },
+    {
+      "Surah": 101,
+      "Page": 600,
+      "LineCount": 15,
+      "FirstTextLine": 3,
+      "MapSha256": "77d74597f0484555ebaf98e93c9ed1a7c92a3c9ac1f095c05f34d261504a72d5",
+      "ImageSha256": "9161e91f686917b8595c818ddaed4fa5d362b006e861760d15be724c1b3cccdf"
+    },
+    {
+      "Surah": 102,
+      "Page": 600,
+      "LineCount": 15,
+      "FirstTextLine": 11,
+      "MapSha256": "77d74597f0484555ebaf98e93c9ed1a7c92a3c9ac1f095c05f34d261504a72d5",
+      "ImageSha256": "9161e91f686917b8595c818ddaed4fa5d362b006e861760d15be724c1b3cccdf"
+    },
+    {
+      "Surah": 103,
+      "Page": 601,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "81673cde342b2827c58a7b6554231df34cd554d4597fec61b2dc203d4946de08",
+      "ImageSha256": "d4e88693970a171ead0199d98250219e1b869a8a08090d6b0bfeb11abaa986f2"
+    },
+    {
+      "Surah": 104,
+      "Page": 601,
+      "LineCount": 15,
+      "FirstTextLine": 6,
+      "MapSha256": "81673cde342b2827c58a7b6554231df34cd554d4597fec61b2dc203d4946de08",
+      "ImageSha256": "d4e88693970a171ead0199d98250219e1b869a8a08090d6b0bfeb11abaa986f2"
+    },
+    {
+      "Surah": 105,
+      "Page": 601,
+      "LineCount": 15,
+      "FirstTextLine": 12,
+      "MapSha256": "81673cde342b2827c58a7b6554231df34cd554d4597fec61b2dc203d4946de08",
+      "ImageSha256": "d4e88693970a171ead0199d98250219e1b869a8a08090d6b0bfeb11abaa986f2"
+    },
+    {
+      "Surah": 106,
+      "Page": 602,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "0a8a4855e65708f7a39f96785abd407103668ffc2bf720df2726983240c7b05d",
+      "ImageSha256": "a51af6e795f44a9be2267b27c6f3f277d986378122bc952db555c1721d43f83c"
+    },
+    {
+      "Surah": 107,
+      "Page": 602,
+      "LineCount": 15,
+      "FirstTextLine": 7,
+      "MapSha256": "0a8a4855e65708f7a39f96785abd407103668ffc2bf720df2726983240c7b05d",
+      "ImageSha256": "a51af6e795f44a9be2267b27c6f3f277d986378122bc952db555c1721d43f83c"
+    },
+    {
+      "Surah": 108,
+      "Page": 602,
+      "LineCount": 15,
+      "FirstTextLine": 13,
+      "MapSha256": "0a8a4855e65708f7a39f96785abd407103668ffc2bf720df2726983240c7b05d",
+      "ImageSha256": "a51af6e795f44a9be2267b27c6f3f277d986378122bc952db555c1721d43f83c"
+    },
+    {
+      "Surah": 109,
+      "Page": 603,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "5c15f465702a247af08077bcbeccf191ce43938bf38034e73458c3aa07caf1ac",
+      "ImageSha256": "e938662db1463323803333f8e0a14e79f9a082ae9667cb038e2036455a137842"
+    },
+    {
+      "Surah": 110,
+      "Page": 603,
+      "LineCount": 15,
+      "FirstTextLine": 7,
+      "MapSha256": "5c15f465702a247af08077bcbeccf191ce43938bf38034e73458c3aa07caf1ac",
+      "ImageSha256": "e938662db1463323803333f8e0a14e79f9a082ae9667cb038e2036455a137842"
+    },
+    {
+      "Surah": 111,
+      "Page": 603,
+      "LineCount": 15,
+      "FirstTextLine": 12,
+      "MapSha256": "5c15f465702a247af08077bcbeccf191ce43938bf38034e73458c3aa07caf1ac",
+      "ImageSha256": "e938662db1463323803333f8e0a14e79f9a082ae9667cb038e2036455a137842"
+    },
+    {
+      "Surah": 112,
+      "Page": 604,
+      "LineCount": 15,
+      "FirstTextLine": 2,
+      "MapSha256": "f5c6cf1b01340922011be3ae2a88d78618d6a98d8004076d15b469dcfca2afe1",
+      "ImageSha256": "af05b0d6a54830a124d69cb39687147fd70cd5d7ed6254632cc550fc43f5fcc7"
+    },
+    {
+      "Surah": 113,
+      "Page": 604,
+      "LineCount": 15,
+      "FirstTextLine": 6,
+      "MapSha256": "f5c6cf1b01340922011be3ae2a88d78618d6a98d8004076d15b469dcfca2afe1",
+      "ImageSha256": "af05b0d6a54830a124d69cb39687147fd70cd5d7ed6254632cc550fc43f5fcc7"
+    },
+    {
+      "Surah": 114,
+      "Page": 604,
+      "LineCount": 15,
+      "FirstTextLine": 11,
+      "MapSha256": "f5c6cf1b01340922011be3ae2a88d78618d6a98d8004076d15b469dcfca2afe1",
+      "ImageSha256": "af05b0d6a54830a124d69cb39687147fd70cd5d7ed6254632cc550fc43f5fcc7"
+    }
+  ]
+}

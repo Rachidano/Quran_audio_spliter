@@ -1,0 +1,90 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "فهرس السور والبحث";
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.Q))
+{
+    <div class="mb-4">
+        <h4 class="mb-3">🔍 نتائج البحث عن : <span class="text-success">"@Model.Q"</span> (@Model.SearchResults.Count نتيجة)</h4>
+        
+        @if (Model.SearchResults.Count == 0)
+        {
+            <div class="alert alert-warning">
+                لم يتم العثور على أي آية مطابقة. جرّب البحث برقم السورة والآية مثل <code>1:2</code> أو بكلمة أخرى.
+            </div>
+        }
+        else
+        {
+            <div class="list-group">
+                @foreach (var item in Model.SearchResults)
+                {
+                    <a asp-page="/Ayah" asp-route-surah="@item.SurahNumber" asp-route-ayah="@item.AyahNumber" class="list-group-item list-group-item-action p-3 mb-2 rounded border">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-success">سورة @item.SurahNameArabic (@item.SurahNameLatin) — آية @item.AyahNumber</span>
+                            <span class="text-muted small">عرض وتلاوة الآية ←</span>
+                        </div>
+                        <p class="quran-text mb-0 fs-5">@item.TextWarsh</p>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+    <hr class="my-5" />
+}
+
+<!-- Section d'introduction -->
+<div class="text-center py-4 px-3 mb-4 rounded-4" style="background: linear-gradient(180deg, #f0fdf4, #ffffff); border: 1px solid #d1fae5;">
+    <h1 class="display-6 fw-bold text-success mb-2">مصحف رواية ورش عن نافع بجميع الأوجه الشاطبية</h1>
+    <p class="lead text-secondary mb-3">بصوت فضيلة الشيخ القارئ <strong>صابر عبد الحكم</strong></p>
+    <div class="d-inline-flex gap-2">
+        <a asp-page="/Surah" asp-route-number="1" class="btn btn-quran-primary">سورة الفاتحة مباشرة</a>
+        <a href="#surahs-grid" class="btn btn-quran-outline">تصفح السور (114)</a>
+    </div>
+</div>
+
+<!-- Grille des 114 sourates -->
+<div id="surahs-grid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold mb-0">فهرس سور القرآن الكريم</h3>
+        <span class="badge bg-secondary">114 سورة</span>
+    </div>
+
+    @if (Model.Surahs.Count == 0)
+    {
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <span>البيانات المرجعية لم تُستورد بعد في قاعدة البيانات. اضغط للتهيئة الأولية السريعة :</span>
+            <form method="post" action="/api/admin/import/seed-reference" onsubmit="event.preventDefault(); fetch('/api/admin/import/seed-reference', {method: 'POST'}).then(() => fetch('/api/admin/import/import-fatiha', {method: 'POST'})).then(() => location.reload());">
+                <button type="submit" class="btn btn-sm btn-primary">تهيئة 114 سورة و الفاتحة الآن</button>
+            </form>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+            @foreach (var surah in Model.Surahs)
+            {
+                <div class="col">
+                    <a asp-page="/Surah" asp-route-number="@surah.Number" class="text-decoration-none text-dark">
+                        <div class="card h-100 p-3 ayah-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="ayah-number-badge">@surah.Number</span>
+                                    <div>
+                                        <h5 class="fw-bold mb-1">سورة @surah.NameArabic</h5>
+                                        <small class="text-muted">@surah.NameLatin — @surah.NameTranslation</small>
+                                    </div>
+                                </div>
+                                <div class="text-start">
+                                    <span class="badge bg-light text-dark border">@surah.AyahCount آية</span>
+                                    <div class="small text-muted mt-1">@(surah.RevelationType == "Meccan" ? "مكية" : "مدنية")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</div>

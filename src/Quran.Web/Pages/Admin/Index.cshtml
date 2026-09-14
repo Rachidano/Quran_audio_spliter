@@ -1,0 +1,126 @@
+@page
+@model Quran.Web.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "لوحة التحكم — الإدارة والمراقبة";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h2 class="fw-bold mb-1">لوحة التحكم والمراقبة (Back-office QA)</h2>
+        <p class="text-muted mb-0">متابعة إحصائيات المنصة، حالة تدقيق التسجيلات وسلامة بيانات المصحف</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="/Admin/Inventory" class="btn btn-outline-success">
+            📁 مستودع Archive.org (114 سورة)
+        </a>
+        <a asp-page="/Admin/Validation" class="btn btn-quran-primary">
+            ✅ شاشة التحقق والاعتماد الصوتي
+        </a>
+    </div>
+</div>
+
+<!-- Cartes d'indicateurs clés (KPIs) -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 rounded-3 border-0 shadow-sm text-center" style="background: #eff6ff;">
+            <div class="text-primary fs-3 fw-bold">@Model.DashboardStats?.TotalSurahs / 114</div>
+            <div class="text-muted small fw-semibold">السور المرجعية</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 rounded-3 border-0 shadow-sm text-center" style="background: #f0fdf4;">
+            <div class="text-success fs-3 fw-bold">@Model.DashboardStats?.AyahsWithAudio</div>
+            <div class="text-muted small fw-semibold">آيات بتسجيلات منشورة</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 rounded-3 border-0 shadow-sm text-center" style="background: #fffbeb;">
+            <div class="text-warning fs-3 fw-bold">@Model.DashboardStats?.SegmentsPendingValidation</div>
+            <div class="text-muted small fw-semibold">مقاطع قيد المراجعة</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 rounded-3 border-0 shadow-sm text-center" style="background: #fef2f2;">
+            <div class="text-danger fs-3 fw-bold">@Model.DashboardStats?.SegmentsRejected</div>
+            <div class="text-muted small fw-semibold">مقاطع مرفوضة (تحتاج تعديل)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Rapport de contrôle de cohérence : CheckCorpus -->
+<div class="card rounded-4 border-0 shadow-sm p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <h4 class="fw-bold mb-0">تقرير فحص سلامة وتناسق المصحف (CheckCorpus)</h4>
+            @if (Model.CorpusReport?.IsCorpusHealthy == true)
+            {
+                <span class="badge bg-success">متناسق وسليم ✓</span>
+            }
+            else
+            {
+                <span class="badge bg-warning text-dark">توجد تنبيهات أو نقص</span>
+            }
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="location.reload();">
+            🔄 إعادة الفحص الآن
+        </button>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>السور المتوفرة :</span>
+                    <strong>@Model.CorpusReport?.SurahCount / 114</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>مجموع الآيات المسجلة :</span>
+                    <strong>@Model.CorpusReport?.TotalAyahs</strong>
+                </li>
+            </ul>
+        </div>
+        <div class="col-md-4">
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>آيات بدون نص ورش :</span>
+                    <strong class="@(Model.CorpusReport?.AyahsWithoutText > 0 ? "text-danger" : "text-success")">
+                        @Model.CorpusReport?.AyahsWithoutText
+                    </strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>آيات بدون تلاوة منشورة :</span>
+                    <strong>@Model.CorpusReport?.AyahsWithoutAudio</strong>
+                </li>
+            </ul>
+        </div>
+        <div class="col-md-4">
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>ملفات مفقودة على القرص :</span>
+                    <strong class="@(Model.CorpusReport?.MissingFilesCount > 0 ? "text-danger" : "text-success")">
+                        @Model.CorpusReport?.MissingFilesCount
+                    </strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>فروق البصمة (Checksum) :</span>
+                    <strong class="@(Model.CorpusReport?.ChecksumMismatchCount > 0 ? "text-danger" : "text-success")">
+                        @Model.CorpusReport?.ChecksumMismatchCount
+                    </strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    @if (Model.CorpusReport?.Issues.Count > 0)
+    {
+        <div class="alert alert-light border small mt-2 mb-0">
+            <h6 class="fw-bold text-dark mb-2">ملاحظات التدقيق الآلي :</h6>
+            <ul class="mb-0 ps-3">
+                @foreach (var issue in Model.CorpusReport.Issues)
+                {
+                    <li class="text-secondary">@issue</li>
+                }
+            </ul>
+        </div>
+    }
+</div>

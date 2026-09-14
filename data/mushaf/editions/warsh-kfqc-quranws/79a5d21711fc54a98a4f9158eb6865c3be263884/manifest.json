@@ -1,0 +1,48 @@
+{
+  "repository": "https://github.com/quran-ws/quran-svg",
+  "revision": "79a5d21711fc54a98a4f9158eb6865c3be263884",
+  "retrievedAtUtc": "2026-09-12T22:21:19.3948544Z",
+  "status": "Research sample; not approved for production",
+  "files": [
+    {
+      "file": "NOTICE.md",
+      "url": "https://raw.githubusercontent.com/quran-ws/quran-svg/79a5d21711fc54a98a4f9158eb6865c3be263884/NOTICE.md",
+      "sha256": "128f69f9475dda93f6d899757c0cd3343d1c14ac836e7a2a5d5368b7facd5792"
+    },
+    {
+      "file": "LICENSE",
+      "url": "https://raw.githubusercontent.com/quran-ws/quran-svg/79a5d21711fc54a98a4f9158eb6865c3be263884/LICENSE",
+      "sha256": "0c3f54cf8be9bbc33946d5b2c61a6befb1f9222dcd17972139a0e72529db354f"
+    },
+    {
+      "file": "001.svg",
+      "url": "https://raw.githubusercontent.com/quran-ws/quran-svg/79a5d21711fc54a98a4f9158eb6865c3be263884/mushafs/warsh/kfqc/svg/001.svg",
+      "sha256": "a798c4d8b5ffe1baccf0e5f32ef37fdbab6d606f7c82941a15a6443f99edcfaf"
+    },
+    {
+      "file": "002.svg",
+      "url": "https://raw.githubusercontent.com/quran-ws/quran-svg/79a5d21711fc54a98a4f9158eb6865c3be263884/mushafs/warsh/kfqc/svg/002.svg",
+      "sha256": "a0ff21f15e54db5422e41459e684535af1e818f830b6081271513d6527b8762e"
+    },
+    {
+      "file": "003.svg",
+      "url": "https://raw.githubusercontent.com/quran-ws/quran-svg/79a5d21711fc54a98a4f9158eb6865c3be263884/mushafs/warsh/kfqc/svg/003.svg",
+      "sha256": "8e2c082cdadfef3d8c91add7e001a0e32ab841d7e5fe2948a92806bd721a2330"
+    },
+    {
+      "file": "001.json",
+      "url": "https://raw.githubusercontent.com/quran-ws/quran-svg/79a5d21711fc54a98a4f9158eb6865c3be263884/mushafs/warsh/kfqc/json/001.json",
+      "sha256": "74bbebe1d3ed09d5f243e968fc1bf4fd89cadb7e59eb1c9f8cdbe86f1bb17585"
+    },
+    {
+      "file": "002.json",
+      "url": "https://raw.githubusercontent.com/quran-ws/quran-svg/79a5d21711fc54a98a4f9158eb6865c3be263884/mushafs/warsh/kfqc/json/002.json",
+      "sha256": "7b811559f8fd5599656b8572300631a25743f084723ca9dbdecbde2751f00465"
+    },
+    {
+      "file": "003.json",
+      "url": "https://raw.githubusercontent.com/quran-ws/quran-svg/79a5d21711fc54a98a4f9158eb6865c3be263884/mushafs/warsh/kfqc/json/003.json",
+      "sha256": "d7ce82fe941c11ac5ea7ca05e174c0bb2ae296288dcd9b53c03b20d2d3a7216d"
+    }
+  ]
+}

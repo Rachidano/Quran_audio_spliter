@@ -1,0 +1,12 @@
+namespace Quran.Domain.Entities;
+
+public class Reciter
+{
+    public int Id { get; set; }
+    public string NameArabic { get; set; } = string.Empty;
+    public string NameLatin { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsActive { get; set; } = true;
+
+    public ICollection<Recitation> Recitations { get; set; } = new List<Recitation>();
+}

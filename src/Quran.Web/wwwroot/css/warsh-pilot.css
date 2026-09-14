@@ -1,0 +1,28 @@
+.pilot-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.pilot-heading h1 { font-size: 1.8rem; color: #0d5c46; }
+.pilot-heading p, .pilot-note { color: #596358; }
+.pilot-pages { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pilot-pages a { padding: .55rem .8rem; border: 1px solid #c6d6cb; border-radius: .5rem; color: #0d5c46; text-decoration: none; }
+.pilot-pages a[aria-current=page] { background: #0d5c46; color: white; }
+.pilot-grid { display: grid; grid-template-columns: minmax(0,1fr) 260px; gap: 1.5rem; align-items: start; }
+.pilot-scroll { overflow: auto; background: #eeeae0; border-radius: 1rem; direction: ltr; }
+.pilot-sheet { position: relative; width: 100%; background: white; }
+.pilot-sheet img { display: block; width: 100%; height: auto; }
+.pilot-regions { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.pilot-regions path { pointer-events: all; fill: transparent; stroke: transparent; cursor: pointer; stroke-width: 1; }
+.pilot-regions path:hover { fill: #0d5c4630; stroke: #0d5c46; }
+.pilot-regions path.selected { fill: #e8b53655; stroke: #a97812; }
+.pilot-controls { padding: 1.2rem; background: white; border: 1px solid #e3e6dc; border-radius: 1rem; }
+.pilot-controls h2 { font-size: 1.1rem; }
+.pilot-ayahs { display: flex; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
+.pilot-ayahs button { min-width: 44px; min-height: 44px; border: 1px solid #b7cbbd; border-radius: .5rem; background: white; color: #0d5c46; }
+.pilot-ayahs button[aria-pressed=true] { background: #0d5c46; color: white; }
+.pilot-ayahs button:focus-visible, .pilot-pages a:focus-visible { outline: 3px solid #b98413; outline-offset: 3px; }
+.pilot-controls audio { max-width: 100%; width: 100%; }
+.pilot-controls input { width: 100%; margin: .6rem 0 1rem; }
+.pilot-credit { font-size: .85rem; color: #67736a; margin-top: 1rem; }
+@media (max-width: 767px) {
+    .pilot-grid { grid-template-columns: minmax(0,1fr); }
+    .pilot-controls { order: -1; }
+    .pilot-heading { margin-bottom: 1rem; }
+}

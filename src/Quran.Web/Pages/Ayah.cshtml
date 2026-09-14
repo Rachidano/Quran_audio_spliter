@@ -1,0 +1,176 @@
+@page "{surah:int}/{ayah:int}"
+@model AyahModel
+@{
+    ViewData["Title"] = $"سورة {Model.SurahInfo?.NameArabic} — الآية {Model.Ayah}";
+}
+
+@if (Model.SurahInfo != null && Model.AyahInfo != null)
+{
+    <!-- Fil d'ariane & Navigation -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/Index">الفهرس</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Surah" asp-route-number="@Model.SurahInfo.Number">سورة @Model.SurahInfo.NameArabic</a></li>
+            <li class="breadcrumb-item active" aria-current="page">الآية @Model.Ayah</li>
+        </ol>
+    </nav>
+
+    <!-- Carte principale de l'Ayah -->
+    <div class="card p-4 p-md-5 mb-4 rounded-4 shadow-sm border-0" style="background: #ffffff;">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div>
+                <span class="ayah-number-badge fs-5">@Model.Ayah</span>
+                <span class="fs-5 fw-bold ms-2">سورة @Model.SurahInfo.NameArabic (@Model.SurahInfo.NameLatin)</span>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" onclick="navigator.clipboard.writeText(window.location.href); alert('تم نسخ رابط الآية بنجاح!');">
+                مشاركة الرابط 🔗
+            </button>
+        </div>
+
+        @if (Model.MushafPage != null && Model.MushafRegions.Count > 0)
+        {
+            <!-- Affichage fidèle du Mushaf Warsh officiel (الرسم العثماني) -->
+            <div class="mushaf-crop-container my-4 text-center p-3 p-md-4 rounded-4 bg-white border shadow-sm" style="border-color: #e2e8f0;">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
+                    <span class="badge bg-success-subtle text-success fs-6 border border-success-subtle px-3 py-2 d-flex align-items-center gap-2">
+                        <span>📖</span> الرسم العثماني — مصحف المدينة النبوية (صفحة @Model.MushafPage.PageNumber)
+                    </span>
+                    <a href="/mushaf/warsh/page/@Model.MushafPage.PageNumber#ayah-@Model.AyahInfo.Id" class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 fw-bold">
+                        <span>عرض في صفحة المصحف الكاملة</span> <span>↗</span>
+                    </a>
+                </div>
+
+                <!-- Découpage / Crop vectoriel de l'Ayah -->
+                <div class="d-flex flex-column gap-3 align-items-center justify-content-center py-2">
+                    @foreach (var region in Model.MushafRegions.OrderBy(r => r.Sequence))
+                    {
+                        var inv = System.Globalization.CultureInfo.InvariantCulture;
+                        var vb = $"{region.X.ToString(inv)} {region.Y.ToString(inv)} {region.Width.ToString(inv)} {region.Height.ToString(inv)}";
+                        <div class="mushaf-region-crop shadow-sm" style="max-width: 850px; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; background: #fffdf7;">
+                            <svg viewBox="@vb" width="100%" style="display: block; max-height: 180px;" preserveAspectRatio="xMidYMid meet">
+                                <image href="@Model.MushafPage.ImageUrl" x="0" y="0" width="1" height="1" preserveAspectRatio="none" />
+                            </svg>
+                        </div>
+                    }
+                </div>
+
+                <!-- Texte Unicode pour la recherche et l'indexation (replié / secondaire) -->
+                <div class="mt-3 pt-3 border-top text-end">
+                    <details class="text-muted small">
+                        <summary class="cursor-pointer fw-semibold text-secondary" style="cursor: pointer;">
+                            ℹ️ النص الرقمي للبحث والأرشفة (Unicode)
+                        </summary>
+                        <div class="p-3 mt-2 rounded bg-light border text-center">
+                            <p class="quran-text fs-4 mb-0 text-dark" style="line-height: 2;">
+                                @Model.AyahInfo.TextWarsh
+                            </p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Fallback Texte Warsh si les coordonnées graphiques ne sont pas encore annotées -->
+            <div class="text-center py-4 my-2">
+                <p class="quran-text display-6 mb-0" style="line-height: 2.4;">
+                    @Model.AyahInfo.TextWarsh
+                </p>
+            </div>
+        }
+
+        <!-- Détails de récitation & Awjuh -->
+        <div class="mt-4 p-4 rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted small">القارئ الشيخ :</p>
+                    <h6 class="fw-bold text-success mb-3">صابر عبد الحكم</h6>
+
+                    <p class="mb-1 text-muted small">الرواية :</p>
+                    <h6 class="fw-bold text-success mb-0">ورش عن نافع من طريق الشاطبية</h6>
+                </div>
+
+                <div class="col-md-6">
+                    <p class="mb-2 text-muted small">الأوجه المتوفرة للآية :</p>
+                    @if (Model.AyahInfo.Recitations.Count > 0)
+                    {
+                        <div class="d-flex flex-column gap-2" id="wajh-selector">
+                            @for (int i = 0; i < Model.AyahInfo.Recitations.Count; i++)
+                            {
+                                var rec = Model.AyahInfo.Recitations[i];
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="wajhRadio" id="wajh-@i" value="@rec.AudioUrl" @(i == 0 ? "checked" : "") onchange="updateAudioPlayer(this.value, '@(rec.WajhNameArabic ?? rec.WajhCode ?? "الوجه الأول")')">
+                                    <label class="form-check-label fw-semibold" for="wajh-@i">
+                                        @(rec.WajhNameArabic ?? rec.WajhCode ?? $"الوجه {i + 1}")
+                                    </label>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Player Audio interactif -->
+                        <div class="mt-3 pt-3 border-top">
+                            <audio id="main-audio-player" controls class="w-100 mb-2">
+                                <source src="@Model.AyahInfo.Recitations.First().AudioUrl" type="audio/mpeg">
+                                متصفحك لا يدعم تشغيل الصوت.
+                            </audio>
+                            <a id="download-btn" href="@Model.AyahInfo.Recitations.First().AudioUrl" download class="btn btn-quran-primary btn-sm w-100">
+                                ⬇ تحميل هذا الوجه بصيغة MP3
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border small text-muted mb-0">
+                            تسجيلات الأوجه لهذه الآية تحت المراجعة والربط الصوتي.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Boutons de navigation Précédente / Suivante -->
+        <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top">
+            @if (Model.PrevAyahNumber.HasValue)
+            {
+                <a asp-page="/Ayah" asp-route-surah="@Model.Surah" asp-route-ayah="@Model.PrevAyahNumber.Value" class="btn btn-outline-dark">
+                    ← الآية السابقة (@Model.PrevAyahNumber.Value)
+                </a>
+            }
+            else
+            {
+                <div></div>
+            }
+
+            <a asp-page="/Surah" asp-route-number="@Model.Surah" class="btn btn-quran-outline">
+                عرض كامل سورة @Model.SurahInfo.NameArabic
+            </a>
+
+            @if (Model.NextAyahNumber.HasValue)
+            {
+                <a asp-page="/Ayah" asp-route-surah="@Model.Surah" asp-route-ayah="@Model.NextAyahNumber.Value" class="btn btn-outline-dark">
+                    الآية التالية (@Model.NextAyahNumber.Value) →
+                </a>
+            }
+            else
+            {
+                <div></div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function updateAudioPlayer(audioUrl, wajhName) {
+            const player = document.getElementById('main-audio-player');
+            const downloadBtn = document.getElementById('download-btn');
+            if (player) {
+                player.src = audioUrl;
+                player.play();
+            }
+            if (downloadBtn) {
+                downloadBtn.href = audioUrl;
+            }
+        }
+    </script>
+}

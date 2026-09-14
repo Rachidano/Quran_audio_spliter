@@ -1,0 +1,61 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+(async () => {
+ const browser = await chromium.launch({headless:true});
+ try {
+  const page = await browser.newPage({viewport:{width:1280,height:1000}});
+  await page.route('**/api/annotations/import', route => { const data=route.request().postDataJSON();return route.fulfill({json:data.passages.map(p=>({...p,serverVersion:1,status:'Draft'}))}); });
+  const base = process.env.PILOT_URL || 'http://127.0.0.1:5098';
+  assert.equal((await page.goto(base+'/mushaf/audioreview')).status(),200);
+  await page.waitForFunction(()=>Number.isFinite(document.querySelector('audio').duration));
+  assert.ok(await page.locator('audio').evaluate(a=>a.duration>15480));
+  const src=await page.locator('audio').getAttribute('src');
+  assert.equal((await page.request.get(new URL(src,base).href,{headers:{Range:'bytes=0-99'}})).status(),206);
+  async function add(start,end,type) {
+   await page.locator('#passage-start').fill(start);
+   await page.locator('#passage-end').fill(end);
+   await page.locator('#passage-ayah').selectOption('2:4');
+   await page.locator('#passage-type').selectOption(type);
+   await page.locator('#passage-form button[type=submit], #passage-form > button.btn-success').click();
+  }
+  await add('0','1','1');
+  assert.equal(await page.locator('#passage-start').inputValue(),'1.000');
+  assert.equal(await page.locator('#passage-end').inputValue(),'');
+  assert.equal(await page.locator('#passage-ayah').inputValue(),'2:5');
+  assert.equal(await page.locator('#passage-type').inputValue(),'1');
+  const initial=await page.locator('#repeat-of option').nth(1).getAttribute('value');
+  await page.locator('#repeat-of').selectOption(initial);
+  await page.locator('#wajh-observation').selectOption('DifferentObserved');
+  await page.locator('#wajh-description').fill('وصف تجريبي للمراجعة');
+  await add('2','3','3');
+  assert.equal(await page.locator('#passage-ayah').inputValue(),'2:4');
+  assert.equal(await page.locator('#passage-list li').count(),2);
+  await page.locator('#passage-list li').nth(1).getByText('تعديل',{exact:true}).click();
+  await page.locator('#passage-note').fill('Annotation de test uniquement');
+  await page.locator('#passage-form button[type=submit], #passage-form > button.btn-success').click();
+  await page.reload();
+  assert.equal(await page.locator('#passage-list li').count(),2);
+  assert.equal(await page.locator('#passage-start').inputValue(),'3.000');
+  assert.equal(await page.locator('#passage-ayah').inputValue(),'2:4');
+  assert.equal(await page.locator('#passage-end').inputValue(),'');
+  const pending=page.waitForEvent('download');
+  await page.locator('#export-passages').click();
+  const report=JSON.parse(fs.readFileSync(await (await pending).path(),'utf8'));
+  assert.equal(report.passages[1].repeatOfId,initial);
+  assert.equal(report.passages[1].wajhObservation,'DifferentObserved');
+  assert.equal(report.passages[1].wajhDescription,'وصف تجريبي للمراجعة');
+  assert.equal(await page.locator('#audio-review').getAttribute('dir'),'rtl');
+  assert.equal(report.passages[1].notes,'Annotation de test uniquement');
+  assert.ok(report.passages.every(p=>p.status==='Draft'&&p.wajhId===null&&p.reference==='2:4'));
+  await page.waitForFunction(()=>Number.isFinite(document.querySelector('audio').duration));
+  await page.locator('#passage-start').fill('0');
+  await page.locator('#passage-end').fill('0.3');
+  await page.locator('#preview-passage').click();
+  await page.waitForFunction(()=>{const a=document.querySelector('audio');return a.paused&&a.currentTime>=0.3;});
+  await page.screenshot({path:'artifacts/baqarah-audio-review.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  console.log('Audio review: range requests, draft persistence, repetition relation, editing, export, playback bounds and mobile passed.');
+ } finally {await browser.close();}
+})().catch(e=>{console.error(e);process.exit(1);});

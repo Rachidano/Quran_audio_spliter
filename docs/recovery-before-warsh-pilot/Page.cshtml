@@ -1,0 +1,144 @@
+@page "{pageNumber:int?}"
+@model Quran.Web.Pages.Mushaf.PageModelCustom
+@{
+    ViewData["Title"] = $"المصحف الشريف برواية ورش — صفحة {Model.PageNumber}";
+}
+
+<div class="container py-4" id="mushaf-public-viewer">
+    <!-- En-tête de navigation du Mushaf -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm border">
+        <div>
+            <h1 class="h4 mb-0 fw-bold text-success d-flex align-items-center gap-2">
+                <span>📖</span> المصحف الشريف بالرسم العثماني
+            </h1>
+            <span class="text-muted small">رواية ورش عن نافع من طريق الشاطبية — مجمع الملك فهد لطباعة المصحف الشريف</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <a href="/Mushaf/Page/@(Model.PageNumber - 1)" class="btn btn-sm btn-outline-success @(Model.PageNumber <= 1 ? "disabled" : "")">◀ الصفحة السابقة</a>
+            <span class="badge bg-dark text-warning fs-6 px-3 py-2 font-monospace">صفحة @Model.PageNumber / 604</span>
+            <a href="/Mushaf/Page/@(Model.PageNumber + 1)" class="btn btn-sm btn-outline-success @(Model.PageNumber >= 604 ? "disabled" : "")">الصفحة التالية ▶</a>
+        </div>
+    </div>
+
+    <!-- Conteneur de la Page du Mushaf -->
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-md-11 text-center">
+            <div class="card shadow border-0 p-2 p-md-3 bg-white position-relative" style="border-radius: 16px;">
+                <!-- Loading indicator -->
+                <div id="mushafLoading" class="py-5 text-center">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <div class="mt-2 text-muted">جارٍ تحميل صفحة المصحف الشريف...</div>
+                </div>
+
+                <!-- Page Image Wrapper with Overlays -->
+                <div id="pageWrapper" class="d-inline-block position-relative shadow rounded border mx-auto d-none" style="max-width: 100%;">
+                    <img id="mushafPageImg" src="" alt="صفحة @Model.PageNumber" class="img-fluid rounded" style="max-height: 85vh; width: auto;" onload="onPublicImageLoaded()" />
+                    
+                    <!-- Overlays de surbrillance des ayat -->
+                    <div id="publicOverlays" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events: none;"></div>
+                </div>
+
+                <!-- Panneau d'écoute de l'ayah active sous la page -->
+                <div id="activeAyahAudioPanel" class="mt-3 p-3 bg-light rounded-3 border d-none">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-success" id="activeAyahBadge">آية</span>
+                            <span class="ms-2 fw-bold text-dark" id="activeAyahText">—</span>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center mt-2 mt-md-0">
+                            <audio id="publicAudioPlayer" controls class="me-2" style="height: 36px;"></audio>
+                            <a id="btnAyahDetailLink" href="#" class="btn btn-sm btn-outline-success">تفاصيل الآية والأوجه ↗</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const pageNum = @Model.PageNumber;
+        const highlightAyahId = @(Model.HighlightAyahId.HasValue ? Model.HighlightAyahId.Value.ToString() : "null");
+        let pageViewerData = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch(`/api/mushaf/pages/${pageNum}`);
+                if (!res.ok) throw new Error(await res.text());
+                pageViewerData = await res.json();
+
+                const img = document.getElementById('mushafPageImg');
+                img.src = pageViewerData.page.imageUrl;
+            } catch (err) {
+                console.error(err);
+                document.getElementById('mushafLoading').innerHTML = `<div class="text-danger py-4">فشل في تحميل الصفحة: ${err.message}</div>`;
+            }
+        });
+
+        function onPublicImageLoaded() {
+            document.getElementById('mushafLoading').classList.add('d-none');
+            document.getElementById('pageWrapper').classList.remove('d-none');
+            renderPublicOverlays(pageViewerData.ayahRegions);
+        }
+
+        function renderPublicOverlays(regions) {
+            const container = document.getElementById('publicOverlays');
+            container.innerHTML = '';
+
+            regions.forEach(r => {
+                const box = document.createElement('div');
+                box.className = 'position-absolute rounded';
+                box.style.left = `${r.x * 100}%`;
+                box.style.top = `${r.y * 100}%`;
+                box.style.width = `${r.width * 100}%`;
+                box.style.height = `${r.height * 100}%`;
+                box.style.pointerEvents = 'all';
+                box.style.cursor = 'pointer';
+
+                const isTarget = highlightAyahId && r.ayahId === highlightAyahId;
+                if (isTarget) {
+                    box.style.border = '2px solid #f59e0b';
+                    box.style.backgroundColor = 'rgba(245, 158, 11, 0.28)';
+                    box.style.boxShadow = '0 0 12px rgba(245, 158, 11, 0.6)';
+                    selectAyahInPublic(r.ayahId);
+                } else {
+                    box.style.border = '1px solid transparent';
+                    box.style.backgroundColor = 'rgba(16, 185, 129, 0.08)';
+                }
+
+                box.onmouseenter = () => {
+                    box.style.backgroundColor = 'rgba(16, 185, 129, 0.25)';
+                    box.style.borderColor = '#10b981';
+                };
+                box.onmouseleave = () => {
+                    if (!isTarget) {
+                        box.style.backgroundColor = 'rgba(16, 185, 129, 0.08)';
+                        box.style.borderColor = 'transparent';
+                    }
+                };
+                box.onclick = () => selectAyahInPublic(r.ayahId);
+
+                container.appendChild(box);
+            });
+        }
+
+        function selectAyahInPublic(ayahId) {
+            const ayah = pageViewerData.ayahs.find(a => a.id === ayahId);
+            if (!ayah) return;
+
+            const panel = document.getElementById('activeAyahAudioPanel');
+            panel.classList.remove('d-none');
+            document.getElementById('activeAyahBadge').textContent = `${ayah.surahNameArabic} — آية ${ayah.ayahNumber}`;
+            document.getElementById('activeAyahText').textContent = ayah.textWarsh;
+            document.getElementById('btnAyahDetailLink').href = `/Surah/${ayah.surahNumber}?ayah=${ayah.ayahNumber}`;
+
+            const player = document.getElementById('publicAudioPlayer');
+            const surahFormatted = ayah.surahNumber.toString().padStart(3, '0');
+            const ayahFormatted = ayah.ayahNumber.toString().padStart(3, '0');
+            player.src = `/audio/published/${surahFormatted}/${ayahFormatted}.mp3`;
+            player.load();
+        }
+    </script>
+}

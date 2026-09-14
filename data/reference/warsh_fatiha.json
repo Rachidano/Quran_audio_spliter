@@ -1,0 +1,74 @@
+[
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 0,
+    "NumberInQuran": 0,
+    "PageNumber": 1,
+    "LineStart": 1,
+    "LineEnd": 1,
+    "TextWarsh": "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ"
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 1,
+    "NumberInQuran": 1,
+    "PageNumber": 1,
+    "LineStart": 2,
+    "LineEnd": 2,
+    "TextWarsh": "ٱلۡحَمۡدُ لِلَّهِ رَبِّ ٱلۡعَٰلَمِينَ"
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 2,
+    "NumberInQuran": 2,
+    "PageNumber": 1,
+    "LineStart": 3,
+    "LineEnd": 3,
+    "TextWarsh": "ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ"
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 3,
+    "NumberInQuran": 3,
+    "PageNumber": 1,
+    "LineStart": 4,
+    "LineEnd": 4,
+    "TextWarsh": "مَٰلِكِ يَوۡمِ ٱلدِّينِ"
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 4,
+    "NumberInQuran": 4,
+    "PageNumber": 1,
+    "LineStart": 5,
+    "LineEnd": 5,
+    "TextWarsh": "إِيَّاكَ نَعۡبُدُ وَإِيَّاكَ نَسۡتَعِينُ"
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 5,
+    "NumberInQuran": 5,
+    "PageNumber": 1,
+    "LineStart": 6,
+    "LineEnd": 6,
+    "TextWarsh": "ٱهۡدِنَا ٱلصِّرَٰطَ ٱلۡمُسۡتَقِيمَ"
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 6,
+    "NumberInQuran": 6,
+    "PageNumber": 1,
+    "LineStart": 7,
+    "LineEnd": 7,
+    "TextWarsh": "صِرَٰطَ ٱلَّذِينَ أَنۡعَمۡتَ عَلَيۡهِمۡ"
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 7,
+    "NumberInQuran": 7,
+    "PageNumber": 1,
+    "LineStart": 8,
+    "LineEnd": 8,
+    "TextWarsh": "غَيۡرِ ٱلۡمَغۡضُوبِ عَلَيۡهِمۡ وَلَا ٱلضَّآلِّينَ"
+  }
+]

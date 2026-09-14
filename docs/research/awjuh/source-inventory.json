@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "checkedAt": "2026-09-14",
+  "scope": "Research inventory, not an approved awjuh catalog",
+  "sources": [
+    {
+      "id": "shatibiyya",
+      "title": "حرز الأماني ووجه التهاني",
+      "author": "الشاطبي",
+      "url": "https://tajweed.quranpedia.net/document/show/1703",
+      "role": "PrimaryText",
+      "routes": [
+        "azraq-shatibiyya"
+      ],
+      "access": "LandingPageVerified; attachment unavailable to web reader",
+      "extraction": "NotStarted"
+    },
+    {
+      "id": "nashr",
+      "title": "النشر في القراءات العشر",
+      "author": "ابن الجزري",
+      "url": "https://quranpedia.net/book/20635",
+      "alternateUrl": "https://sites.dlib.nyu.edu/viewer/books/columbia_aco000602/display?lang=ar",
+      "role": "PrimaryText",
+      "routes": [
+        "azraq-tayyiba",
+        "asbahani-tayyiba"
+      ],
+      "access": "BibliographicMetadataVerified; full text not reviewed",
+      "extraction": "NotStarted"
+    },
+    {
+      "id": "azraq-tables",
+      "title": "جداول تحريرات ورش من طريق الأزرق من طيبة النشر",
+      "author": "عمر بن يوسف حماد",
+      "url": "https://quranpedia.net/book/20887",
+      "downloadUrl": "https://files.quranpedia.net/attachments/documents/BOOK_20887_1.pdf",
+      "localFile": "azraq-tayyiba-tables.pdf",
+      "pages": 3,
+      "role": "SpecialistTables",
+      "routes": [
+        "azraq-tayyiba"
+      ],
+      "access": "Downloaded; first page visually inspected",
+      "extraction": "NotTranscribed",
+      "sha256": "9e47a4429989f044b4c4d9349b649767530e0b841f565ad6479ea6386d2a6df7",
+      "bytes": 108280
+    },
+    {
+      "id": "asbahani-chapter",
+      "title": "تنقيح كتاب التحرير — فصل الأصبهاني",
+      "author": "بشار بن مصطفى عيتاني",
+      "url": "https://quranpedia.net/book/20899",
+      "downloadUrl": "https://quranpedia.net/book-attachment/20899/93760",
+      "localFile": "asbahani-tahrirat.pdf",
+      "pages": 5,
+      "printedStartPage": 181,
+      "role": "SpecialistStudy",
+      "routes": [
+        "asbahani-tayyiba"
+      ],
+      "access": "Five pages visually inspected",
+      "extraction": "Ten page185 branches and four constraints transcribed; remaining claims pending",
+      "sha256": "6d1b8b8f3d274965a93c5f553f731d1ee8e99daba2bcdebd037ecf28d840c5f2",
+      "bytes": 176813
+    },
+    {
+      "id": "asbahani-individual-reports",
+      "title": "دراسة الانفرادات الواردة في النشر من طريق الأصبهاني عن ورش",
+      "url": "https://tafsir.net/researchs/12057",
+      "role": "CriticalStudy",
+      "routes": [
+        "asbahani-tayyiba"
+      ],
+      "access": "AbstractReviewed",
+      "extraction": "NotStarted"
+    },
+    {
+      "id": "warsh-symbol",
+      "title": "رمز الجيم لورش في طيبة النشر",
+      "url": "https://jqrs.qurancomplex.gov.sa/wp-content/uploads/jqrs-docs/28/03-رمز-«الجيم»-لورش-في-طيبة-النشر.pdf",
+      "role": "CriticalStudy",
+      "routes": [
+        "azraq-tayyiba",
+        "asbahani-tayyiba"
+      ],
+      "access": "SearchLocatedOnly",
+      "extraction": "NotStarted"
+    }
+  ],
+  "coverage": [
+    {
+      "route": "azraq-shatibiyya",
+      "usul": "NotExtracted",
+      "farsh": "NotExtracted",
+      "tahrirat": "FourExistingSecondaryProposalsOnly",
+      "reviewed": false
+    },
+    {
+      "route": "azraq-tayyiba",
+      "usul": "NotExtracted",
+      "farsh": "NotExtracted",
+      "tahrirat": "ThreePageTableLocated",
+      "reviewed": false
+    },
+    {
+      "route": "asbahani-tayyiba",
+      "usul": "NotExtracted",
+      "farsh": "NotExtracted",
+      "tahrirat": "TenContextualProposalsAndFourConstraints; NotComplete",
+      "reviewed": false
+    }
+  ]
+}

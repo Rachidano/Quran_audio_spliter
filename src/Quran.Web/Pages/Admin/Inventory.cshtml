@@ -1,0 +1,193 @@
+@page
+@model InventoryModel
+@{
+    ViewData["Title"] = "إدارة مصادر التسجيلات — أرشيف Archive.org (114 سورة)";
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="/Index">الرئيسية</a></li>
+        <li class="breadcrumb-item"><a asp-page="/Admin/Index">لوحة التحكم</a></li>
+        <li class="breadcrumb-item active" aria-current="page">مستودع مصادر Archive.org</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">مستودع التسجيلات الكاملة (114 سورة)</h2>
+        <p class="text-muted mb-0">جرد وتنزيل ملفات MP3 الأصلية بصوت القارئ الشيخ صابر عبد الحكم من منصة Archive.org</p>
+    </div>
+
+    <form method="post" asp-page-handler="Sync">
+        <button type="submit" class="btn btn-outline-success">
+            🔄 تحديث بيانات الأرشيف (Sync Metadata)
+        </button>
+    </form>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @Model.StatusMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (Model.Summary != null)
+{
+    <!-- Statistiques d'inventaire -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card p-3 rounded-4 border-0 shadow-sm text-center bg-white">
+                <span class="text-muted small">السور المطلوبة</span>
+                <h3 class="fw-bold text-dark mt-1">@Model.Summary.TotalExpected</h3>
+                <span class="badge bg-secondary">114 سورة كاملة</span>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card p-3 rounded-4 border-0 shadow-sm text-center bg-white">
+                <span class="text-muted small">المسجلة في Archive.org</span>
+                <h3 class="fw-bold text-primary mt-1">@Model.Summary.TotalRemoteFound</h3>
+                <span class="badge @(Model.Summary.TotalRemoteFound == 114 ? "bg-success" : "bg-warning")">
+                    @(Model.Summary.TotalRemoteFound == 114 ? "مطابق تماماً ✓" : "جاري الفحص")
+                </span>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card p-3 rounded-4 border-0 shadow-sm text-center bg-white">
+                <span class="text-muted small">تم تنزيلها محلياً</span>
+                <h3 class="fw-bold text-success mt-1">@Model.Summary.TotalDownloaded</h3>
+                @{
+                    var percent = Model.Summary.TotalExpected > 0
+                        ? (int)((double)Model.Summary.TotalDownloaded / Model.Summary.TotalExpected * 100)
+                        : 0;
+                }
+                <div class="progress mt-2" style="height: 6px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: @percent%;" aria-valuenow="@percent" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card p-3 rounded-4 border-0 shadow-sm text-center bg-white">
+                <span class="text-muted small">الحجم المحلي / الإجمالي</span>
+                <h4 class="fw-bold text-dark mt-1">
+                    @((Model.Summary.TotalDownloadedSizeBytes / (1024.0 * 1024.0)).ToString("0.0")) Mo
+                </h4>
+                <span class="text-muted small">من أصل @((Model.Summary.TotalRemoteSizeBytes / (1024.0 * 1024.0 * 1024.0)).ToString("0.00")) Go</span>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Tableau des 114 sourates -->
+<div class="card rounded-4 border-0 shadow-sm p-4 bg-white">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h5 class="fw-bold mb-0">قائمة السور الـ 114 وملفاتها المصدرية</h5>
+        <div class="w-auto">
+            <input type="text" id="inventorySearch" class="form-control form-control-sm" placeholder="🔍 تصفية بالاسم أو الرقم..." onkeyup="filterInventoryTable()">
+        </div>
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="alert alert-info text-center py-4">
+            <h5>لم يتم تحميل بيانات الأرشيف بعد.</h5>
+            <p>انقر على زر "تحديث بيانات الأرشيف" في الأعلى للاتصال بـ Archive.org وتوليد الفهرس الكامل.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="inventoryTable">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 70px;">الرقم</th>
+                        <th>اسم السورة</th>
+                        <th>المدة</th>
+                        <th>الحجم</th>
+                        <th>MD5 Checksum</th>
+                        <th>الحالة على القرص</th>
+                        <th class="text-center" style="width: 160px;">الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        var durationTime = TimeSpan.FromSeconds(item.DurationSeconds);
+                        var durationStr = durationTime.Hours > 0
+                            ? $"{durationTime.Hours:D2}:{durationTime.Minutes:D2}:{durationTime.Seconds:D2}"
+                            : $"{durationTime.Minutes:D2}:{durationTime.Seconds:D2}";
+                        var sizeMb = (item.SizeBytes / (1024.0 * 1024.0)).ToString("0.0");
+
+                        <tr>
+                            <td>
+                                <span class="badge bg-light text-dark border">@item.SurahNumber.ToString("D3")</span>
+                            </td>
+                            <td>
+                                <strong class="fs-6">@item.SurahNameArabic</strong>
+                                <br />
+                                <small class="text-muted text-truncate d-inline-block" style="max-width: 260px;" title="@item.FileName">@item.FileName</small>
+                            </td>
+                            <td class="text-nowrap">
+                                ⏱️ @durationStr
+                            </td>
+                            <td class="text-nowrap">
+                                💾 @sizeMb Mo
+                            </td>
+                            <td>
+                                <code class="small text-muted" title="@item.Md5">@(item.Md5?.Substring(0, Math.Min(8, item.Md5.Length)) ?? "—")...</code>
+                            </td>
+                            <td>
+                                @if (item.IsDownloaded)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        ✓ تم التنزيل
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-light text-secondary border px-2 py-1">
+                                        غير محمل
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    <form method="post" asp-page-handler="Download" asp-route-surahNumber="@item.SurahNumber" class="d-inline">
+                                        <button type="submit" class="btn btn-sm @(item.IsDownloaded ? "btn-outline-secondary" : "btn-outline-success")">
+                                            @(item.IsDownloaded ? "إعادة تنزيل" : "⬇ تنزيل")
+                                        </button>
+                                    </form>
+                                    <a href="@item.DownloadUrl" target="_blank" class="btn btn-sm btn-outline-light text-dark border" title="فتح الرابط الأصلي">
+                                        🔗
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    function filterInventoryTable() {
+        const input = document.getElementById('inventorySearch');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('inventoryTable');
+        if (!table) return;
+
+        const trs = table.getElementsByTagName('tr');
+        for (let i = 1; i < trs.length; i++) {
+            const row = trs[i];
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        }
+    }
+</script>
+}

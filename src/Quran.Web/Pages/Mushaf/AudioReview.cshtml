@@ -1,0 +1,63 @@
+@page
+@model Quran.Web.Pages.Mushaf.AudioReviewModel
+@{ ViewData["Title"] = "البقرة — ضبط المقاطع وأوجه الأداء"; }
+<section id="audio-review" dir="rtl" lang="ar" data-source-hash="@Model.SourceHash" data-edition="@Model.Edition">
+ <h1>البقرة — ضبط المقاطع وأوجه الأداء</h1>
+ <div class="border rounded p-3 my-3">
+  <button id="system-save" class="btn btn-success" type="button">حفظ المقاطع في النظام</button>
+  <button id="system-load" class="btn btn-outline-success" type="button">استرجاع مقاطع النظام</button>
+  <label>استيراد ملف الملاحظات <input id="system-import" type="file" accept=".json,application/json" /></label>
+  <p>بعد الحفظ، افتح المعاينة لرؤية المقطع على المصحف. النشر يتطلب التحقق من ربط الآية، واعتماد الوجه إن اختير.</p>
+  <label><input id="reference-checked" type="checkbox" /> تحققت من مطابقة الآية في مصحف MARW للمقاطع التي سأنشرها</label>
+  <p id="system-message" role="status"></p>
+ </div>
+ <p class="lead">رواية ورش عن نافع</p>
+ <p>يعتمد اختيار الآيات على ترقيم <a href="/mushaf/page/2" target="_blank" rel="noopener">مصحف الوزارة الجزائرية</a>، لا على الترقيم القديم للمقاطع الصوتية.</p>
+ <p>استمع، وحدد نهاية المقطع، ثم احفظ في النظام. تصبح النهاية بداية المقطع التالي تلقائيًا، وينتقل رقم الآية بعد حفظ آية كاملة. تبقى نسخة محلية احتياطية عند تعذر الاتصال.</p>
+ <audio id="review-audio" controls preload="metadata" src="@Model.AudioUrl" style="width:100%"></audio>
+ <p id="audio-position" role="status">الموضع: 0 ثانية</p>
+ <canvas id="audio-waveform" width="1200" height="100" style="width:100%;height:100px;background:#f1f5f2" aria-label="سعة الصوت في الدقائق الست الأولى، للاستدلال البصري فقط"></canvas>
+ <p>سعة الصوت في الدقائق الست الأولى — السكوت لا يحدد وحده نهاية الآية.</p>
+ <div class="d-flex flex-wrap gap-2 my-3">
+  <label>الموضع بالثواني <input id="audio-seek" dir="ltr" type="number" min="0" value="0" step="0.1" style="width:100px" /></label>
+  <button id="audio-go" type="button" class="btn btn-outline-success">انتقال</button>
+  <button id="audio-context" type="button" class="btn btn-outline-success">استماع من البداية</button>
+  <label>سرعة التشغيل <select id="audio-rate" dir="ltr"><option value="1">1×</option><option value="0.75">0.75×</option><option value="0.5">0.5×</option></select></label>
+ </div>
+ <form id="passage-form" class="border rounded p-3">
+  <h2 class="h5">١. حدود المقطع</h2>
+  <div class="d-flex flex-wrap gap-3">
+   <label>البداية (ثانية) <input id="passage-start" dir="ltr" type="number" min="0" step="0.001" required value="0" style="width:100px" /></label><button id="mark-start" type="button" class="btn btn-outline-success">تحديد البداية</button>
+   <label>النهاية (ثانية) <input id="passage-end" dir="ltr" type="number" min="0" step="0.001" required value="10" style="width:100px" /></label><button id="mark-end" type="button" class="btn btn-outline-success">تحديد النهاية</button>
+   <button id="preview-passage" type="button" class="btn btn-outline-success">استماع إلى المقطع</button><label><input id="loop-passage" type="checkbox" /> تكرار التشغيل</label>
+  </div>
+  <div class="d-flex flex-wrap gap-3 my-3">
+   <label>الآية المقترحة <select id="passage-ayah"><option value="">غير محددة</option>@foreach(var ayah in Model.Ayahs){<option value="2:@ayah">البقرة — الآية @ayah</option>}</select></label>
+   <label>نوع المقطع <select id="passage-type"><option value="99">غير محدد</option><option value="1">آية كاملة</option><option value="2">جزء من آية</option><option value="3">إعادة مقطع</option><option value="4">استكمال مقطع</option></select></label>
+   <label>إعادة للمقطع <select id="repeat-of"><option value="">غير محدد / لا ينطبق</option></select></label>
+  </div>
+  <fieldset class="border rounded p-3 my-3" style="background:#f1f5f2">
+   <legend class="float-none w-auto px-2 h5">٢. أوجه الأداء في رواية ورش</legend>
+   <p><a href="/mushaf/awjuh" target="_blank" rel="noopener">مرجع الأوجه ومصادرها</a></p>
+   <label>وجه مقترح من المرجع <select id="wajh-catalog" class="form-select"><option value="">غير محدد</option></select></label>
+   <p id="wajh-catalog-status" class="small">تحميل المرجع…</p>
+   <p><strong>إعادة المقطع ليست تعيينًا لوجه آخر.</strong> سجّل ملاحظتك عن الأداء بصورة مستقلة عن نوع المقطع. تحديد الوجه وموافقته للطريق يحتاج إلى مراجعة متخصصة.</p>
+   <div class="d-flex flex-wrap gap-3">
+    <label>ملاحظة الأداء <select id="wajh-observation"><option value="Unqualified">لم يُحدَّد الوجه</option><option value="SameObserved">يبدو نفس الوجه — للمراجعة</option><option value="DifferentObserved">يبدو وجهًا آخر — للمراجعة</option></select></label>
+    <label>الطريق إن كان معلومًا <input id="wajh-tariq" type="text" maxlength="200" class="form-control" /></label>
+   </div>
+   <label for="wajh-description" class="mt-2">وصف الوجه المقترح وموضعه في الكلمات</label>
+   <textarea id="wajh-description" class="form-control" maxlength="2000" rows="2"></textarea>
+   <small>هذا وصف مقترح لا اعتماد للوجه. لا تُنسب الأوجه تلقائيًا، ولا تُفترض صحة جمعها في الموضع نفسه.</small>
+  </fieldset>
+  <label for="passage-note">الكلمات المعنية وملاحظات المقطع</label>
+  <textarea id="passage-note" class="form-control" maxlength="4000" rows="2"></textarea>
+  <button class="btn btn-success mt-2">حفظ المقطع وتحضير التالي</button>
+ </form>
+ <p id="audio-message" role="status" aria-live="polite"></p>
+ <h2 class="mt-3">المقاطع حسب ترتيب التسجيل</h2>
+ <ol id="passage-list"></ol>
+ <button id="export-passages" type="button" class="btn btn-outline-success">تصدير الملاحظات JSON</button>
+ <p class="mt-2">التشغيل المتواصل يحفظ جميع إعادات القارئ في التسجيل الأصلي. الاستماع إلى مقطع محدد وسيلة للمراجعة، وليس قطعًا نهائيًا للصوت.</p>
+</section>
+@section Scripts { <script src="~/js/audio-review.js" asp-append-version="true" defer></script> }

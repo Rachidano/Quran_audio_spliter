@@ -1,0 +1,590 @@
+{
+  "schemaVersion": 1,
+  "revision": "warsh-catalog-v3",
+  "riwaya": "ورش عن نافع",
+  "coverage": "Partial",
+  "routes": [
+    {
+      "code": "azraq-shatibiyya",
+      "name": "الأزرق — الشاطبية",
+      "coverage": "Partial"
+    },
+    {
+      "code": "azraq-tayyiba",
+      "name": "الأزرق — طرق الطيبة",
+      "coverage": "NotDocumented"
+    },
+    {
+      "code": "asbahani-tayyiba",
+      "name": "الأصبهاني — طرق الطيبة",
+      "coverage": "Partial"
+    }
+  ],
+  "sources": [
+    {
+      "id": "badal-lin-study",
+      "title": "دراسة اجتماع البدل واللين للأزرق",
+      "url": "https://www.alukah.net/sharia/0/98951/حكم-اجتماع-البدل-واللين-في-آية-واحدة-لورش-من-طريق-الأزرق/",
+      "locator": "فقرة الأوجه الأربعة من طريق الحرز",
+      "kind": "SecondaryStudy"
+    },
+    {
+      "id": "asbahani-tanqih-p185",
+      "title": "تنقيح كتاب التحرير — جدول أول يس",
+      "url": "https://quranpedia.net/book-attachment/20899/93760#page=5",
+      "locator": "ص 185 المطبوعة، صفحة PDF الخامسة، الفروع 1–10؛ السياق ص 181–184",
+      "kind": "SpecialistStudy",
+      "sha256": "6d1b8b8f3d274965a93c5f553f731d1ee8e99daba2bcdebd037ecf28d840c5f2"
+    },
+    {
+      "id": "asbahani-p181",
+      "title": "تنقيح كتاب التحرير — الأصبهاني",
+      "url": "https://quranpedia.net/book-attachment/20899/93760#page=1",
+      "locator": "ص 181 المطبوعة / PDF 1",
+      "kind": "SpecialistStudy",
+      "sha256": "6d1b8b8f3d274965a93c5f553f731d1ee8e99daba2bcdebd037ecf28d840c5f2"
+    },
+    {
+      "id": "asbahani-p182",
+      "title": "تنقيح كتاب التحرير — الأصبهاني",
+      "url": "https://quranpedia.net/book-attachment/20899/93760#page=2",
+      "locator": "ص 182 المطبوعة / PDF 2",
+      "kind": "SpecialistStudy",
+      "sha256": "6d1b8b8f3d274965a93c5f553f731d1ee8e99daba2bcdebd037ecf28d840c5f2"
+    },
+    {
+      "id": "asbahani-p184",
+      "title": "تنقيح كتاب التحرير — الأصبهاني",
+      "url": "https://quranpedia.net/book-attachment/20899/93760#page=4",
+      "locator": "ص 184 المطبوعة / PDF 4",
+      "kind": "SpecialistStudy",
+      "sha256": "6d1b8b8f3d274965a93c5f553f731d1ee8e99daba2bcdebd037ecf28d840c5f2"
+    }
+  ],
+  "entries": [
+    {
+      "code": "az-sh-badal2-lin4",
+      "nameArabic": "البدل: 2 حركات؛ اللين المهموز: 4 حركات",
+      "routeCode": "azraq-shatibiyya",
+      "category": "Tahrirat",
+      "ruleGroup": "badal-lin",
+      "components": {
+        "badal": 2,
+        "linMahmuz": 4
+      },
+      "scope": "اجتماع مد البدل واللين المهموز في سياق الدراسة المشار إليها. ليست قاعدة لكل موضع؛ يلزم فحص الاستثناءات وبقية الأصول قبل التطبيق.",
+      "excludedScope": "لا يُعمم على طرق الطيبة أو الأصبهاني ولا على المواضع الخاصة دون توثيق.",
+      "sourceIds": [
+        "badal-lin-study"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null
+    },
+    {
+      "code": "az-sh-badal4-lin4",
+      "nameArabic": "البدل: 4 حركات؛ اللين المهموز: 4 حركات",
+      "routeCode": "azraq-shatibiyya",
+      "category": "Tahrirat",
+      "ruleGroup": "badal-lin",
+      "components": {
+        "badal": 4,
+        "linMahmuz": 4
+      },
+      "scope": "اجتماع مد البدل واللين المهموز في سياق الدراسة المشار إليها. ليست قاعدة لكل موضع؛ يلزم فحص الاستثناءات وبقية الأصول قبل التطبيق.",
+      "excludedScope": "لا يُعمم على طرق الطيبة أو الأصبهاني ولا على المواضع الخاصة دون توثيق.",
+      "sourceIds": [
+        "badal-lin-study"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null
+    },
+    {
+      "code": "az-sh-badal6-lin4",
+      "nameArabic": "البدل: 6 حركات؛ اللين المهموز: 4 حركات",
+      "routeCode": "azraq-shatibiyya",
+      "category": "Tahrirat",
+      "ruleGroup": "badal-lin",
+      "components": {
+        "badal": 6,
+        "linMahmuz": 4
+      },
+      "scope": "اجتماع مد البدل واللين المهموز في سياق الدراسة المشار إليها. ليست قاعدة لكل موضع؛ يلزم فحص الاستثناءات وبقية الأصول قبل التطبيق.",
+      "excludedScope": "لا يُعمم على طرق الطيبة أو الأصبهاني ولا على المواضع الخاصة دون توثيق.",
+      "sourceIds": [
+        "badal-lin-study"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null
+    },
+    {
+      "code": "az-sh-badal6-lin6",
+      "nameArabic": "البدل: 6 حركات؛ اللين المهموز: 6 حركات",
+      "routeCode": "azraq-shatibiyya",
+      "category": "Tahrirat",
+      "ruleGroup": "badal-lin",
+      "components": {
+        "badal": 6,
+        "linMahmuz": 6
+      },
+      "scope": "اجتماع مد البدل واللين المهموز في سياق الدراسة المشار إليها. ليست قاعدة لكل موضع؛ يلزم فحص الاستثناءات وبقية الأصول قبل التطبيق.",
+      "excludedScope": "لا يُعمم على طرق الطيبة أو الأصبهاني ولا على المواضع الخاصة دون توثيق.",
+      "sourceIds": [
+        "badal-lin-study"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null
+    },
+    {
+      "code": "as-ty-ys-01",
+      "nameArabic": "أول يس — تركيب 1 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "فتح",
+        "nunBeforeWaw": "إدغام",
+        "maUndhira": "قصر",
+        "abaahum": "فويق القصر"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "تُراجع شروط الطريق قبل التطبيق.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 1,
+      "sourceBooks": [
+        "الإعلان"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    },
+    {
+      "code": "as-ty-ys-02",
+      "nameArabic": "أول يس — تركيب 2 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "فتح",
+        "nunBeforeWaw": "إدغام",
+        "maUndhira": "قصر",
+        "abaahum": "توسط"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "تُراجع شروط الطريق قبل التطبيق.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 2,
+      "sourceBooks": [
+        "روضة المعدل"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    },
+    {
+      "code": "as-ty-ys-03",
+      "nameArabic": "أول يس — تركيب 3 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "فتح",
+        "nunBeforeWaw": "إدغام",
+        "maUndhira": "قصر",
+        "abaahum": "إشباع"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "تُراجع شروط الطريق قبل التطبيق.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 3,
+      "sourceBooks": [
+        "المستنير",
+        "المفتاح",
+        "جامع ابن فارس",
+        "كفاية أبي العز",
+        "روضة المالكي",
+        "غاية أبي العلاء"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    },
+    {
+      "code": "as-ty-ys-04",
+      "nameArabic": "أول يس — تركيب 4 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "فتح",
+        "nunBeforeWaw": "إدغام",
+        "maUndhira": "فويق القصر",
+        "abaahum": "فويق القصر"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "تُراجع شروط الطريق قبل التطبيق.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 4,
+      "sourceBooks": [
+        "الإعلان"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    },
+    {
+      "code": "as-ty-ys-05",
+      "nameArabic": "أول يس — تركيب 5 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "فتح",
+        "nunBeforeWaw": "إدغام",
+        "maUndhira": "فويق القصر",
+        "abaahum": "إشباع"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "تُراجع شروط الطريق قبل التطبيق.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 5,
+      "sourceBooks": [
+        "المبهج",
+        "التذكار",
+        "غاية أبي العلاء"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    },
+    {
+      "code": "as-ty-ys-06",
+      "nameArabic": "أول يس — تركيب 6 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "فتح",
+        "nunBeforeWaw": "إظهار",
+        "maUndhira": "توسط",
+        "abaahum": "توسط"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "تلزم الغنة بحسب الحاشية 6.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 6,
+      "sourceBooks": [
+        "غاية ابن مهران"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    },
+    {
+      "code": "as-ty-ys-07",
+      "nameArabic": "أول يس — تركيب 7 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "تقليل",
+        "nunBeforeWaw": "إدغام",
+        "maUndhira": "قصر",
+        "abaahum": "إشباع"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "على مد التعظيم بحسب الحاشية 7.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 7,
+      "sourceBooks": [
+        "المصباح",
+        "الكامل"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    },
+    {
+      "code": "as-ty-ys-08",
+      "nameArabic": "أول يس — تركيب 8 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "تقليل",
+        "nunBeforeWaw": "إدغام",
+        "maUndhira": "توسط",
+        "abaahum": "توسط"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "تُراجع شروط الطريق قبل التطبيق.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 8,
+      "sourceBooks": [
+        "التجريد"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    },
+    {
+      "code": "as-ty-ys-09",
+      "nameArabic": "أول يس — تركيب 9 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "تقليل",
+        "nunBeforeWaw": "إدغام",
+        "maUndhira": "فويق القصر",
+        "abaahum": "إشباع"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "تُراجع شروط الطريق قبل التطبيق.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 9,
+      "sourceBooks": [
+        "تلخيص أبي معشر"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    },
+    {
+      "code": "as-ty-ys-10",
+      "nameArabic": "أول يس — تركيب 10 بحسب المصدر",
+      "routeCode": "asbahani-tayyiba",
+      "category": "Tahrirat",
+      "ruleGroup": "yasin-opening",
+      "components": {
+        "yaSin": "تقليل",
+        "nunBeforeWaw": "إدغام",
+        "maUndhira": "توسط",
+        "abaahum": "إشباع"
+      },
+      "scope": "خاص بأول يس (1–6 بترقيم المصدر)، عند وصل السياق. ترقيم MARW لم يطابق بعد.",
+      "excludedScope": "تُراجع شروط الطريق قبل التطبيق.",
+      "sourceIds": [
+        "asbahani-tanqih-p185"
+      ],
+      "sourceBranch": 10,
+      "sourceBooks": [
+        "الكامل"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "application": {
+        "sourceSurah": 36,
+        "sourceAyahs": [
+          1,
+          6
+        ],
+        "marwMappingStatus": "NotMapped",
+        "automaticAssignment": false
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "code": "as-haantum-no-qasr",
+      "routeCode": "asbahani-tayyiba",
+      "nameArabic": "قيد هاأنتم",
+      "contextArabic": "إثبات ألف هاأنتم ومدها مع تسهيل الهمزة",
+      "condition": {
+        "token": "هاأنتم",
+        "alif": "retained-and-lengthened",
+        "hamza": "tashil"
+      },
+      "effect": {
+        "prohibited": {
+          "munfasil": "qasr"
+        }
+      },
+      "explanationArabic": "في هذا السياق، لا يُجمع الأداء المذكور مع قصر المنفصل.",
+      "sourceIds": [
+        "asbahani-p181"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "automaticEnforcement": false,
+      "marwMappingStatus": "NotMapped"
+    },
+    {
+      "code": "as-yasin-izhar",
+      "routeCode": "asbahani-tayyiba",
+      "nameArabic": "قيد إظهار نون يس",
+      "contextArabic": "عند وصل يس بالواو وإظهار النون",
+      "condition": {
+        "token": "يس والقرآن",
+        "nun": "izhar"
+      },
+      "effect": {
+        "required": {
+          "munfasil": "tawassut",
+          "muttasil": "tawassut",
+          "ghunnaLamRa": true
+        }
+      },
+      "explanationArabic": "يربط المؤلف هذا الأداء بتوسط المدين والغنة، ويعزوه إلى غاية ابن مهران.",
+      "sourceIds": [
+        "asbahani-p182"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "automaticEnforcement": false,
+      "marwMappingStatus": "NotMapped"
+    },
+    {
+      "code": "as-nun-no-idgham",
+      "routeCode": "asbahani-tayyiba",
+      "nameArabic": "نون افتتاح القلم",
+      "contextArabic": "وصل نون بالقسم بعدها",
+      "condition": {
+        "token": "ن والقلم"
+      },
+      "effect": {
+        "prohibited": {
+          "nun": "idgham"
+        }
+      },
+      "explanationArabic": "يستبعد النص الإدغام هنا للأصبهاني.",
+      "sourceIds": [
+        "asbahani-p184"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "automaticEnforcement": false,
+      "marwMappingStatus": "NotMapped"
+    },
+    {
+      "code": "as-nakhluq-qasr",
+      "routeCode": "asbahani-tayyiba",
+      "nameArabic": "قيد نخلقكم",
+      "contextArabic": "كلمة نخلقكم مع قصر المنفصل",
+      "condition": {
+        "token": "نخلقكم",
+        "munfasil": "qasr"
+      },
+      "effect": {
+        "required": {
+          "assimilation": "complete"
+        }
+      },
+      "explanationArabic": "قصر المنفصل يقترن هنا بالإدغام الكامل؛ إبقاء الصفة له سياق آخر في المصدر.",
+      "sourceIds": [
+        "asbahani-p184"
+      ],
+      "status": "PendingReview",
+      "reviewer": null,
+      "reviewedAt": null,
+      "automaticEnforcement": false,
+      "marwMappingStatus": "NotMapped"
+    }
+  ]
+}

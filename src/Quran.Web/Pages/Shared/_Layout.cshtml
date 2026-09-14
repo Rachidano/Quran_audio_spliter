@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — القرآن الكريم رواية ورش عن نافع (صابر عبد الحكم)</title>
+    
+    <!-- Google Fonts: Amiri (Quranic & Classic) + Tajawal (UI Modern) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        :root {
+            --primary-emerald: #0d5c46;
+            --primary-emerald-dark: #07382a;
+            --accent-gold: #c59b27;
+            --accent-gold-light: #f7e7b4;
+            --bg-canvas: #fcfbf8;
+            --surface-card: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --font-quran: 'Amiri', serif;
+            --font-ui: 'Tajawal', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            direction: rtl;
+            text-align: right;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar-custom {
+            background: linear-gradient(135deg, var(--primary-emerald-dark), var(--primary-emerald));
+            border-bottom: 3px solid var(--accent-gold);
+            padding: 0.8rem 1rem;
+        }
+
+        .navbar-brand-title {
+            color: #ffffff !important;
+            font-weight: 800;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-brand-subtitle {
+            color: var(--accent-gold-light);
+            font-size: 0.85rem;
+            font-weight: 400;
+        }
+
+        .nav-link-custom {
+            color: #f3f4f6 !important;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link-custom:hover {
+            color: var(--accent-gold) !important;
+        }
+
+        .quran-text {
+            font-family: var(--font-quran);
+            font-size: 1.9rem;
+            line-height: 2.3;
+            color: #111827;
+        }
+
+        .ayah-card {
+            background: var(--surface-card);
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 1.25rem;
+            padding: 1.5rem;
+        }
+
+        .ayah-card:hover {
+            box-shadow: 0 6px 16px rgba(13, 92, 70, 0.08);
+            border-color: #d1d5db;
+        }
+
+        .ayah-number-badge {
+            background: var(--primary-emerald);
+            color: #ffffff;
+            font-family: var(--font-ui);
+            font-size: 0.9rem;
+            font-weight: 700;
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid var(--accent-gold);
+        }
+
+        .btn-quran-primary {
+            background: var(--primary-emerald);
+            color: #ffffff;
+            border: none;
+            font-weight: 600;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .btn-quran-primary:hover {
+            background: var(--primary-emerald-dark);
+            color: #ffffff;
+        }
+
+        .btn-quran-outline {
+            border: 1px solid var(--primary-emerald);
+            color: var(--primary-emerald);
+            font-weight: 600;
+            padding: 0.4rem 1rem;
+            border-radius: 8px;
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .btn-quran-outline:hover {
+            background: var(--primary-emerald);
+            color: #ffffff;
+        }
+
+        .wajh-badge {
+            background-color: #ecfdf5;
+            color: var(--primary-emerald);
+            border: 1px solid #a7f3d0;
+            font-size: 0.85rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        footer {
+            background: #ffffff;
+            border-top: 1px solid #e5e7eb;
+            color: var(--text-muted);
+            padding: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+            <div class="container">
+                <a class="navbar-brand d-flex flex-column" asp-page="/Index">
+                    <span class="navbar-brand-title">📖 القرآن الكريم</span>
+                    <span class="navbar-brand-subtitle">رواية ورش عن نافع — الشيخ صابر عبد الحكم</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="تبديل التنقل">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom active" asp-page="/Index">فهرس السور</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom" asp-page="/Surah" asp-route-number="1">سورة الفاتحة</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom" asp-page="/Admin/Index">لوحة التحكم (الإدارة)</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom" asp-page="/Mushaf/Page" asp-route-pageNumber="1">📖 المصحف المصور</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom" asp-page="/Mushaf/AudioReview">🎧 ضبط المقاطع</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom" asp-page="/Mushaf/Awjuh">مرجع الأوجه</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom" asp-page="/Admin/MushafRegionEditor" asp-route-pageNumber="1">📐 محرر مناطق المصحف</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom" asp-page="/Admin/Validation">تدقيق التسجيلات</a>
+                        </li>
+                    </ul>
+                    <form class="d-flex" method="get" asp-page="/Index">
+                        <input class="form-control me-2" type="search" name="q" placeholder="بحث بالآية أو 1:2..." aria-label="بحث" style="border-radius: 8px;">
+                        <button class="btn btn-quran-primary ms-2" type="submit">بحث</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container py-4">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="text-center mt-5">
+        <div class="container">
+            <p class="mb-1">منصة تلاوة القرآن الكريم برواية ورش عن نافع بجميع الأوجه الشاطبية — الشيخ صابر عبد الحكم</p>
+            <p class="text-secondary small mb-0">مصدر النص : مجمع الملك فهد لطباعة المصحف الشريف | التسجيلات : Internet Archive</p>
+        </div>
+    </footer>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

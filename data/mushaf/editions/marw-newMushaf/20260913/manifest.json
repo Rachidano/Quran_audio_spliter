@@ -1,0 +1,38 @@
+{
+  "edition": "newMushaf",
+  "source": "https://mushaf.marw.dz/web/ar/mushaf/newMushaf/1",
+  "recordedAtUtc": "2026-09-13T08:53:37.771541+00:00",
+  "status": "Research only; text preview mismatch observed; redistribution terms unconfirmed",
+  "files": [
+    {
+      "file": "page-001.png",
+      "url": "https://mushaf.marw.dz/web/api/v1/masahif/newMushaf/pages/1.png",
+      "sha256": "e37112e5a3f925e572bdf2436e3f56f0d49b6178d691dc09ec6bda1158105feb"
+    },
+    {
+      "file": "page-001.json",
+      "url": "https://mushaf.marw.dz/web/api/v1/masahif/newMushaf/ayat-shadows/1",
+      "sha256": "04df3ce15fb817bf8014c3da27ef3fac55bf80ed1c2e8f03322ab67ff6a75dde"
+    },
+    {
+      "file": "page-002.png",
+      "url": "https://mushaf.marw.dz/web/api/v1/masahif/newMushaf/pages/2.png",
+      "sha256": "189b55c51e492747b3d3af194243010e44dae9ac52e8a516e6a8105f9110443d"
+    },
+    {
+      "file": "page-002.json",
+      "url": "https://mushaf.marw.dz/web/api/v1/masahif/newMushaf/ayat-shadows/2",
+      "sha256": "120845b9e997930e35dabbe3743a133b732ed55b7d92ce8f7c4dde4cab81824d"
+    },
+    {
+      "file": "page-003.png",
+      "url": "https://mushaf.marw.dz/web/api/v1/masahif/newMushaf/pages/3.png",
+      "sha256": "d9aa5cb63ecb4c5efc1422a7fdd4c458a2fc3fc376a92c6d43a0dbaff0c4c5f8"
+    },
+    {
+      "file": "page-003.json",
+      "url": "https://mushaf.marw.dz/web/api/v1/masahif/newMushaf/ayat-shadows/3",
+      "sha256": "f7a5aa0f4f184603fd47269e5515ea688d6ca118d0769795f7fefa6d6031a3df"
+    }
+  ]
+}

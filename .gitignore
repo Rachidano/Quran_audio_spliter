@@ -1,0 +1,56 @@
+## .NET & Visual Studio / Rider / VSCode
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+.idea/
+
+## Build outputs
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rms/
+[Aa]rm64/
+build/
+artifacts/
+
+## Audio processing local files (prevent committing large audio media)
+data/audio/*.mp3
+data/audio/sources/*
+!data/audio/sources/.gitkeep
+data/audio/working/*
+!data/audio/working/.gitkeep
+data/audio/published/*
+!data/audio/published/.gitkeep
+
+## Mushaf image derivatives (masters and web runtime cache)
+data/mushaf/masters/*
+!data/mushaf/masters/.gitkeep
+data/mushaf/web/*
+!data/mushaf/web/.gitkeep
+
+## Database dumps & backups
+backups/
+*.dump
+*.backup
+*.sql.gz
+
+## Secrets & local configs
+appsettings.*.local.json
+appsettings.Production.json
+*.env
+*.env.local
+
+## Test & Playwright outputs
+test-results/
+playwright-report/
+
+## OS files
+.DS_Store
+Thumbs.db
+desktop.ini

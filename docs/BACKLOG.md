@@ -1,0 +1,102 @@
+# Backlog d’Implémentation et Reprise — Quran Warsh
+
+**Date : 14 septembre 2026**  
+**Référence : `PLAN_REPRISE_ANTIGRAVITY.md`**  
+**Solution : `D:\Projets\ITComp\Quran\QuranWarsh.sln` (.NET 9)**
+
+Ce backlog suit l’état d’avancement réel des lots définis dans le dossier de reprise. Chaque lot doit être vérifié avant d’être marqué terminé.
+
+---
+
+## Vue d’ensemble des Lots
+
+| Lot | Titre | Dépendance | Statut | Date de réalisation |
+|---|---|---|---|---|
+| **Lot 0** | Sécuriser la reprise et établir la référence | Aucune | ✅ **Terminé** | 14/09/2026 |
+| **Lot 1** | Fermer les accès administratifs et les médias privés | Lot 0 | ⏳ **En cours** | |
+| **Lot 2** | Fixer le corpus et les références | Lots 0, 1 | ⏳ À venir | |
+| **Lot 3** | Réunifier les occurrences et migrer les brouillons | Lot 2 | ⏳ À venir | |
+| **Lot 4** | Achever le référentiel administrable | Lots 2, 3 | ⏳ À venir | |
+| **Lot 5** | Livrer l’éditeur unique et simple | Lots 3, 4 | ⏳ À venir | |
+| **Lot 6** | Achever revue, rendu et publication | Lots 3, 4, 5 | ⏳ À venir | |
+| **Lot 7** | Terminer le site public cohérent | Lots 2, 4, 6 | ⏳ À venir | |
+| **Lot 8** | Industrialiser l’ingestion et la qualité | Lots 3, 6, 7 | ⏳ À venir | |
+| **Lot 9** | Nettoyer le projet et rendre l’exécution reproductible | Remplacements recettés | ⏳ À venir | |
+| **Lot 10** | Recette, exploitation et livraison | Lots 0 à 9 | ⏳ À venir | |
+
+---
+
+## Détail des Tâches par Lot
+
+### Lot 0 — Sécuriser la reprise et établir la référence
+- [x] **0.1** Relever instructions locales, SDK (.NET 9.0.312), PostgreSQL 16 local, routes et configuration.
+- [x] **0.2** Initialiser le dépôt Git avec `.gitignore` complet (exclusion stricte des MP3, dumps, secrets, sorties de build).
+- [x] **0.3** Sauvegarder la base de données PostgreSQL `quran_db` (`backups/20260914_pre_reprise/quran_db_snapshot.dump`).
+- [x] **0.4** Tester la restauration intégrale dans une base isolée `quran_db_test_restore` (114 sourates, 5 passages restaurés sans erreur).
+- [x] **0.5** Archiver et calculer les empreintes SHA-256 des exports utilisateurs (`baqarah-audio-passages-draft.json` et `baqarah-audio-passages-draft(1).json`).
+- [x] **0.6** Créer la base de test dédiée `quran_db_test` et isoler les tests de la base active de travail.
+- [x] **0.7** Établir la ligne de base des tests automatisés (50 tests passants).
+- [x] **0.8** Rédiger `docs/ETAT_DU_SYSTEME.md` et `docs/BACKLOG.md`.
+
+### Lot 1 — Fermer les accès administratifs et les médias privés
+- [ ] **1.1** Installer ASP.NET Core Identity (EF Core Stores, tables Identity, rôles `Admin` et `Reviewer`).
+- [ ] **1.2** Configurer l’authentification par cookie sécurisé et ordonner `UseAuthentication()` avant `UseAuthorization()`.
+- [ ] **1.3** Séparer la navigation publique et le back-office dans les layouts Razor.
+- [ ] **1.4** Protéger toutes les routes d’administration (`/Admin/*`, `/api/admin/*`, endpoints de mutation).
+- [ ] **1.5** Supprimer l’accès public direct aux répertoires `sources/` et `working/` ; n’exposer via middleware autorisé qu’avec support Range HTTP 206.
+- [ ] **1.6** Supprimer le paramètre `preview=true` public et réserver la prévisualisation aux utilisateurs autorisés (`Reviewer`/`Admin`).
+- [ ] **1.7** Tests automatisés d’autorisation négatifs (anonyme refusé sur API admin, mutations et médias privés).
+
+### Lot 2 — Fixer le corpus et les références
+- [ ] **2.1** Introduire le modèle canonique corpus/édition (`QuranCorpus`, `CorpusAyah`, `MushafEdition`, `ReferenceMapping`).
+- [ ] **2.2** Intégrer formellement le paquet MARW `newMushaf` (révision `20260913-full`, 604 pages).
+- [ ] **2.3** Rapprocher les textes et décomptes ; établir le rapport d’écart (notamment Al-Baqarah 2:1 à 2:5).
+- [ ] **2.4** Modéliser et outiller la table de correspondances (`ReferenceMapping`) avec résolutions explicites.
+- [ ] **2.5** Conserver la géométrie MARW et les revues d'ouvertures de sourates sans écrasement.
+
+### Lot 3 — Réunifier les occurrences et migrer les brouillons
+- [ ] **3.1** Étendre `AudioSegment` comme agrégat canonique (révisions, spans de texte, portions graphiques, liens de reprise).
+- [ ] **3.2** Migrer les 5 `MushafPassages` existants vers `AudioSegment` en préservant leurs GUID, timestamps et notes.
+- [ ] **3.3** Traiter les deux fichiers d'export utilisateur (zone 67 986 ms à 84 592 ms marquée comme trou explicite à qualifier).
+- [ ] **3.4** Extraire la logique métier de `AnnotationsController` et `AudioEditorController` dans la couche `Quran.Application`.
+- [ ] **3.5** Persister la session d'annotation (curseur temporel, dernière occurrence, reprise).
+
+### Lot 4 — Achever le référentiel administrable
+- [ ] **4.1** Déployer les tables relationnelles structurées du référentiel (`TransmissionRoute`, `ReadingRule`, `WajhDefinition`, etc.).
+- [ ] **4.2** Migrer les 14 propositions existantes sans recréer les anciens codes supprimés.
+- [ ] **4.3** Développer le CRUD back-office complet des oujouth avec gestion des révisions et statuts.
+- [ ] **4.4** Fournir la recherche, le rapport d'impact et la matrice de couverture documentaire.
+- [ ] **4.5** Remplacer le bootstrap destructif par un seed versionné immuable.
+
+### Lot 5 — Livrer l’éditeur unique et simple
+- [ ] **5.1** Créer l'interface unifiée d'édition audio en arabe (mode simple par défaut + panneau avancé WaveSurfer).
+- [ ] **5.2** Implémenter l'action « إنهاء الآية والانتقال إلى التالية » (capture atomique, fin = début suivant, avance de l'ayah).
+- [ ] **5.3** Implémenter l'action « تكرار للآية السابقة » (reprise liée, temps propres, maintien du numéro d'ayah).
+- [ ] **5.4** Gestion des portions d'ayat (« مقطع من الآية » et « استكمال الآية ») pour les arrêts de souffle.
+- [ ] **5.5** Raccordement direct à l'image MARW et sélection de portions graphiques.
+
+### Lot 6 — Achever revue, rendu et publication
+- [ ] **6.1** Imposer la machine à états serveur : `Draft → Reviewed → Approved → Rendering → Rendered → Published`.
+- [ ] **6.2** File d'attente de revue administrative avec motifs de rejet motivés et traçabilité de l'acteur.
+- [ ] **6.3** Découpage FFmpeg idempotent, asynchrone et persistant lié à la révision exacte.
+- [ ] **6.4** Publication et dépublication explicites avec vérification des assets générés.
+
+### Lot 7 — Terminer le site public cohérent
+- [ ] **7.1** Aligner les pages publiques (`/`, `/surah/{number}`, `/quran/{surah}/{ayah}`, `/mushaf/page/{pageNumber}`).
+- [ ] **7.2** Lecteur partagé sur les images MARW avec surlignage fidèle et filtrage par وجه disponible.
+- [ ] **7.3** Téléchargement propre du passage découpé et partage par URL canonique qualifiée.
+- [ ] **7.4** Prise en charge RTL, responsive mobile, navigation clavier et gestion des cas sans audio publié.
+
+### Lot 8 — Industrialiser l’ingestion et la qualité
+- [ ] **8.1** Inventaire et ingestion automatisée des 114 sourates Archive.org.
+- [ ] **8.2** Tableaux de bord de couverture et rapports de cohérence (trous, chevauchements, dépendances).
+
+### Lot 9 — Nettoyer le projet et rendre l’exécution reproductible
+- [ ] **9.1** Nettoyage des contrôleurs, vues d'essai et scripts obsolètes.
+- [ ] **9.2** Autonomie complète des tests Playwright sans dépendance externe.
+- [ ] **9.3** Documentation README épurée et reproductibilité multi-environnements.
+
+### Lot 10 — Recette, exploitation et livraison
+- [ ] **10.1** Configuration Docker Compose complète (Web, DB, Worker, volumes persistants).
+- [ ] **10.2** Exécution et consignation de l'ensemble des 28 scénarios de recette (T01 à T28).
+- [ ] **10.3** Dossier de livraison distinguant logiciel fonctionnel et contenu restant à qualifier.

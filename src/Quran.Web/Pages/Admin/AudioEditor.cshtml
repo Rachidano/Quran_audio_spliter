@@ -1,0 +1,1136 @@
+@page "{surahNumber:int?}"
+@model Quran.Web.Pages.Admin.AudioEditorModel
+@{
+    ViewData["Title"] = "استوديو التقطيع الصوتي المتقدم للأوجه والآيات";
+}
+
+<div class="container-fluid px-4 py-3" id="audio-editor-app">
+    <!-- En-tête et sélecteur de sourate -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 bg-white p-3 rounded-3 shadow-sm border">
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="h4 mb-0 fw-bold text-success d-flex align-items-center gap-2">
+                <span>🎧</span> استوديو التقطيع الصوتي للآيات والأوجه (WaveSurfer Studio)
+            </h1>
+            <span class="badge bg-emerald-subtle text-success border border-success-subtle px-3 py-2">
+                ورش عن نافع — صابر عبد الحكم
+            </span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <label for="surahSelect" class="form-label mb-0 fw-bold">اختر السورة:</label>
+            <select id="surahSelect" class="form-select form-select-sm" style="min-width: 220px;" onchange="onSurahChange(this.value)">
+                @foreach (var s in Model.Surahs)
+                {
+                    <option value="@s.Number" selected="@(s.Number == Model.SurahNumber)">
+                        @s.Number. @s.NameArabic (@s.NameLatin) — @s.AyahCount آية
+                    </option>
+                }
+            </select>
+            <button class="btn btn-sm btn-outline-secondary" onclick="reloadContext()" title="إعادة تحميل">🔄</button>
+        </div>
+    </div>
+
+    <!-- Informations sur la source audio -->
+    <div id="sourceAudioInfo" class="alert alert-secondary py-2 px-3 mb-3 d-flex flex-wrap justify-content-between align-items-center small">
+        <div class="d-flex gap-3 align-items-center">
+            <span><strong>الملف المصدر:</strong> <span id="infoFileName">—</span></span>
+            <span><strong>المدة:</strong> <span id="infoDuration">—</span></span>
+            <span><strong>الحجم:</strong> <span id="infoSize">—</span></span>
+            <span><strong>الحالة:</strong> <span id="infoStatus" class="badge bg-secondary">—</span></span>
+        </div>
+        <div>
+            <span class="text-muted">مفاتيح الاختصار: <kbd>Space</kbd> تشغيل/إيقاف | <kbd>L</kbd> تكرار المقطع | <kbd>←</kbd> <kbd>→</kbd> تنقل سريع | <kbd>Ctrl+S</kbd> حفظ</span>
+        </div>
+    </div>
+
+    <!-- ZONE WAVESURFER AUDIO CANVAS -->
+    <div class="card shadow-sm border mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+            <div class="d-flex align-items-center gap-2">
+                <button id="btnPlayPause" class="btn btn-success btn-sm px-3" onclick="togglePlayPause()">
+                    <span id="playIcon">▶</span> تشغيل
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="stopAudio()" title="إيقاف">⏹</button>
+                <button id="btnLoopRegion" class="btn btn-outline-primary btn-sm" onclick="toggleLoopRegion()" title="تكرار المقطع المحدد">
+                    🔁 تكرار التحديد: <span id="loopStatus">معطل</span>
+                </button>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" onclick="jumpTime(-2000)" title="تراجع ثانيتين">-2s</button>
+                    <button class="btn btn-outline-secondary" onclick="jumpTime(-500)" title="تراجع نصف ثانية">-500ms</button>
+                    <button class="btn btn-outline-secondary" onclick="jumpTime(500)" title="تقدم نصف ثانية">+500ms</button>
+                    <button class="btn btn-outline-secondary" onclick="jumpTime(2000)" title="تقدم ثانيتين">+2s</button>
+                </div>
+            </div>
+
+            <!-- Position / Horloge -->
+            <div class="d-flex align-items-center gap-3">
+                <div class="badge bg-dark text-warning font-monospace fs-6 px-3 py-1">
+                    <span id="currentTimeDisplay">00:00.000</span> / <span id="totalDurationDisplay">00:00.000</span>
+                </div>
+                <!-- Zoom Slider -->
+                <div class="d-flex align-items-center gap-1" style="width: 170px;">
+                    <span class="small text-muted">🔍</span>
+                    <input type="range" class="form-range" id="zoomSlider" min="10" max="250" value="40" oninput="onZoomChange(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-3 bg-dark-subtle position-relative">
+            <!-- Loading overlay -->
+            <div id="waveLoading" class="position-absolute top-50 start-50 translate-middle text-center" style="z-index: 10;">
+                <div class="spinner-border text-success" role="status"></div>
+                <div class="mt-2 fw-bold text-dark">جارٍ تحميل الإشارة الصوتية...</div>
+            </div>
+
+            <!-- Waveform Canvas -->
+            <div id="waveform" style="min-height: 140px; background: #111827; border-radius: 6px; overflow: hidden;"></div>
+            <!-- Timeline Canvas -->
+            <div id="wave-timeline" class="mt-1" style="background: #1f2937; border-radius: 4px;"></div>
+            <!-- Minimap Canvas -->
+            <div id="wave-minimap" class="mt-2" style="background: #0f172a; border-radius: 4px; height: 35px;"></div>
+        </div>
+    </div>
+
+    <!-- ZONE TRAVAIL : INSPECTEUR DE SEGMENT & SELECTION DE MOTS -->
+    <div class="row g-3 mb-4">
+        <!-- Colonne Gauche : Sélection de la Ayah et découpage mot-à-mot -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100 border">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h6 mb-0 fw-bold text-success">
+                        📖 نص الآية والكلمات المشمولة في المقطع
+                    </h2>
+                    <div class="d-flex align-items-center gap-2">
+                        <select id="activeAyahSelect" class="form-select form-select-sm" style="min-width: 140px;" onchange="onActiveAyahChange(this.value)">
+                            <!-- Options remplies dynamiquement -->
+                        </select>
+                        <button class="btn btn-sm btn-outline-success" onclick="selectFullAyahWords()">كل الآية</button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Texte complet de l'Ayah -->
+                    <div class="p-3 mb-3 bg-light rounded-3 border text-center">
+                        <div id="currentAyahFullText" class="quran-text" style="font-size: 1.8rem; line-height: 2.2;">
+                            (اختر آية من القائمة أعلاه)
+                        </div>
+                    </div>
+
+                    <!-- Mots cliquables individuels -->
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-muted mb-1">
+                            انقر لتحديد بداية ونهاية المقطع لفظياً (الكلمات المشمولة):
+                        </label>
+                        <div id="wordsContainer" class="d-flex flex-wrap gap-2 p-2 bg-light rounded border min-height-60 align-items-center justify-content-center">
+                            <!-- Badges de mots interactifs -->
+                        </div>
+                    </div>
+
+                    <!-- Résumé du découpage verbal -->
+                    <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
+                        <span>الكلمة الأولى: <strong id="startWordLabel" class="text-dark">—</strong></span>
+                        <span>الكلمة الأخيرة: <strong id="endWordLabel" class="text-dark">—</strong></span>
+                        <span id="wordCoverageSummary" class="badge bg-info-subtle text-info-emphasis">آية كاملة</span>
+                    </div>
+
+                    <!-- Lien / Aperçu vers la page du Mushaf Warsh (الرسم العثماني) -->
+                    <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-emerald-subtle text-success border">الرسم العثماني الأصلي</span>
+                            <span class="small text-muted" id="ayahMushafPageLabel">صفحة المصحف: جارٍ التحميل...</span>
+                        </div>
+                        <a id="btnOpenMushafRegionEditor" href="/Admin/MushafRegionEditor/1" target="_blank" class="btn btn-sm btn-outline-success">
+                            📐 ضبط المناطق في المصحف ↗
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne Droite : Formulaire du Segment Actif & Micro-Ajustement -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm h-100 border">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h6 mb-0 fw-bold text-primary">
+                        🎛️ ضبط المقطع الصوتي المحدد
+                    </h2>
+                    <span id="activeSegmentBadge" class="badge bg-secondary">جديد / غير محفوظ</span>
+                </div>
+
+                <div class="card-body">
+                    <!-- Bornes temporelles (Start / End) avec Micro-ajustements -->
+                    <div class="row g-2 mb-3">
+                        <!-- Début -->
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted mb-1">البداية (ms)</label>
+                            <div class="input-group input-group-sm mb-1">
+                                <input type="number" id="segStartMs" class="form-control font-monospace fw-bold" value="0" step="10" onchange="onManualTimeChange()">
+                                <span class="input-group-text" id="segStartFormatted">00:00.000</span>
+                            </div>
+                            <!-- Boutons micro-ajustement début -->
+                            <div class="btn-group btn-group-sm w-100">
+                                <button class="btn btn-outline-secondary py-0" onclick="adjustStart(-500)" title="-500ms">-500</button>
+                                <button class="btn btn-outline-secondary py-0" onclick="adjustStart(-50)" title="-50ms">-50</button>
+                                <button class="btn btn-outline-secondary py-0" onclick="adjustStart(50)" title="+50ms">+50</button>
+                                <button class="btn btn-outline-secondary py-0" onclick="adjustStart(500)" title="+500ms">+500</button>
+                            </div>
+                        </div>
+
+                        <!-- Fin -->
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted mb-1">النهاية (ms)</label>
+                            <div class="input-group input-group-sm mb-1">
+                                <input type="number" id="segEndMs" class="form-control font-monospace fw-bold" value="5000" step="10" onchange="onManualTimeChange()">
+                                <span class="input-group-text" id="segEndFormatted">00:05.000</span>
+                            </div>
+                            <!-- Boutons micro-ajustement fin -->
+                            <div class="btn-group btn-group-sm w-100">
+                                <button class="btn btn-outline-secondary py-0" onclick="adjustEnd(-500)" title="-500ms">-500</button>
+                                <button class="btn btn-outline-secondary py-0" onclick="adjustEnd(-50)" title="-50ms">-50</button>
+                                <button class="btn btn-outline-secondary py-0" onclick="adjustEnd(50)" title="+50ms">+50</button>
+                                <button class="btn btn-outline-secondary py-0" onclick="adjustEnd(500)" title="+500ms">+500</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Durée totale du segment -->
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded border small">
+                        <span>مدة المقطع: <strong id="segDurationDisplay" class="text-success font-monospace">5,000 ms (05.000s)</strong></span>
+                        <button class="btn btn-xs btn-outline-success" onclick="playActiveSegment()">▶ معاينة المقطع</button>
+                    </div>
+
+                    <!-- Type de segment & Wajh -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted mb-1">نوع المقطع:</label>
+                            <select id="segTypeSelect" class="form-select form-select-sm">
+                                <option value="1">آية كاملة (FullAyah)</option>
+                                <option value="2">جزء من آية (PartialAyah)</option>
+                                <option value="3">تكرار لوجه آخر (Repetition)</option>
+                                <option value="4">وصل/استئناف (Continuation)</option>
+                                <option value="5">أخرى (Other)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted mb-1">الوجه التجويدي (Wajh):</label>
+                            <select id="segWajhSelect" class="form-select form-select-sm">
+                                <option value="">— افتراضي / أصل —</option>
+                                <!-- Rempli dynamiquement -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted mb-1">ملاحظات التدقيق:</label>
+                        <input type="text" id="segNotes" class="form-control form-control-sm" placeholder="مثال: ترقيق الراء، تقليل ذوات الياء، إشباع البدل...">
+                    </div>
+
+                    <!-- Boutons d'action du segment -->
+                    <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+                        <button id="btnSaveSegment" class="btn btn-success btn-sm flex-fill" onclick="saveActiveSegment()">
+                            💾 حفظ التعديل (Ctrl+S)
+                        </button>
+                        <button id="btnNewRegion" class="btn btn-outline-primary btn-sm" onclick="createNewRegionAtCursor()" title="إنشاء مقطع جديد عند موضع المؤشر">
+                            ➕ مقطع جديد
+                        </button>
+                        <button id="btnApproveSegment" class="btn btn-outline-info btn-sm" onclick="approveActiveSegment()" title="اعتماد المقطع">
+                            ✓ اعتماد
+                        </button>
+                        <button id="btnRenderSegment" class="btn btn-outline-warning btn-sm" onclick="renderActiveSegment()" title="توليد ملف MP3 عبر FFmpeg">
+                            ⚙️ توليد MP3
+                        </button>
+                        <button id="btnPublishSegment" class="btn btn-outline-success btn-sm" onclick="publishActiveSegment()" title="نشر المقطع كتلاوة معتمدة">
+                            🚀 نشر رسمي
+                        </button>
+                        <button id="btnDeleteSegment" class="btn btn-outline-danger btn-sm" onclick="deleteActiveSegment()" title="حذف المقطع">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLEAU DE TOUS LES SEGMENTS DE LA SOURATE -->
+    <div class="card shadow-sm border mb-5">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+            <h2 class="h6 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                <span>📋</span> جدول المقاطع المقطوعة لهذه السورة (<span id="segmentsCount">0</span> مقطع)
+            </h2>
+            <div class="d-flex gap-2">
+                <input type="text" id="tableFilter" class="form-control form-control-sm" placeholder="تصفية بالآية أو الوجه..." oninput="filterSegmentsTable(this.value)">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center small">
+                <thead class="table-light">
+                    <tr>
+                        <th># الآية</th>
+                        <th>النوع</th>
+                        <th>الوجه</th>
+                        <th>الكلمات</th>
+                        <th>البداية (ms)</th>
+                        <th>النهاية (ms)</th>
+                        <th>المدة</th>
+                        <th>الحالة</th>
+                        <th>ملاحظات</th>
+                        <th>الملف المقتطع</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="segmentsTableBody">
+                    <tr>
+                        <td colspan="11" class="py-4 text-muted">جارٍ تحميل المقاطع...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- WaveSurfer 7.x et ses extensions officielles via CDN -->
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/timeline.min.js"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/minimap.min.js"></script>
+
+    <script>
+        // État global du studio
+        let currentSurahNumber = @Model.SurahNumber;
+        let editorContext = null;
+        let wavesurfer = null;
+        let regionsPlugin = null;
+        let activeRegion = null;
+        let isLooping = false;
+        let activeSegmentData = null; // Données du segment en cours d'édition
+
+        // Palette de couleurs pour les régions selon leur type
+        const SEGMENT_COLORS = {
+            1: 'rgba(16, 185, 129, 0.25)', // FullAyah (Émeraude)
+            2: 'rgba(59, 130, 246, 0.25)', // PartialAyah (Bleu)
+            3: 'rgba(245, 158, 11, 0.25)', // Repetition (Ambre)
+            4: 'rgba(139, 92, 246, 0.25)', // Continuation (Violet)
+            5: 'rgba(107, 114, 128, 0.25)'  // Other (Gris)
+        };
+
+        const SEGMENT_BORDER_COLORS = {
+            1: '#10b981',
+            2: '#3b82f6',
+            3: '#f59e0b',
+            4: '#8b5cf6',
+            5: '#6b7280'
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initShortcuts();
+            await loadEditorContext(currentSurahNumber);
+        });
+
+        // 1. Chargement du contexte via l'API REST
+        async function loadEditorContext(surahNumber) {
+            document.getElementById('waveLoading').style.display = 'block';
+            try {
+                const response = await fetch(`/api/admin/audio-editor/surah/${surahNumber}`);
+                if (!response.ok) {
+                    throw new Error(`Erreur ${response.status}: ${await response.text()}`);
+                }
+                editorContext = await response.json();
+                renderUI();
+                initWaveSurfer(editorContext.sourceAudio.audioUrl);
+            } catch (err) {
+                console.error(err);
+                alert('فشل في تحميل بيانات السورة: ' + err.message);
+                document.getElementById('waveLoading').style.display = 'none';
+            }
+        }
+
+        // 2. Initialisation de WaveSurfer 7
+        function initWaveSurfer(audioUrl) {
+            if (wavesurfer) {
+                wavesurfer.destroy();
+            }
+
+            regionsPlugin = WaveSurfer.Regions.create();
+
+            wavesurfer = WaveSurfer.create({
+                container: '#waveform',
+                waveColor: '#059669',
+                progressColor: '#34d399',
+                cursorColor: '#f59e0b',
+                cursorWidth: 2,
+                barWidth: 2,
+                barGap: 1,
+                barRadius: 2,
+                height: 140,
+                normalize: true,
+                minPxPerSec: 40,
+                url: audioUrl,
+                plugins: [
+                    regionsPlugin,
+                    WaveSurfer.Timeline.create({
+                        container: '#wave-timeline',
+                        primaryColor: '#e5e7eb',
+                        secondaryColor: '#9ca3af',
+                        primaryFontColor: '#e5e7eb',
+                        secondaryFontColor: '#9ca3af',
+                        fontSize: 10
+                    }),
+                    WaveSurfer.Minimap.create({
+                        container: '#wave-minimap',
+                        waveColor: '#374151',
+                        progressColor: '#059669',
+                        height: 35
+                    })
+                ]
+            });
+
+            wavesurfer.on('ready', () => {
+                document.getElementById('waveLoading').style.display = 'none';
+                const dur = wavesurfer.getDuration();
+                document.getElementById('totalDurationDisplay').textContent = formatTime(dur * 1000);
+                loadExistingRegions();
+            });
+
+            wavesurfer.on('timeupdate', (currentTime) => {
+                document.getElementById('currentTimeDisplay').textContent = formatTime(currentTime * 1000);
+
+                if (isLooping && activeRegion) {
+                    if (currentTime >= activeRegion.end || currentTime < activeRegion.start) {
+                        wavesurfer.seekTo(activeRegion.start / wavesurfer.getDuration());
+                        wavesurfer.play();
+                    }
+                }
+            });
+
+            wavesurfer.on('play', () => {
+                document.getElementById('playIcon').textContent = '⏸';
+                document.getElementById('btnPlayPause').classList.replace('btn-success', 'btn-warning');
+            });
+
+            wavesurfer.on('pause', () => {
+                document.getElementById('playIcon').textContent = '▶';
+                document.getElementById('btnPlayPause').classList.replace('btn-warning', 'btn-success');
+            });
+
+            // Événements sur les Régions
+            regionsPlugin.on('region-created', (region) => {
+                // Style de la région
+                applyRegionStyle(region);
+            });
+
+            regionsPlugin.on('region-clicked', (region, e) => {
+                e.stopPropagation();
+                selectRegion(region);
+            });
+
+            regionsPlugin.on('region-updated', (region) => {
+                if (activeRegion && activeRegion.id === region.id) {
+                    updateFormFromRegion(region);
+                }
+            });
+        }
+
+        function loadExistingRegions() {
+            regionsPlugin.clearRegions();
+            if (!editorContext || !editorContext.segments) return;
+
+            editorContext.segments.forEach(seg => {
+                const reg = regionsPlugin.addRegion({
+                    id: seg.id,
+                    start: seg.startMs / 1000,
+                    end: seg.endMs / 1000,
+                    color: SEGMENT_COLORS[seg.segmentType] || SEGMENT_COLORS[1],
+                    drag: true,
+                    resize: true,
+                    content: `آية ${seg.ayahNumber}`
+                });
+                reg.segmentData = seg;
+                applyRegionStyle(reg);
+            });
+
+            // Sélectionner le premier segment par défaut si existant
+            if (editorContext.segments.length > 0) {
+                const firstReg = regionsPlugin.getRegions()[0];
+                if (firstReg) selectRegion(firstReg);
+            }
+        }
+
+        function applyRegionStyle(region) {
+            const el = region.element;
+            if (el) {
+                el.style.borderTop = `3px solid ${SEGMENT_BORDER_COLORS[region.segmentData?.segmentType || 1] || '#10b981'}`;
+                el.style.borderBottom = `3px solid ${SEGMENT_BORDER_COLORS[region.segmentData?.segmentType || 1] || '#10b981'}`;
+                el.style.fontWeight = 'bold';
+                el.style.fontSize = '12px';
+                el.style.color = '#ffffff';
+                el.style.textShadow = '0 1px 2px rgba(0,0,0,0.8)';
+            }
+        }
+
+        function selectRegion(region) {
+            activeRegion = region;
+            updateFormFromRegion(region);
+
+            // Synchroniser le segmentData correspondant
+            if (region.segmentData) {
+                activeSegmentData = region.segmentData;
+                populateFormWithSegment(activeSegmentData);
+            } else {
+                // Région nouvellement créée manuellement
+                activeSegmentData = null;
+                document.getElementById('activeSegmentBadge').className = 'badge bg-secondary';
+                document.getElementById('activeSegmentBadge').textContent = 'جديد / غير محفوظ';
+            }
+
+            highlightTableRow(region.id);
+        }
+
+        function updateFormFromRegion(region) {
+            const startMs = Math.round(region.start * 1000);
+            const endMs = Math.round(region.end * 1000);
+            const durMs = endMs - startMs;
+
+            document.getElementById('segStartMs').value = startMs;
+            document.getElementById('segStartFormatted').textContent = formatTime(startMs);
+
+            document.getElementById('segEndMs').value = endMs;
+            document.getElementById('segEndFormatted').textContent = formatTime(endMs);
+
+            document.getElementById('segDurationDisplay').textContent = `${durMs.toLocaleString()} ms (${(durMs / 1000).toFixed(3)}s)`;
+        }
+
+        function populateFormWithSegment(seg) {
+            document.getElementById('segStartMs').value = seg.startMs;
+            document.getElementById('segStartFormatted').textContent = formatTime(seg.startMs);
+            document.getElementById('segEndMs').value = seg.endMs;
+            document.getElementById('segEndFormatted').textContent = formatTime(seg.endMs);
+            const durMs = seg.endMs - seg.startMs;
+            document.getElementById('segDurationDisplay').textContent = `${durMs.toLocaleString()} ms (${(durMs / 1000).toFixed(3)}s)`;
+
+            document.getElementById('activeAyahSelect').value = seg.ayahId;
+            onActiveAyahChange(seg.ayahId, false);
+
+            document.getElementById('segTypeSelect').value = seg.segmentType;
+            document.getElementById('segWajhSelect').value = seg.wajhId || '';
+            document.getElementById('segNotes').value = seg.notes || '';
+
+            // Badge d'état
+            const badge = document.getElementById('activeSegmentBadge');
+            const statusMap = {
+                1: { text: 'مسودة (Draft)', cls: 'bg-secondary' },
+                2: { text: 'قيد المراجعة', cls: 'bg-info text-dark' },
+                3: { text: 'معتمد (Approved)', cls: 'bg-primary' },
+                4: { text: 'جارٍ التوليد...', cls: 'bg-warning text-dark' },
+                5: { text: 'مقتطع (Rendered)', cls: 'bg-warning text-dark' },
+                6: { text: 'منشور رسمياً (Published)', cls: 'bg-success' },
+                7: { text: 'مرفوض', cls: 'bg-danger' }
+            };
+            const sInfo = statusMap[seg.status] || { text: 'مسودة', cls: 'bg-secondary' };
+            badge.className = `badge ${sInfo.cls}`;
+            badge.textContent = sInfo.text;
+
+            // Sélection des mots
+            selectWordSpan(seg.startWordIndex, seg.endWordIndex);
+        }
+
+        // 3. Rendu de l'UI (listes déroulantes, tableau)
+        function renderUI() {
+            // Source Audio Info
+            document.getElementById('infoFileName').textContent = editorContext.sourceAudio.storageKey;
+            document.getElementById('infoDuration').textContent = formatTime(editorContext.sourceAudio.durationMs);
+            document.getElementById('infoSize').textContent = (editorContext.sourceAudio.sizeBytes / (1024 * 1024)).toFixed(2) + ' Mo';
+            const statusBadge = document.getElementById('infoStatus');
+            statusBadge.textContent = editorContext.sourceAudio.status === 2 ? 'مُحمّل جاهز' : 'متاح';
+            statusBadge.className = editorContext.sourceAudio.status === 2 ? 'badge bg-success' : 'badge bg-secondary';
+
+            // Sélecteur d'Ayah
+            const ayahSelect = document.getElementById('activeAyahSelect');
+            ayahSelect.innerHTML = '';
+            editorContext.ayahs.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = `آية ${a.ayahNumber}`;
+                ayahSelect.appendChild(opt);
+            });
+
+            // Sélecteur d'Awjuh
+            const wajhSelect = document.getElementById('segWajhSelect');
+            wajhSelect.innerHTML = '<option value="">— افتراضي / أصل —</option>';
+            editorContext.awjuh.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w.id;
+                opt.textContent = `${w.nameArabic} (${w.code})`;
+                wajhSelect.appendChild(opt);
+            });
+
+            if (editorContext.ayahs.length > 0) {
+                onActiveAyahChange(editorContext.ayahs[0].id, false);
+            }
+
+            renderSegmentsTable(editorContext.segments);
+        }
+
+        function onActiveAyahChange(ayahId, resetWords = true) {
+            const ayah = editorContext.ayahs.find(a => a.id == ayahId);
+            if (!ayah) return;
+
+            document.getElementById('currentAyahFullText').textContent = ayah.textWarsh;
+
+            // Rendu des badges de mots
+            const wordsCont = document.getElementById('wordsContainer');
+            wordsCont.innerHTML = '';
+
+            ayah.words.forEach(w => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm btn-outline-secondary word-token';
+                btn.dataset.wordIndex = w.wordIndex;
+                btn.textContent = w.textWarsh;
+                btn.onclick = () => onWordTokenClick(w.wordIndex);
+                wordsCont.appendChild(btn);
+            });
+
+            if (resetWords) {
+                selectFullAyahWords();
+            }
+
+            // Mettre à jour le lien vers la page du Mushaf
+            let targetPage = 1;
+            if (editorContext.surahNumber === 1) targetPage = 1;
+            else if (editorContext.surahNumber === 2 && ayah.ayahNumber <= 5) targetPage = 2;
+            else targetPage = Math.max(1, Math.min(604, Math.floor(ayah.numberInQuran / 15) + 1));
+
+            const pageLabel = document.getElementById('ayahMushafPageLabel');
+            if (pageLabel) pageLabel.textContent = `صفحة المصحف الشريف: ${targetPage}`;
+            const btnEditor = document.getElementById('btnOpenMushafRegionEditor');
+            if (btnEditor) btnEditor.href = `/Admin/MushafRegionEditor/${targetPage}?selectedAyahId=${ayah.id}`;
+        }
+
+        let selectedStartWord = null;
+        let selectedEndWord = null;
+
+        function onWordTokenClick(wordIndex) {
+            if (selectedStartWord === null || (selectedStartWord !== null && selectedEndWord !== null)) {
+                selectedStartWord = wordIndex;
+                selectedEndWord = null;
+            } else {
+                if (wordIndex < selectedStartWord) {
+                    selectedEndWord = selectedStartWord;
+                    selectedStartWord = wordIndex;
+                } else {
+                    selectedEndWord = wordIndex;
+                }
+            }
+            updateWordsHighlight();
+        }
+
+        function selectFullAyahWords() {
+            const activeAyahId = document.getElementById('activeAyahSelect').value;
+            const ayah = editorContext.ayahs.find(a => a.id == activeAyahId);
+            if (!ayah || !ayah.words.length) return;
+
+            selectedStartWord = 1;
+            selectedEndWord = ayah.words.length;
+            updateWordsHighlight();
+            document.getElementById('segTypeSelect').value = "1"; // FullAyah
+        }
+
+        function selectWordSpan(startIdx, endIdx) {
+            selectedStartWord = startIdx;
+            selectedEndWord = endIdx;
+            updateWordsHighlight();
+        }
+
+        function updateWordsHighlight() {
+            const activeAyahId = document.getElementById('activeAyahSelect').value;
+            const ayah = editorContext.ayahs.find(a => a.id == activeAyahId);
+            if (!ayah) return;
+
+            const tokens = document.querySelectorAll('.word-token');
+            tokens.forEach(tok => {
+                const idx = parseInt(tok.dataset.wordIndex);
+                if (selectedStartWord !== null && selectedEndWord !== null) {
+                    if (idx >= selectedStartWord && idx <= selectedEndWord) {
+                        tok.className = 'btn btn-sm btn-success word-token fw-bold shadow-sm';
+                    } else {
+                        tok.className = 'btn btn-sm btn-outline-secondary word-token opacity-50';
+                    }
+                } else if (selectedStartWord !== null && idx === selectedStartWord) {
+                    tok.className = 'btn btn-sm btn-warning word-token fw-bold';
+                } else {
+                    tok.className = 'btn btn-sm btn-outline-secondary word-token';
+                }
+            });
+
+            // Labels
+            if (selectedStartWord !== null) {
+                const w1 = ayah.words.find(w => w.wordIndex === selectedStartWord);
+                document.getElementById('startWordLabel').textContent = w1 ? `${w1.textWarsh} (#${selectedStartWord})` : '—';
+            } else {
+                document.getElementById('startWordLabel').textContent = '—';
+            }
+
+            if (selectedEndWord !== null) {
+                const w2 = ayah.words.find(w => w.wordIndex === selectedEndWord);
+                document.getElementById('endWordLabel').textContent = w2 ? `${w2.textWarsh} (#${selectedEndWord})` : '—';
+            } else {
+                document.getElementById('endWordLabel').textContent = '—';
+            }
+
+            const cov = document.getElementById('wordCoverageSummary');
+            if (selectedStartWord === 1 && selectedEndWord === ayah.words.length) {
+                cov.className = 'badge bg-success-subtle text-success-emphasis';
+                cov.textContent = 'آية كاملة';
+            } else if (selectedStartWord !== null && selectedEndWord !== null) {
+                cov.className = 'badge bg-primary-subtle text-primary-emphasis';
+                cov.textContent = `مقطع جزئي (${selectedEndWord - selectedStartWord + 1} كلمات)`;
+                document.getElementById('segTypeSelect').value = "2"; // PartialAyah
+            } else {
+                cov.className = 'badge bg-secondary-subtle text-secondary-emphasis';
+                cov.textContent = 'تحديد جزئي';
+            }
+        }
+
+        // 4. Tableau des Segments
+        function renderSegmentsTable(segments) {
+            const tbody = document.getElementById('segmentsTableBody');
+            document.getElementById('segmentsCount').textContent = segments.length;
+
+            if (segments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="py-4 text-muted">لا توجد مقاطع مسجلة لهذه السورة بعد. يمكنك البدء بإنشاء أول مقطع!</td></tr>`;
+                return;
+            }
+
+            const typeMap = {
+                1: { text: 'آية كاملة', cls: 'badge bg-success' },
+                2: { text: 'جزئي', cls: 'badge bg-primary' },
+                3: { text: 'تكرار وجه', cls: 'badge bg-warning text-dark' },
+                4: { text: 'وصل/استئناف', cls: 'badge bg-purple text-white', style: 'background-color:#8b5cf6;' },
+                5: { text: 'أخرى', cls: 'badge bg-secondary' }
+            };
+
+            const statusMap = {
+                1: '<span class="badge bg-secondary">مسودة</span>',
+                2: '<span class="badge bg-info text-dark">مراجعة</span>',
+                3: '<span class="badge bg-primary">معتمد</span>',
+                4: '<span class="badge bg-warning text-dark">جارٍ التوليد</span>',
+                5: '<span class="badge bg-warning text-dark">مقتطع MP3</span>',
+                6: '<span class="badge bg-success">منشور</span>',
+                7: '<span class="badge bg-danger">مرفوض</span>'
+            };
+
+            tbody.innerHTML = segments.map(s => {
+                const typeInfo = typeMap[s.segmentType] || typeMap[1];
+                const dur = s.endMs - s.startMs;
+                const wordsCovered = (s.startWordIndex && s.endWordIndex) ? `${s.startWordIndex} → ${s.endWordIndex}` : 'الكل';
+                const audioLink = s.publishedUrl ? `<a href="${s.publishedUrl}" target="_blank" class="btn btn-xs btn-outline-success">🎵 استماع</a>` : '<span class="text-muted">—</span>';
+
+                return `
+                    <tr id="row-seg-${s.id}" onclick="jumpToSegment('${s.id}')" style="cursor: pointer;">
+                        <td class="fw-bold">آية ${s.ayahNumber}</td>
+                        <td><span class="${typeInfo.cls}" style="${typeInfo.style || ''}">${typeInfo.text}</span></td>
+                        <td><span class="badge bg-light text-dark border">${s.wajhNameArabic || 'الأصل'}</span></td>
+                        <td>${wordsCovered}</td>
+                        <td class="font-monospace">${s.startMs.toLocaleString()}</td>
+                        <td class="font-monospace">${s.endMs.toLocaleString()}</td>
+                        <td class="font-monospace fw-bold text-success">${(dur / 1000).toFixed(2)}s</td>
+                        <td>${statusMap[s.status] || s.status}</td>
+                        <td class="text-muted small">${s.notes || ''}</td>
+                        <td>${audioLink}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" onclick="event.stopPropagation()">
+                                <button class="btn btn-outline-primary" onclick="jumpToSegment('${s.id}')" title="تحديد في الموجة">🎯</button>
+                                <button class="btn btn-outline-warning" onclick="renderSegmentById('${s.id}')" title="توليد MP3">⚙️</button>
+                                <button class="btn btn-outline-success" onclick="publishSegmentById('${s.id}')" title="نشر">🚀</button>
+                                <button class="btn btn-outline-danger" onclick="deleteSegmentById('${s.id}')" title="حذف">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function highlightTableRow(segmentId) {
+            document.querySelectorAll('#segmentsTableBody tr').forEach(r => r.classList.remove('table-active'));
+            const row = document.getElementById(`row-seg-${segmentId}`);
+            if (row) row.classList.add('table-active');
+        }
+
+        function jumpToSegment(segmentId) {
+            const reg = regionsPlugin.getRegions().find(r => r.id === segmentId);
+            if (reg) {
+                selectRegion(reg);
+                wavesurfer.seekTo(reg.start / wavesurfer.getDuration());
+            }
+        }
+
+        // 5. Actions sur les segments (Création, Sauvegarde, Rendu, Publication)
+        function createNewRegionAtCursor() {
+            const curTime = wavesurfer.getCurrentTime();
+            const start = curTime;
+            const end = Math.min(curTime + 4.0, wavesurfer.getDuration());
+
+            const newReg = regionsPlugin.addRegion({
+                start: start,
+                end: end,
+                color: SEGMENT_COLORS[1],
+                drag: true,
+                resize: true,
+                content: 'مقطع جديد'
+            });
+
+            selectRegion(newReg);
+            selectFullAyahWords();
+        }
+
+        async function saveActiveSegment() {
+            if (!activeRegion) {
+                alert('الرجاء تحديد أو إنشاء مقطع أولاً.');
+                return;
+            }
+
+            const startMs = parseInt(document.getElementById('segStartMs').value);
+            const endMs = parseInt(document.getElementById('segEndMs').value);
+            const ayahId = parseInt(document.getElementById('activeAyahSelect').value);
+            const wajhVal = document.getElementById('segWajhSelect').value;
+            const wajhId = wajhVal ? parseInt(wajhVal) : null;
+            const segType = parseInt(document.getElementById('segTypeSelect').value);
+            const notes = document.getElementById('segNotes').value;
+
+            if (isNaN(startMs) || isNaN(endMs) || endMs <= startMs) {
+                alert('توقيت البداية والنهاية غير صالح.');
+                return;
+            }
+
+            const btnSave = document.getElementById('btnSaveSegment');
+            btnSave.disabled = true;
+            btnSave.textContent = 'جارٍ الحفظ...';
+
+            try {
+                if (activeSegmentData && activeSegmentData.id) {
+                    // Mise à jour (PUT)
+                    const payload = {
+                        ayahId: ayahId,
+                        wajhId: wajhId,
+                        startMs: startMs,
+                        endMs: endMs,
+                        startWordIndex: selectedStartWord,
+                        endWordIndex: selectedEndWord,
+                        segmentType: segType,
+                        notes: notes,
+                        rowVersionBase64: activeSegmentData.rowVersionBase64
+                    };
+
+                    const res = await fetch(`/api/admin/audio-editor/segments/${activeSegmentData.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.message || 'Erreur lors de la mise à jour');
+                    }
+
+                    const updated = await res.json();
+                    activeRegion.segmentData = updated;
+                    activeSegmentData = updated;
+                    activeRegion.setOptions({
+                        color: SEGMENT_COLORS[updated.segmentType] || SEGMENT_COLORS[1],
+                        content: `آية ${updated.ayahNumber}`
+                    });
+                    applyRegionStyle(activeRegion);
+
+                    // Mettre à jour dans la liste locale
+                    const idx = editorContext.segments.findIndex(s => s.id === updated.id);
+                    if (idx !== -1) editorContext.segments[idx] = updated;
+                    renderSegmentsTable(editorContext.segments);
+                    populateFormWithSegment(updated);
+                } else {
+                    // Création (POST)
+                    const payload = {
+                        sourceAudioId: editorContext.sourceAudio.id,
+                        ayahId: ayahId,
+                        wajhId: wajhId,
+                        startMs: startMs,
+                        endMs: endMs,
+                        startWordIndex: selectedStartWord,
+                        endWordIndex: selectedEndWord,
+                        segmentType: segType,
+                        notes: notes
+                    };
+
+                    const res = await fetch(`/api/admin/audio-editor/segments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.message || 'Erreur lors de la création');
+                    }
+
+                    const created = await res.json();
+                    activeRegion.id = created.id;
+                    activeRegion.segmentData = created;
+                    activeSegmentData = created;
+                    activeRegion.setOptions({
+                        color: SEGMENT_COLORS[created.segmentType] || SEGMENT_COLORS[1],
+                        content: `آية ${created.ayahNumber}`
+                    });
+                    applyRegionStyle(activeRegion);
+
+                    editorContext.segments.push(created);
+                    renderSegmentsTable(editorContext.segments);
+                    populateFormWithSegment(created);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('فشل الحفظ: ' + err.message);
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = '💾 حفظ التعديل (Ctrl+S)';
+            }
+        }
+
+        async function approveActiveSegment() {
+            if (!activeSegmentData) return;
+            try {
+                const res = await fetch(`/api/admin/audio-editor/segments/${activeSegmentData.id}/approve`, { method: 'POST' });
+                if (!res.ok) throw new Error(await res.text());
+                const updated = await res.json();
+                populateFormWithSegment(updated);
+                const idx = editorContext.segments.findIndex(s => s.id === updated.id);
+                if (idx !== -1) editorContext.segments[idx] = updated;
+                renderSegmentsTable(editorContext.segments);
+            } catch (e) {
+                alert('فشل الاعتماد: ' + e.message);
+            }
+        }
+
+        async function renderActiveSegment() {
+            if (!activeSegmentData) return;
+            await renderSegmentById(activeSegmentData.id);
+        }
+
+        async function renderSegmentById(id) {
+            try {
+                const btn = document.getElementById('btnRenderSegment');
+                if (btn) btn.textContent = '⚙️ جارٍ التوليد...';
+                const res = await fetch(`/api/admin/audio-editor/segments/${id}/render`, { method: 'POST' });
+                if (!res.ok) throw new Error(await res.text());
+                const updated = await res.json();
+                if (activeSegmentData && activeSegmentData.id === id) {
+                    populateFormWithSegment(updated);
+                }
+                const idx = editorContext.segments.findIndex(s => s.id === updated.id);
+                if (idx !== -1) editorContext.segments[idx] = updated;
+                renderSegmentsTable(editorContext.segments);
+                alert('تم توليد ملف MP3 بنجاح!');
+            } catch (e) {
+                alert('فشل التوليد: ' + e.message);
+            } finally {
+                const btn = document.getElementById('btnRenderSegment');
+                if (btn) btn.textContent = '⚙️ توليد MP3';
+            }
+        }
+
+        async function publishActiveSegment() {
+            if (!activeSegmentData) return;
+            await publishSegmentById(activeSegmentData.id);
+        }
+
+        async function publishSegmentById(id) {
+            if (!confirm('هل أنت متأكد من رغبتك في نشر هذا المقطع كتلاوة معتمدة في المصحف؟')) return;
+            try {
+                const res = await fetch(`/api/admin/audio-editor/segments/${id}/publish`, { method: 'POST' });
+                if (!res.ok) throw new Error(await res.text());
+                const updated = await res.json();
+                if (activeSegmentData && activeSegmentData.id === id) {
+                    populateFormWithSegment(updated);
+                }
+                const idx = editorContext.segments.findIndex(s => s.id === updated.id);
+                if (idx !== -1) editorContext.segments[idx] = updated;
+                renderSegmentsTable(editorContext.segments);
+                alert('تم نشر المقطع بنجاح!');
+            } catch (e) {
+                alert('فشل النشر: ' + e.message);
+            }
+        }
+
+        async function deleteActiveSegment() {
+            if (!activeRegion) return;
+            if (activeSegmentData) {
+                await deleteSegmentById(activeSegmentData.id);
+            } else {
+                activeRegion.remove();
+                activeRegion = null;
+            }
+        }
+
+        async function deleteSegmentById(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا المقطع؟')) return;
+            try {
+                const res = await fetch(`/api/admin/audio-editor/segments/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(await res.text());
+
+                const reg = regionsPlugin.getRegions().find(r => r.id === id);
+                if (reg) reg.remove();
+
+                editorContext.segments = editorContext.segments.filter(s => s.id !== id);
+                renderSegmentsTable(editorContext.segments);
+                activeSegmentData = null;
+                activeRegion = null;
+            } catch (e) {
+                alert('فشل الحذف: ' + e.message);
+            }
+        }
+
+        // 6. Micro-ajustements et contrôles audio
+        function adjustStart(deltaMs) {
+            const el = document.getElementById('segStartMs');
+            let val = parseInt(el.value) + deltaMs;
+            if (val < 0) val = 0;
+            el.value = val;
+            onManualTimeChange();
+        }
+
+        function adjustEnd(deltaMs) {
+            const el = document.getElementById('segEndMs');
+            let val = parseInt(el.value) + deltaMs;
+            el.value = val;
+            onManualTimeChange();
+        }
+
+        function onManualTimeChange() {
+            const startMs = parseInt(document.getElementById('segStartMs').value);
+            const endMs = parseInt(document.getElementById('segEndMs').value);
+            if (isNaN(startMs) || isNaN(endMs)) return;
+
+            document.getElementById('segStartFormatted').textContent = formatTime(startMs);
+            document.getElementById('segEndFormatted').textContent = formatTime(endMs);
+            const durMs = endMs - startMs;
+            document.getElementById('segDurationDisplay').textContent = `${durMs.toLocaleString()} ms (${(durMs / 1000).toFixed(3)}s)`;
+
+            if (activeRegion) {
+                activeRegion.setOptions({
+                    start: startMs / 1000,
+                    end: endMs / 1000
+                });
+            }
+        }
+
+        function togglePlayPause() {
+            if (!wavesurfer) return;
+            wavesurfer.playPause();
+        }
+
+        function stopAudio() {
+            if (!wavesurfer) return;
+            wavesurfer.stop();
+        }
+
+        function toggleLoopRegion() {
+            isLooping = !isLooping;
+            document.getElementById('loopStatus').textContent = isLooping ? 'مفعّل' : 'معطل';
+            document.getElementById('btnLoopRegion').className = isLooping ? 'btn btn-primary btn-sm' : 'btn btn-outline-primary btn-sm';
+            if (isLooping && activeRegion) {
+                wavesurfer.seekTo(activeRegion.start / wavesurfer.getDuration());
+                wavesurfer.play();
+            }
+        }
+
+        function playActiveSegment() {
+            if (!wavesurfer) return;
+            const startMs = parseInt(document.getElementById('segStartMs').value);
+            const endMs = parseInt(document.getElementById('segEndMs').value);
+            if (isNaN(startMs) || isNaN(endMs)) return;
+
+            wavesurfer.seekTo(startMs / (wavesurfer.getDuration() * 1000));
+            wavesurfer.play();
+
+            const checkStop = (time) => {
+                if (time >= endMs / 1000) {
+                    wavesurfer.pause();
+                    wavesurfer.un('timeupdate', checkStop);
+                }
+            };
+            wavesurfer.on('timeupdate', checkStop);
+        }
+
+        function jumpTime(deltaMs) {
+            if (!wavesurfer) return;
+            const cur = wavesurfer.getCurrentTime();
+            const target = Math.max(0, Math.min(wavesurfer.getDuration(), cur + (deltaMs / 1000)));
+            wavesurfer.seekTo(target / wavesurfer.getDuration());
+        }
+
+        function onZoomChange(val) {
+            if (!wavesurfer) return;
+            wavesurfer.zoom(parseInt(val));
+        }
+
+        function onSurahChange(num) {
+            window.location.href = `/Admin/AudioEditor/${num}`;
+        }
+
+        function reloadContext() {
+            loadEditorContext(currentSurahNumber);
+        }
+
+        function filterSegmentsTable(query) {
+            if (!editorContext || !editorContext.segments) return;
+            const q = query.trim().toLowerCase();
+            const filtered = editorContext.segments.filter(s => {
+                return s.ayahNumber.toString().includes(q) ||
+                       (s.wajhNameArabic && s.wajhNameArabic.toLowerCase().includes(q)) ||
+                       (s.notes && s.notes.toLowerCase().includes(q));
+            });
+            renderSegmentsTable(filtered);
+        }
+
+        // 7. Raccourcis clavier
+        function initShortcuts() {
+            window.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                    if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        saveActiveSegment();
+                    }
+                    return;
+                }
+
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    togglePlayPause();
+                } else if (e.key.toLowerCase() === 'l') {
+                    e.preventDefault();
+                    toggleLoopRegion();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    jumpTime(e.shiftKey ? -2000 : -500);
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    jumpTime(e.shiftKey ? 2000 : 500);
+                } else if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    saveActiveSegment();
+                }
+            });
+        }
+
+        // Utilitaire format mm:ss.mmm
+        function formatTime(ms) {
+            if (isNaN(ms) || ms < 0) return '00:00.000';
+            const totalSec = ms / 1000;
+            const min = Math.floor(totalSec / 60);
+            const sec = Math.floor(totalSec % 60);
+            const millis = Math.floor(ms % 1000);
+            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
+        }
+    </script>
+}

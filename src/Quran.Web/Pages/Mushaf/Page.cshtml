@@ -1,0 +1,96 @@
+@page "{pageNumber:int?}"
+@model Quran.Web.Pages.Mushaf.PageModelCustom
+@{
+    ViewData["Title"] = $"مصحف ورش — صفحة {Model.PageNumber}";
+}
+<link rel="stylesheet" href="~/css/warsh-pilot.css" asp-append-version="true" />
+<section id="warsh-pilot" data-initial-reference="@Model.Reference" data-preview-passage="@Model.PreviewPassage">
+    <header class="pilot-heading">
+        <div><h1>مصحف الجزائر الإلكتروني — ورش</h1><p>نسخة MARW الجديدة — 604 صفحات</p></div>
+        <nav aria-label="صفحات المصحف" class="pilot-pages">
+            @foreach (var number in Model.NavigationPages)
+            {
+                <a asp-page="/Mushaf/Page" asp-route-pageNumber="@number"
+                   aria-current="@(number == Model.PageNumber ? "page" : null)">صفحة @number</a>
+            }
+        </nav>
+    </header>
+    <div class="d-flex flex-wrap gap-3 my-3">
+        <form method="get" action="/mushaf/page" class="d-flex gap-2 align-items-center">
+            <label for="page-jump">الصفحة</label>
+            <input id="page-jump" name="PageNumber" type="number" min="1" max="604" value="@Model.PageNumber" class="form-control" style="width:90px" required />
+            <button class="btn btn-outline-success">انتقال</button>
+        </form>
+        <form method="get" action="/mushaf/page" class="d-flex gap-2 align-items-center">
+            <label for="surah-jump">السورة</label>
+            <select id="surah-jump" name="SurahNumber" class="form-select">
+                @foreach (var surah in Model.SurahStartPages.Keys.Order())
+                {
+                    <option value="@surah" selected="@(surah == Model.MushafPage.Regions[0].SurahNumber)">@surah — @Model.GetSurahName(surah)</option>
+                }
+            </select>
+            <button class="btn btn-outline-success">انتقال</button>
+        </form>
+    </div>
+    @if (Model.HighlightAyahId.HasValue)
+    {
+        <p class="alert alert-warning">الرابط السابق مرتبط بترقيم النسخة القديمة. يرجى اختيار الآية من الصفحة.</p>
+    }
+    <p class="pilot-note">اختر آية من الصفحة أو من الأزرار. ربط التسجيلات بالآيات قيد المراجعة.</p>
+    <div class="pilot-grid">
+        <div class="pilot-scroll" aria-label="صفحة المصحف">
+            <div class="pilot-sheet" id="pilot-sheet">
+                <img id="pilot-image" src="@Model.ImageUrl" width="@Model.MushafPage.Width" height="@Model.MushafPage.Height"
+                     alt="مصحف ورش — الصفحة @Model.PageNumber" />
+                <svg class="pilot-regions" viewBox="@Model.MushafPage.ViewBox" aria-hidden="true">
+                    @foreach (var region in Model.MushafPage.Regions)
+                    {
+                        <path d="@region.PathData" data-reference="@region.Reference"><title>سورة @region.SurahNumber — آية @region.AyahNumber</title></path>
+                    }
+                </svg>
+            </div>
+        </div>
+        <aside class="pilot-controls">
+            <h2>الاستماع إلى الآية حسب الوجه</h2>
+            @if(Model.PreviewPassage.HasValue){<p class="alert alert-warning">معاينة مسودة — الربط غير معتمد للنشر.</p>}
+            <select id="playback-wajh" class="form-select" aria-label="اختيار الوجه"><option value="">جميع الأوجه المتاحة</option></select>
+            <div id="playback-passages" class="my-2"></div>
+            <audio id="passage-player" controls preload="none"></audio>
+            <p id="playback-message" role="status">اختر آية لعرض المقاطع المتاحة.</p>
+            <h2>آيات الصفحة</h2>
+            <div class="pilot-ayahs" role="group" aria-label="اختيار الآية">
+                @foreach (var region in Model.MushafPage.Regions)
+                {
+                    <button type="button" data-reference="@region.Reference" aria-pressed="false"
+                            aria-label="سورة @region.SurahNumber آية @region.AyahNumber">@region.Reference</button>
+                }
+            </div>
+            <p id="pilot-selection" role="status" aria-live="polite">لم تُحدَّد آية بعد</p>
+            <label for="pilot-zoom">تكبير الصفحة</label>
+            <input id="pilot-zoom" type="range" min="100" max="200" step="25" value="100" />
+            <button type="button" id="pilot-clear" class="btn btn-outline-secondary">إلغاء التحديد</button>
+            <hr />
+            <h2>تسجيل السورة الأصلي</h2>
+            @if (Model.SourceAudios.Count > 0)
+            {
+                @foreach (var source in Model.SourceAudios)
+                {
+                    <p>سورة @Model.GetSurahName(source.Surah)</p>
+                    <audio controls preload="none" src="@source.Url" aria-label="تسجيل السورة @source.Surah"></audio>
+                }
+                <p class="small text-muted">تسجيل السورة كاملاً، غير متزامن مع الآية المحددة.</p>
+            }
+            else
+            {
+                <p>تسجيل السورة غير متاح محلياً.</p>
+            }
+            <p class="small">اختيار الوجه والاستماع إلى الآية سيتاحان بعد مراجعة الربط بالتسجيلات.</p>
+        </aside>
+    </div>
+    <p id="pilot-image-error" class="alert alert-danger" hidden>تعذّر تحميل الصورة. أعد تحميل الصفحة.</p>
+    <p class="pilot-credit">الصور وخريطة الآيات: <a href="https://mushaf.marw.dz/web/ar/mushaf/newMushaf/1">مصحف الجزائر الإلكتروني — MARW / newMushaf</a>. هذه النسخة قيد المراجعة.</p>
+</section>
+@section Scripts {
+    <script src="~/js/warsh-pilot.js" asp-append-version="true" defer></script>
+    <script src="~/js/mushaf-playback.js" asp-append-version="true" defer></script>
+}

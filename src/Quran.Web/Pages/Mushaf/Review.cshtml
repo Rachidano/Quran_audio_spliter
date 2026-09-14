@@ -1,0 +1,38 @@
+@page
+@model Quran.Web.Pages.Mushaf.ReviewModel
+@{ ViewData["Title"] = "Revue des 114 débuts de sourate"; }
+<link rel="stylesheet" href="~/css/marw-review.css" asp-append-version="true" />
+<section id="marw-review" dir="ltr" data-revision="@Model.Revision">
+    <h1>Revue des 114 débuts de sourate</h1>
+    <p>Comparer le premier verset avec le surlignage : texte complet, marqueur de fin, exclusion du titre et de la basmala. Ouvrir la page pour examiner les transitions et les versets suivants.</p>
+    <p>Revue visuelle assistée réalisée sur les 114 débuts : les en-têtes ont été exclus du surlignage, en conservant les lignes de texte et le marqueur final. <a href="?handler=Report">Consulter le rapport des limites retenues</a>.</p>
+    <p>Les statuts ci-dessous sont ceux de votre propre contre-vérification. Ils ne constituent pas une certification du texte ni une validation de la sourate entière.</p>
+    <div class="review-tools">
+        <label>Rechercher <input id="review-search" type="search" placeholder="Numéro, nom arabe ou page" /></label>
+        <label>Statut <select id="review-filter"><option value="all">Tous</option><option value="pending">À examiner</option><option value="issue">À corriger</option><option value="checked">Conforme</option></select></label>
+        <label><input id="review-overlay" type="checkbox" checked /> Afficher le surlignage</label>
+        <button id="review-export" type="button">Exporter le rapport JSON</button>
+    </div>
+    <p id="review-progress" role="status" aria-live="polite"></p>
+    <p id="review-storage">Les statuts et notes sont conservés dans ce navigateur. Exporter le rapport pour en garder une copie.</p>
+    <div class="review-gallery">
+    @foreach (var item in Model.Openings)
+    {
+        <article class="review-card" data-surah="@item.Surah" data-page="@item.Page.Number" data-fingerprint="@item.Fingerprint" data-search="@item.Surah @item.Name page @item.Page.Number">
+            <h2>@item.Surah — <span lang="ar" dir="rtl">@item.Name</span></h2>
+            <p>Page @item.Page.Number · Référence @item.Region.Reference</p>
+            <p>Revue assistée : texte à partir de la ligne @Model.FirstTextLine(item.Surah) de la zone MARW, en-tête exclu.</p>
+            <div class="review-image">
+                <img loading="lazy" decoding="async" width="@item.Page.Width" height="@item.Page.Height" src="/api/mushaf/marw-pilot/@Model.Revision/pages/@item.Page.Number/image.png" alt="Page @item.Page.Number, début de la sourate @item.Surah" />
+                <svg viewBox="@item.Page.ViewBox" aria-hidden="true"><path d="@item.Region.PathData" /></svg>
+            </div>
+            <p><a href="/mushaf/page/@item.Page.Number?Reference=@item.Region.Reference" target="_blank" rel="noopener">Examiner en grand dans le lecteur</a> · <a href="https://mushaf.marw.dz/web/ar/mushaf/newMushaf/@item.Page.Number?surah=@item.Surah&ayah=1&menu=masahif" target="_blank" rel="noopener">Source MARW</a></p>
+            <label for="status-@item.Surah">Votre contre-vérification</label>
+            <select id="status-@item.Surah" class="review-status"><option value="pending">À examiner</option><option value="issue">À corriger</option><option value="checked">Conforme</option></select>
+            <label for="note-@item.Surah">Observation</label>
+            <textarea id="note-@item.Surah" rows="2" maxlength="4000" placeholder="Zone manquante, titre surligné, etc."></textarea>
+        </article>
+    }
+    </div>
+</section>
+@section Scripts { <script src="~/js/marw-review.js" asp-append-version="true" defer></script> }

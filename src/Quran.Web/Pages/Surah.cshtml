@@ -1,0 +1,156 @@
+@page "{number:int?}"
+@model SurahModel
+@{
+    ViewData["Title"] = $"سورة {Model.Surah?.NameArabic ?? ""}";
+}
+
+@if (Model.Surah != null)
+{
+    <!-- En-tête de la Sourate -->
+    <div class="card p-4 mb-4 text-center rounded-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #0d5c46, #07382a); color: #ffffff;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            @if (Model.Surah.Number > 1)
+            {
+                <a asp-page="/Surah" asp-route-number="@(Model.Surah.Number - 1)" class="btn btn-outline-light btn-sm">← السورة السابقة</a>
+            }
+            else
+            {
+                <div></div>
+            }
+
+            <span class="badge bg-warning text-dark px-3 py-2 fw-bold">سورة رقم @Model.Surah.Number</span>
+
+            @if (Model.Surah.Number < 114)
+            {
+                <a asp-page="/Surah" asp-route-number="@(Model.Surah.Number + 1)" class="btn btn-outline-light btn-sm">السورة التالية →</a>
+            }
+            else
+            {
+                <div></div>
+            }
+        </div>
+
+        <h1 class="display-4 fw-bold mb-2">سورة @Model.Surah.NameArabic</h1>
+        <p class="fs-5 text-light mb-1">@Model.Surah.NameLatin — @Model.Surah.NameTranslation</p>
+        <p class="small text-warning mb-0">
+            عدد الآيات : @Model.Surah.AyahCount | النوع : @(Model.Surah.RevelationType == "Meccan" ? "مكية" : "مدنية") | ترتيب النزول : @Model.Surah.RevelationOrder
+        </p>
+    </div>
+
+    var openingAyah = Model.Ayahs.FirstOrDefault(a => a.AyahNumber == 0);
+    var regularAyahs = Model.Ayahs.Where(a => a.AyahNumber > 0).OrderBy(a => a.AyahNumber).ToList();
+
+    @if (openingAyah != null)
+    {
+        <!-- Bloc d'ouverture : الاستعاذة والبسملة -->
+        <div class="card p-3 p-md-4 mb-4 rounded-4 border-0 shadow-sm text-center" style="background: #f8faf9; border-top: 4px solid #0d5c46 !important;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-success px-3 py-1">الاستعاذة والبسملة</span>
+                <span class="text-muted small">مقدمة التلاوة برواية ورش</span>
+            </div>
+
+            <h3 class="quran-text text-success my-3">@openingAyah.TextWarsh</h3>
+
+            @if (openingAyah.Recitations.Count > 0)
+            {
+                <div class="row g-2 justify-content-center mt-2">
+                    @foreach (var rec in openingAyah.Recitations)
+                    {
+                        <div class="col-12 col-md-6">
+                            <div class="p-2 border rounded-3 bg-white text-start">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold small text-success">@(rec.WajhNameArabic ?? rec.WajhCode)</span>
+                                    <a href="@rec.AudioUrl" download class="btn btn-outline-success btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">⬇ تحميل</a>
+                                </div>
+                                <audio controls class="w-100" style="height: 36px;" preload="none">
+                                    <source src="@rec.AudioUrl" type="audio/mpeg">
+                                </audio>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else if (Model.Surah.Number != 1 && Model.Surah.Number != 9)
+    {
+        <div class="text-center my-4">
+            <h3 class="quran-text text-success">بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ</h3>
+        </div>
+    }
+
+    <!-- Liste des Ayat -->
+    @if (regularAyahs.Count == 0)
+    {
+        <div class="alert alert-info text-center py-4">
+            <h5>آيات هذه السورة قيد الإدراج والربط الصوتي.</h5>
+            <p class="mb-0">سورة الفاتحة متاحة حالياً بالنص الكامل ورواية ورش.</p>
+        </div>
+    }
+    else
+    {
+        <div class="ayahs-container">
+            @foreach (var ayah in regularAyahs)
+            {
+                <div class="ayah-card" id="ayah-@ayah.AyahNumber">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="ayah-number-badge">@ayah.AyahNumber</span>
+                            <span class="text-muted small">الآية @ayah.AyahNumber من سورة @Model.Surah.NameArabic</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="/Mushaf/Page/@(ayah.PageNumber ?? (Model.Surah.Number == 1 ? 1 : 2))?highlightAyahId=@ayah.Id" class="btn btn-sm btn-outline-success">
+                                📖 في المصحف
+                            </a>
+                            <a asp-page="/Ayah" asp-route-surah="@Model.Surah.Number" asp-route-ayah="@ayah.AyahNumber" class="btn btn-sm btn-outline-secondary">
+                                رابط دائم 🔗
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Texte coranique Warsh -->
+                    <p class="quran-text mb-4 text-center">
+                        @ayah.TextWarsh
+                    </p>
+
+                    <!-- Section Audio & Awjuh -->
+                    @if (ayah.Recitations.Count > 0)
+                    {
+                        <div class="bg-light p-3 rounded-3 border">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                <div>
+                                    <strong class="text-success">القارئ :</strong> @ayah.Recitations.First().ReciterNameArabic
+                                    <span class="mx-2">|</span>
+                                    <strong class="text-success">الرواية :</strong> @ayah.Recitations.First().RiwayaNameArabic
+                                </div>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    @foreach (var rec in ayah.Recitations)
+                                    {
+                                        <span class="wajh-badge">@(rec.WajhNameArabic ?? rec.WajhCode ?? "الوجه الافتراضي")</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Audio Player HTML5 -->
+                            <div class="d-flex align-items-center gap-3 mt-2">
+                                <audio controls class="w-100" style="height: 40px;" preload="none">
+                                    <source src="@ayah.Recitations.First().AudioUrl" type="audio/mpeg">
+                                    متصفحك لا يدعم تشغيل الصوت المباشر.
+                                </audio>
+                                <a href="@ayah.Recitations.First().AudioUrl" download class="btn btn-outline-success btn-sm text-nowrap">
+                                    ⬇ تحميل
+                                </a>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted small text-start">
+                            <span>جاري معالجة وربط التلاوة الصوتية بالوجه المناسب لهذه الآية.</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+}

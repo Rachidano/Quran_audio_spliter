@@ -1,0 +1,156 @@
+[
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 0,
+    "WajhCode": "istiadha",
+    "StartTimeSeconds": 0.56,
+    "DurationSeconds": 6.32
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 0,
+    "WajhCode": "basmala",
+    "StartTimeSeconds": 7.53,
+    "DurationSeconds": 5.96
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 1,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 14.16,
+    "DurationSeconds": 8.39
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 2,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 23.14,
+    "DurationSeconds": 11.47
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 3,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 34.61,
+    "DurationSeconds": 13.68
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 4,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 49.09,
+    "DurationSeconds": 18.59
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 5,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 68.38,
+    "DurationSeconds": 6.86
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 6,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 76.18,
+    "DurationSeconds": 8.12
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 7,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 85.30,
+    "DurationSeconds": 8.06
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 8,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 94.15,
+    "DurationSeconds": 7.92
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 9,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 103.05,
+    "DurationSeconds": 26.58
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 10,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 130.45,
+    "DurationSeconds": 18.77
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 11,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 150.15,
+    "DurationSeconds": 6.21
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 12,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 157.22,
+    "DurationSeconds": 12.62
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 13,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 170.58,
+    "DurationSeconds": 16.38
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 14,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 187.75,
+    "DurationSeconds": 18.83
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 15,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 207.56,
+    "DurationSeconds": 20.88
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 16,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 229.32,
+    "DurationSeconds": 16.90
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 17,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 246.79,
+    "DurationSeconds": 30.93
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 18,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 278.77,
+    "DurationSeconds": 14.76
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 19,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 294.33,
+    "DurationSeconds": 32.00
+  },
+  {
+    "SurahNumber": 2,
+    "AyahNumber": 20,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 327.00,
+    "DurationSeconds": 35.00
+  }
+]

@@ -1,0 +1,65 @@
+[
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 0,
+    "WajhCode": "istiadha",
+    "StartTimeSeconds": 0.65,
+    "DurationSeconds": 5.75
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 0,
+    "WajhCode": "basmala",
+    "StartTimeSeconds": 7.45,
+    "DurationSeconds": 5.60
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 1,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 14.05,
+    "DurationSeconds": 6.10
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 2,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 20.75,
+    "DurationSeconds": 5.45
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 3,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 26.75,
+    "DurationSeconds": 4.25
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 4,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 31.80,
+    "DurationSeconds": 6.35
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 5,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 38.70,
+    "DurationSeconds": 5.70
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 6,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 45.15,
+    "DurationSeconds": 4.60
+  },
+  {
+    "SurahNumber": 1,
+    "AyahNumber": 7,
+    "WajhCode": "w01",
+    "StartTimeSeconds": 50.40,
+    "DurationSeconds": 12.35
+  }
+]
