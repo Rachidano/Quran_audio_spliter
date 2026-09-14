@@ -14,8 +14,8 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 |---|---|---|---|---|
 | **Lot 0** | Sécuriser la reprise et établir la référence | Aucune | ✅ **Terminé** | 14/09/2026 |
 | **Lot 1** | Fermer les accès administratifs et les médias privés | Lot 0 | ✅ **Terminé** | 14/09/2026 |
-| **Lot 2** | Fixer le corpus et les références | Lots 0, 1 | ⏳ **En cours** | |
-| **Lot 3** | Réunifier les occurrences et migrer les brouillons | Lot 2 | ⏳ À venir | |
+| **Lot 2** | Fixer le corpus et les références | Lots 0, 1 | ✅ **Terminé** | 14/09/2026 |
+| **Lot 3** | Réunifier les occurrences et migrer les brouillons | Lot 2 | ⏳ **En cours** | |
 | **Lot 4** | Achever le référentiel administrable | Lots 2, 3 | ⏳ À venir | |
 | **Lot 5** | Livrer l’éditeur unique et simple | Lots 3, 4 | ⏳ À venir | |
 | **Lot 6** | Achever revue, rendu et publication | Lots 3, 4, 5 | ⏳ À venir | |
@@ -49,11 +49,11 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **1.8** Commande CLI d'initialisation de l'administrateur sans credentials codés en dur (`--create-admin <email> <password>`).
 
 ### Lot 2 — Fixer le corpus et les références
-- [ ] **2.1** Introduire le modèle canonique corpus/édition (`QuranCorpus`, `CorpusAyah`, `MushafEdition`, `ReferenceMapping`).
-- [ ] **2.2** Intégrer formellement le paquet MARW `newMushaf` (révision `20260913-full`, 604 pages).
-- [ ] **2.3** Rapprocher les textes et décomptes ; établir le rapport d’écart (notamment Al-Baqarah 2:1 à 2:5).
-- [ ] **2.4** Modéliser et outiller la table de correspondances (`ReferenceMapping`) avec résolutions explicites.
-- [ ] **2.5** Conserver la géométrie MARW et les revues d'ouvertures de sourates sans écrasement.
+- [x] **2.1** Introduire le modèle canonique corpus/édition (`QuranCorpus`, `CorpusAyah`, `MushafEdition`, `ReferenceMapping`).
+- [x] **2.2** Intégrer formellement le paquet MARW `newMushaf` (révision `20260913-full`, 604 pages, 6 214 ayat).
+- [x] **2.3** Rapprocher les textes et décomptes ; établir le rapport d’écart (notamment Al-Baqarah 2:1 à 2:5 : 2:1 et 2:2 fusionnés dans MARW 2:1, décalages 2:3 à 2:5).
+- [x] **2.4** Modéliser et outiller la table de correspondances (`ReferenceMapping`) avec résolutions explicites et interdiction d'alignement 1:1 aveugle (`ICorpusResolutionService`).
+- [x] **2.5** Conserver la géométrie MARW et les revues d'ouvertures de sourates sans écrasement ; interface d'administration `/Admin/CorpusMapping`.
 
 ### Lot 3 — Réunifier les occurrences et migrer les brouillons
 - [ ] **3.1** Étendre `AudioSegment` comme agrégat canonique (révisions, spans de texte, portions graphiques, liens de reprise).

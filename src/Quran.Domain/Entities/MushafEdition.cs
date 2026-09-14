@@ -10,6 +10,9 @@ public class MushafEdition
     public Riwaya? Riwaya { get; set; }
     public string? Publisher { get; set; }
     public string? SourceUrl { get; set; }
+    public string? Revision { get; set; }
+    public int? CorpusId { get; set; }
+    public QuranCorpus? Corpus { get; set; }
     public bool IsActive { get; set; } = true;
 
     public ICollection<MushafPage> Pages { get; set; } = new List<MushafPage>();

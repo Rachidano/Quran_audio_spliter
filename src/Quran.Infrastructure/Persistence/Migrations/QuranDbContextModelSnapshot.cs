@@ -437,6 +437,47 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.ToTable("AyahWords", (string)null);
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.CorpusAyah", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("AyahNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CorpusId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("NumberInQuran")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PageNumberHint")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SearchText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SurahNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TextArabic")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorpusId", "NumberInQuran");
+
+                    b.HasIndex("CorpusId", "SurahNumber", "AyahNumber")
+                        .IsUnique();
+
+                    b.ToTable("CorpusAyahs", (string)null);
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.MushafEdition", b =>
                 {
                     b.Property<int>("Id")
@@ -449,6 +490,9 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("CorpusId")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -466,6 +510,10 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("Revision")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<int>("RiwayaId")
                         .HasColumnType("integer");
 
@@ -477,6 +525,8 @@ namespace Quran.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("CorpusId");
 
                     b.HasIndex("RiwayaId");
 
@@ -594,6 +644,70 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.ToTable("MushafPassages");
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.QuranCorpus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CountingSystem")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("NameLatin")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Provenance")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("QualificationStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("RiwayaCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("TextualRevision")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("TotalAyahs")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("QuranCorpora", (string)null);
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.Recitation", b =>
                 {
                     b.Property<long>("Id")
@@ -676,6 +790,67 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Reciters", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.ReferenceMapping", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Cardinality")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("DifferenceDescription")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ProofNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReviewedByUserId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SourceCorpusId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SourceReference")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("SurahNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TargetCorpusId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TargetReference")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceCorpusId", "SourceReference");
+
+                    b.HasIndex("TargetCorpusId", "TargetReference");
+
+                    b.ToTable("ReferenceMappings", (string)null);
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.Riwaya", b =>
@@ -1186,13 +1361,31 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("Ayah");
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.CorpusAyah", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.QuranCorpus", "Corpus")
+                        .WithMany("Ayahs")
+                        .HasForeignKey("CorpusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Corpus");
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.MushafEdition", b =>
                 {
+                    b.HasOne("Quran.Domain.Entities.QuranCorpus", "Corpus")
+                        .WithMany("Editions")
+                        .HasForeignKey("CorpusId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Quran.Domain.Entities.Riwaya", "Riwaya")
                         .WithMany()
                         .HasForeignKey("RiwayaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Corpus");
 
                     b.Navigation("Riwaya");
                 });
@@ -1265,6 +1458,25 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("Wajh");
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.ReferenceMapping", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.QuranCorpus", "SourceCorpus")
+                        .WithMany()
+                        .HasForeignKey("SourceCorpusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Quran.Domain.Entities.QuranCorpus", "TargetCorpus")
+                        .WithMany()
+                        .HasForeignKey("TargetCorpusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("SourceCorpus");
+
+                    b.Navigation("TargetCorpus");
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.SourceAudio", b =>
                 {
                     b.HasOne("Quran.Domain.Entities.Reciter", "Reciter")
@@ -1334,6 +1546,13 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("AyahImageRegions");
 
                     b.Navigation("SegmentImageRegions");
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.QuranCorpus", b =>
+                {
+                    b.Navigation("Ayahs");
+
+                    b.Navigation("Editions");
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.Recitation", b =>

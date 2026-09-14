@@ -112,10 +112,26 @@ Relevé effectué le 14/09/2026 à 13:00 :
 
 ---
 
-## 6. État des Tests Automatisés
+## 6. Corpus, Références et Décomptes (Lot 2)
+
+- **Entités canoniques introduites :**
+  - `QuranCorpus` : identification rigoureuse du corpus (`warsh-pilot-historical`, `marw-newMushaf`), riwaya, système de décompte, révision, provenance et statut de qualification.
+  - `CorpusAyah` : ayah qualifiée rattachée à un corpus précis avec ordinal, texte original, texte de recherche et numéro de page.
+  - `ReferenceMapping` : table de correspondance entre corpus source et cible, avec cardinalité (`OneToOne`, `ManyToOne`, `OneToMany`, `Ambiguous`), description des écarts, statut de revue et notes d'épreuve/isnad.
+  - `MushafEdition` : rattaché explicitement à un `QuranCorpus` avec code de révision.
+- **Migration EF Core :** `20260914121809_AddCorpusAndReferenceMapping` appliquée sur `quran_db` et `quran_db_test`.
+- **Cas Al-Baqarah 2:1 à 2:5 documenté et prouvé :**
+  - Dans le décompte MARW (Madani), `الٓمٓ` ne forme pas un verset indépendant. Le verset 2:1 MARW englobe `الٓمٓ ذَٰلِكَ ٱلۡكِتَٰبُ لَا رَيۡبَۛ فِيهِۛ هُدٗى لِّلۡمُتَّقِينَ` (fusion ManyToOne de 2:1 et 2:2 historiques).
+  - Par conséquent, 2:3 historique devient 2:2 MARW, 2:4 historique devient 2:3 MARW, et 2:5 historique devient 2:4 MARW (se terminant par `ٱلۡمُفۡلِحُونَ`).
+  - Interdiction formelle dans `ICorpusResolutionService` de tout alignement 1:1 aveugle : toute référence sans mapping documenté retourne `IsMapped = false` avec statut `PendingReview`.
+- **Interface d'administration :** `/Admin/CorpusMapping` pour visualiser, éditer et documenter les correspondances et écarts par sourate.
+
+---
+
+## 7. État des Tests Automatisés
 
 - Commande : `dotnet test`
-- Résultat actuel : **62 tests exécutés, 62 réussis (0 échec, 1 ignoré documenté)**
-  - `Quran.UnitTests` : 49/49 réussis
-  - `Quran.IntegrationTests` : 13/13 réussis sur `quran_db_test`, 1 ancien import déprécié ignoré (`Skip`)
-  - Suite de sécurité `SecurityAccessIntegrationTests` : 12 tests validant le blocage anonyme, le support Range et l'authentification admin.
+- Résultat actuel : **68 tests exécutés, 68 réussis (0 échec, 1 ignoré documenté)**
+  - `Quran.UnitTests` : 54/54 réussis (dont `CorpusResolutionServiceTests` validant la résolution et la détection d'écarts d'Al-Baqarah).
+  - `Quran.IntegrationTests` : 14/14 réussis sur `quran_db_test`, 1 ancien import déprécié ignoré (`Skip`), incluant la protection et l'accès à `/Admin/CorpusMapping`.
+

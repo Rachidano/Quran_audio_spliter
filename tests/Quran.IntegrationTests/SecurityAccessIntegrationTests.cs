@@ -157,5 +157,18 @@ public class SecurityAccessIntegrationTests : IClassFixture<QuranTestWebApplicat
         Assert.Equal(HttpStatusCode.OK, adminRes.StatusCode);
         var adminHtml = await adminRes.Content.ReadAsStringAsync();
         Assert.Contains("لوحة التحكم", adminHtml);
+
+        var mappingRes = await authClient.GetAsync("/Admin/CorpusMapping");
+        Assert.Equal(HttpStatusCode.OK, mappingRes.StatusCode);
+        var mappingHtml = await mappingRes.Content.ReadAsStringAsync();
+        Assert.Contains("مطابقة مراجع المصاحف", mappingHtml);
+    }
+
+    [Fact]
+    public async Task AnonymousUser_AccessingAdminCorpusMapping_IsRedirectedToLogin()
+    {
+        var response = await _client.GetAsync("/Admin/CorpusMapping");
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Account/Login", response.Headers.Location?.ToString());
     }
 }

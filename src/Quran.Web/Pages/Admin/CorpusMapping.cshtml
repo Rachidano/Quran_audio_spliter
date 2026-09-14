@@ -1,0 +1,178 @@
+@page
+@model Quran.Web.Pages.Admin.CorpusMappingModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "مطابقة مراجع المصاحف وفروق العد";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h2 class="fw-bold mb-1">مطابقة مراجع المصاحف وفروق العد (Corpus & Reference Mapping)</h2>
+        <p class="text-muted mb-0">توثيق العلاقات وفروق الترقيم بين العد التاريخي الأولي والمصحف المعتمد (MARW)</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="/Admin/Index" class="btn btn-outline-secondary">
+            لوحة الإدارة الرئيسية
+        </a>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- بطاقات المصاحف المسجلة في النظام -->
+<div class="row g-3 mb-4">
+    @foreach (var corpus in Model.Corpora)
+    {
+        <div class="col-md-6">
+            <div class="card p-3 rounded-3 border-0 shadow-sm" style="background: @(corpus.QualificationStatus == "ActiveCanonical" ? "#f0fdf4" : "#eff6ff");">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="fw-bold mb-0">@corpus.NameArabic</h5>
+                    <span class="badge @(corpus.QualificationStatus == "ActiveCanonical" ? "bg-success" : "bg-primary")">
+                        @(corpus.QualificationStatus == "ActiveCanonical" ? "المصحف المعتمد النشط" : "مرجع مساند")
+                    </span>
+                </div>
+                <div class="small text-muted mb-1"><strong>الرمز:</strong> <code>@corpus.Code</code></div>
+                <div class="small text-muted mb-1"><strong>نظام العد:</strong> @corpus.CountingSystem</div>
+                <div class="small text-muted mb-1"><strong>إجمالي الآيات:</strong> @corpus.TotalAyahs آية</div>
+                <div class="small text-muted"><strong>المصدر:</strong> @corpus.Provenance</div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- شريط اختيار السورة -->
+<div class="card rounded-3 border-0 shadow-sm p-3 mb-4">
+    <form method="get" class="row align-items-center g-2">
+        <div class="col-auto">
+            <label for="SelectedSurah" class="form-label mb-0 fw-bold">اختر السورة لعرض الفروق:</label>
+        </div>
+        <div class="col-auto">
+            <select asp-for="SelectedSurah" class="form-select" onchange="this.form.submit()">
+                <option value="1">1. الفاتحة</option>
+                <option value="2">2. البقرة</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary btn-sm">تحديث العرض</button>
+        </div>
+    </form>
+</div>
+
+<!-- جدول الفروق والمطابقات -->
+<div class="card rounded-4 border-0 shadow-sm p-4">
+    <h4 class="fw-bold mb-3">جدول مطابقة الآيات وفروق العد (سورة @Model.SelectedSurah)</h4>
+
+    @if (Model.Mappings.Count == 0)
+    {
+        <div class="alert alert-info">
+            لا توجد مطابقات موثقة حالياً لهذه السورة. يتم اعتبار الآيات غير متطابقة تلقائياً لحين المراجعة والتوثيق.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>المرجع التاريخي</th>
+                        <th>مرجع MARW المعتمد</th>
+                        <th>نوع العلاقة (Cardinality)</th>
+                        <th>شرح الفرق وطبيعة الدمج/الإزاحة</th>
+                        <th>حالة المراجعة</th>
+                        <th>الملاحظات الإسنادية</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.Mappings)
+                    {
+                        <tr>
+                            <td class="fw-bold"><span class="badge bg-secondary dir-ltr">@m.SourceReference</span></td>
+                            <td class="fw-bold"><span class="badge bg-success dir-ltr">@m.TargetReference</span></td>
+                            <td>
+                                <span class="badge @(m.Cardinality == "OneToOne" ? "bg-info text-dark" : "bg-warning text-dark")">
+                                    @m.Cardinality
+                                </span>
+                            </td>
+                            <td>@m.DifferenceDescription</td>
+                            <td>
+                                <span class="badge @(m.ReviewStatus == "Approved" ? "bg-success" : "bg-warning text-dark")">
+                                    @m.ReviewStatus
+                                </span>
+                            </td>
+                            <td class="small text-muted">@m.ProofNotes</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal-@m.Id">
+                                    تعديل
+                                </button>
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="editModal-@m.Id" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form method="post" asp-page-handler="UpdateMapping">
+                                                <input type="hidden" name="mappingId" value="@m.Id" />
+                                                <input type="hidden" name="SelectedSurah" value="@Model.SelectedSurah" />
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">تعديل مطابقة الآية @m.SourceReference</h5>
+                                                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body text-start">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">مرجع MARW:</label>
+                                                        <input type="text" name="targetRef" class="form-control dir-ltr" value="@m.TargetReference" required />
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">نوع العلاقة:</label>
+                                                        <select name="cardinality" class="form-select">
+                                                            <option value="OneToOne" selected="@(m.Cardinality == "OneToOne")">OneToOne (واحد إلى واحد)</option>
+                                                            <option value="ManyToOne" selected="@(m.Cardinality == "ManyToOne")">ManyToOne (دمج متعدد في واحد)</option>
+                                                            <option value="OneToMany" selected="@(m.Cardinality == "OneToMany")">OneToMany (تجزئة إلى متعدد)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">شرح الفرق:</label>
+                                                        <textarea name="description" class="form-control" rows="2">@m.DifferenceDescription</textarea>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">الحالة:</label>
+                                                        <select name="status" class="form-select">
+                                                            <option value="Approved" selected="@(m.ReviewStatus == "Approved")">Approved (معتمد)</option>
+                                                            <option value="PendingReview" selected="@(m.ReviewStatus == "PendingReview")">PendingReview (قيد المراجعة)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">ملاحظات الإسناد والتحقيق:</label>
+                                                        <textarea name="proofNotes" class="form-control" rows="2">@m.ProofNotes</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

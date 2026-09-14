@@ -28,6 +28,9 @@ public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole
     public DbSet<SourceAudio> SourceAudios => Set<SourceAudio>();
     public DbSet<AyahWord> AyahWords => Set<AyahWord>();
     public DbSet<AudioSegment> AudioSegments => Set<AudioSegment>();
+    public DbSet<QuranCorpus> QuranCorpora => Set<QuranCorpus>();
+    public DbSet<CorpusAyah> CorpusAyahs => Set<CorpusAyah>();
+    public DbSet<ReferenceMapping> ReferenceMappings => Set<ReferenceMapping>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -268,10 +271,74 @@ public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole
             entity.Property(e => e.NameLatin).HasMaxLength(150);
             entity.Property(e => e.Publisher).HasMaxLength(200);
             entity.Property(e => e.SourceUrl).HasMaxLength(500);
+            entity.Property(e => e.Revision).HasMaxLength(50);
 
             entity.HasOne(e => e.Riwaya)
                   .WithMany()
                   .HasForeignKey(e => e.RiwayaId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Corpus)
+                  .WithMany(c => c.Editions)
+                  .HasForeignKey(e => e.CorpusId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // QuranCorpus
+        modelBuilder.Entity<QuranCorpus>(entity =>
+        {
+            entity.ToTable("QuranCorpora");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.NameArabic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.NameLatin).HasMaxLength(150);
+            entity.Property(e => e.RiwayaCode).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.CountingSystem).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.TextualRevision).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Provenance).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.QualificationStatus).IsRequired().HasMaxLength(50);
+        });
+
+        // CorpusAyah
+        modelBuilder.Entity<CorpusAyah>(entity =>
+        {
+            entity.ToTable("CorpusAyahs");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.CorpusId, e.SurahNumber, e.AyahNumber }).IsUnique();
+            entity.HasIndex(e => new { e.CorpusId, e.NumberInQuran });
+            entity.Property(e => e.TextArabic).IsRequired();
+            entity.Property(e => e.SearchText).IsRequired();
+
+            entity.HasOne(e => e.Corpus)
+                  .WithMany(c => c.Ayahs)
+                  .HasForeignKey(e => e.CorpusId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ReferenceMapping
+        modelBuilder.Entity<ReferenceMapping>(entity =>
+        {
+            entity.ToTable("ReferenceMappings");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.SourceCorpusId, e.SourceReference });
+            entity.HasIndex(e => new { e.TargetCorpusId, e.TargetReference });
+            entity.Property(e => e.SourceReference).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.TargetReference).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Cardinality).IsRequired().HasMaxLength(30);
+            entity.Property(e => e.ReviewStatus).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DifferenceDescription).HasMaxLength(1000);
+            entity.Property(e => e.ProofNotes).HasMaxLength(1000);
+            entity.Property(e => e.ReviewedByUserId).HasMaxLength(100);
+
+            entity.HasOne(e => e.SourceCorpus)
+                  .WithMany()
+                  .HasForeignKey(e => e.SourceCorpusId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.TargetCorpus)
+                  .WithMany()
+                  .HasForeignKey(e => e.TargetCorpusId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
