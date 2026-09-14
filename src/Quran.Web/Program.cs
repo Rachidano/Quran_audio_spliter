@@ -24,6 +24,7 @@ if (args.Length == 1 && args[0] == "--check-warsh-pilot")
 }
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseStaticWebAssets();
 
 // Isolated local review sessions do not reuse another Windows user's DPAPI keys.
 if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("WarshPilot:ReviewMode"))
@@ -152,12 +153,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.MapStaticAssets();
 
 // Storage setup
 var baseStoragePath = builder.Configuration["Storage:BasePath"];
@@ -200,7 +199,7 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-app.MapRazorPages().WithStaticAssets();
+app.MapRazorPages();
 app.MapControllers();
 
 app.Run();
