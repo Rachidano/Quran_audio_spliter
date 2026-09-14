@@ -564,6 +564,77 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.ToTable("AyahWords", (string)null);
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.CombinationConstraint", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AutomaticEnforcement")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ConditionJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContextArabic")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EffectJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExplanationArabic")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MarwMappingStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReviewerUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RouteCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("TransmissionRouteId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("TransmissionRouteId");
+
+                    b.ToTable("CombinationConstraints", (string)null);
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.CorpusAyah", b =>
                 {
                     b.Property<long>("Id")
@@ -603,6 +674,98 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("CorpusAyahs", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.DocumentaryCoverageEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AnalysisStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ChapterOrSection")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("ConstraintsCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EntriesCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("LastReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReviewedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ScopeContext")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("SourceWorkTitle")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("SurahNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TransmissionRouteCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TransmissionRouteCode", "ChapterOrSection");
+
+                    b.ToTable("DocumentaryCoverageEntries", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.EvidenceCitation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CombinationConstraintId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Locator")
+                        .HasColumnType("text");
+
+                    b.Property<string>("QuoteOrNote")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ReferenceSourceId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("WajhId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CombinationConstraintId");
+
+                    b.HasIndex("ReferenceSourceId");
+
+                    b.HasIndex("WajhId");
+
+                    b.ToTable("EvidenceCitations", (string)null);
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.MushafEdition", b =>
@@ -835,6 +998,76 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.ToTable("QuranCorpora", (string)null);
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.ReadingRealization", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ReadingRuleId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ValueArabic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int?>("ValueNumeric")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code");
+
+                    b.HasIndex("ReadingRuleId");
+
+                    b.ToTable("ReadingRealizations", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.ReadingRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("ReadingRules", (string)null);
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.Recitation", b =>
                 {
                     b.Property<long>("Id")
@@ -978,6 +1211,49 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.HasIndex("TargetCorpusId", "TargetReference");
 
                     b.ToTable("ReferenceMappings", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.ReferenceSource", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Author")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Locator")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Sha256")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("Url")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceCode")
+                        .IsUnique();
+
+                    b.ToTable("ReferenceSources", (string)null);
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.Riwaya", b =>
@@ -1240,6 +1516,59 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.ToTable("Surahs", (string)null);
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.TransmissionRoute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CoverageStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int?>("ParentRouteId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Riwaya")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SubTariq")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Tariq")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("ParentRouteId");
+
+                    b.ToTable("TransmissionRoutes", (string)null);
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.ValidationReview", b =>
                 {
                     b.Property<long>("Id")
@@ -1280,10 +1609,18 @@ namespace Quran.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DefinitionJson")
                         .IsRequired()
@@ -1293,25 +1630,58 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("ExcludedScope")
+                        .HasColumnType("text");
+
                     b.Property<string>("NameArabic")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<int?>("ReadingRuleId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text");
+
                     b.Property<string>("ReviewStatus")
                         .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReviewerUserId")
                         .HasColumnType("text");
 
                     b.Property<string>("RouteCode")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RuleGroup")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SourceBooks")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("SourceBranch")
                         .HasColumnType("integer");
 
                     b.Property<string>("SourceCitation")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("TransmissionRouteId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
@@ -1322,7 +1692,137 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
+                    b.HasIndex("ReadingRuleId");
+
+                    b.HasIndex("TransmissionRouteId");
+
                     b.ToTable("Awjuh", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.WajhApplicationScope", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AutomaticAssignment")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ContextDescription")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MarwMappingStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("SourceAyahEnd")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SourceAyahStart")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SourceSurah")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WajhId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WajhId");
+
+                    b.ToTable("WajhApplicationScopes", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.WajhComponent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ComponentKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ValueArabic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int?>("ValueNumeric")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WajhId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WajhId");
+
+                    b.ToTable("WajhComponents", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.WajhRevision", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AffectsSemanticRecitation")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ChangeReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ChangedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("DefinitionSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("RevisionNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RouteCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("WajhId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WajhId", "RevisionNumber");
+
+                    b.ToTable("WajhRevisions", (string)null);
                 });
 
             modelBuilder.Entity("Quran.Infrastructure.Identity.ApplicationRole", b =>
@@ -1602,6 +2102,16 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("Ayah");
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.CombinationConstraint", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.TransmissionRoute", "TransmissionRoute")
+                        .WithMany("Constraints")
+                        .HasForeignKey("TransmissionRouteId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("TransmissionRoute");
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.CorpusAyah", b =>
                 {
                     b.HasOne("Quran.Domain.Entities.QuranCorpus", "Corpus")
@@ -1611,6 +2121,31 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Corpus");
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.EvidenceCitation", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.CombinationConstraint", "CombinationConstraint")
+                        .WithMany("Citations")
+                        .HasForeignKey("CombinationConstraintId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Quran.Domain.Entities.ReferenceSource", "ReferenceSource")
+                        .WithMany("Citations")
+                        .HasForeignKey("ReferenceSourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Quran.Domain.Entities.Wajh", "Wajh")
+                        .WithMany("Citations")
+                        .HasForeignKey("WajhId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("CombinationConstraint");
+
+                    b.Navigation("ReferenceSource");
+
+                    b.Navigation("Wajh");
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.MushafEdition", b =>
@@ -1655,6 +2190,17 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Wajh");
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.ReadingRealization", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.ReadingRule", "ReadingRule")
+                        .WithMany("Realizations")
+                        .HasForeignKey("ReadingRuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReadingRule");
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.Recitation", b =>
@@ -1774,6 +2320,16 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("Surah");
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.TransmissionRoute", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.TransmissionRoute", "ParentRoute")
+                        .WithMany("SubRoutes")
+                        .HasForeignKey("ParentRouteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ParentRoute");
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.ValidationReview", b =>
                 {
                     b.HasOne("Quran.Domain.Entities.Recitation", "Recitation")
@@ -1783,6 +2339,56 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Recitation");
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.Wajh", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.ReadingRule", "ReadingRule")
+                        .WithMany("Awjuh")
+                        .HasForeignKey("ReadingRuleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Quran.Domain.Entities.TransmissionRoute", "TransmissionRoute")
+                        .WithMany("Awjuh")
+                        .HasForeignKey("TransmissionRouteId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ReadingRule");
+
+                    b.Navigation("TransmissionRoute");
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.WajhApplicationScope", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.Wajh", "Wajh")
+                        .WithMany("Scopes")
+                        .HasForeignKey("WajhId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Wajh");
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.WajhComponent", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.Wajh", "Wajh")
+                        .WithMany("Components")
+                        .HasForeignKey("WajhId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Wajh");
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.WajhRevision", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.Wajh", "Wajh")
+                        .WithMany("Revisions")
+                        .HasForeignKey("WajhId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Wajh");
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.AudioAsset", b =>
@@ -1810,6 +2416,11 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("Words");
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.CombinationConstraint", b =>
+                {
+                    b.Navigation("Citations");
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.MushafEdition", b =>
                 {
                     b.Navigation("Pages");
@@ -1829,6 +2440,13 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("Editions");
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.ReadingRule", b =>
+                {
+                    b.Navigation("Awjuh");
+
+                    b.Navigation("Realizations");
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.Recitation", b =>
                 {
                     b.Navigation("ValidationReviews");
@@ -1837,6 +2455,11 @@ namespace Quran.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Quran.Domain.Entities.Reciter", b =>
                 {
                     b.Navigation("Recitations");
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.ReferenceSource", b =>
+                {
+                    b.Navigation("Citations");
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.Riwaya", b =>
@@ -1859,9 +2482,26 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("Ayahs");
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.TransmissionRoute", b =>
+                {
+                    b.Navigation("Awjuh");
+
+                    b.Navigation("Constraints");
+
+                    b.Navigation("SubRoutes");
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.Wajh", b =>
                 {
+                    b.Navigation("Citations");
+
+                    b.Navigation("Components");
+
                     b.Navigation("Recitations");
+
+                    b.Navigation("Revisions");
+
+                    b.Navigation("Scopes");
                 });
 #pragma warning restore 612, 618
         }

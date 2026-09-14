@@ -9,23 +9,9 @@ public static class AwjuhCatalog
 {
     public static async Task InitializeAsync(QuranDbContext db)
     {
-        // Explicit one-time bootstrap only: normal startup never recreates deleted catalog rows.
-        foreach (var entry in Read().GetProperty("entries").EnumerateArray())
-        {
-            var code = entry.GetProperty("code").GetString()!;
-            if (await db.Awjuh.AnyAsync(w => w.Code == code)) continue;
-            db.Awjuh.Add(new Quran.Domain.Entities.Wajh {
-                Code = code, NameArabic = entry.GetProperty("nameArabic").GetString()!,
-                RouteCode = entry.GetProperty("routeCode").GetString()!,
-                Description = entry.GetProperty("scope").GetString(),
-                SourceCitation = string.Join("؛ ", entry.GetProperty("sourceIds").EnumerateArray().Select(id => {
-                    var source = Read().GetProperty("sources").EnumerateArray().First(s => s.GetProperty("id").GetString() == id.GetString());
-                    return source.GetProperty("title").GetString() + " — " + source.GetProperty("locator").GetString();
-                })),
-                DefinitionJson = entry.GetRawText(), ReviewStatus = "PendingReview"
-            });
-        }
-        await db.SaveChangesAsync();
+        // Use structured AwjuhService for versioned, audited seed that never recreates deleted rows.
+        var service = new AwjuhService(db);
+        await service.EnsureSeedDataAsync(force: false);
     }
     public static readonly string[] LegacyCodes = ["istiadha", "basmala", "w01", "w02", "w03", "taqlil", "silat_mim"];
     public static JsonElement Read()

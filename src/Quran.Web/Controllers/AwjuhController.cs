@@ -1,7 +1,10 @@
+using System.Security.Claims;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Quran.Application.DTOs;
+using Quran.Application.Interfaces;
 using Quran.Domain.Entities;
 using Quran.Domain.Enums;
 using Quran.Infrastructure.Persistence;
@@ -11,67 +14,284 @@ namespace Quran.Web.Controllers;
 
 [ApiController]
 [Route("api/awjuh")]
-public class AwjuhController(QuranDbContext db) : ControllerBase
+public class AwjuhController : ControllerBase
 {
+    private readonly QuranDbContext _db;
+    private readonly IAwjuhService _awjuhService;
+
+    public AwjuhController(QuranDbContext db, IAwjuhService awjuhService)
+    {
+        _db = db;
+        _awjuhService = awjuhService;
+    }
+
     public record Edit(string Code, string NameArabic, string RouteCode, string Description, string SourceCitation, string ReviewStatus, int Version);
+    public record DuplicateRequest(string NewCode);
+
     [HttpGet("catalog")]
     [AllowAnonymous]
-    public async Task<IActionResult> Catalog()
+    public async Task<IActionResult> Catalog(CancellationToken cancellationToken)
     {
         var root = JsonNode.Parse(AwjuhCatalog.Read().GetRawText())!;
         var entries = new JsonArray();
-        var rows = await db.Awjuh.AsNoTracking().OrderBy(w => w.SortOrder).ThenBy(w => w.Id).ToListAsync();
+        var rows = await _db.Awjuh
+            .AsNoTracking()
+            .Include(w => w.Components)
+            .Include(w => w.Scopes)
+            .OrderBy(w => w.SortOrder)
+            .ThenBy(w => w.Id)
+            .ToListAsync(cancellationToken);
+
         foreach (var w in rows)
         {
             var e = JsonNode.Parse(w.DefinitionJson) as JsonObject ?? new JsonObject();
-            e["id"] = w.Id; e["code"] = w.Code; e["nameArabic"] = w.NameArabic; e["routeCode"] = w.RouteCode;
-            e["scope"] = w.Description; e["sourceCitation"] = w.SourceCitation; e["status"] = w.ReviewStatus; e["version"] = w.Version;
-            e["components"] ??= new JsonObject(); e["sourceIds"] ??= new JsonArray();
+            e["id"] = w.Id;
+            e["code"] = w.Code;
+            e["nameArabic"] = w.NameArabic;
+            e["routeCode"] = w.RouteCode;
+            e["scope"] = w.Description;
+            e["sourceCitation"] = w.SourceCitation;
+            e["status"] = w.ReviewStatus;
+            e["version"] = w.Version;
+            
+            // Populate components
+            var compsObj = new JsonObject();
+            foreach (var c in w.Components)
+            {
+                if (c.ValueNumeric.HasValue) compsObj[c.ComponentKey] = c.ValueNumeric.Value;
+                else compsObj[c.ComponentKey] = c.ValueArabic;
+            }
+            e["components"] = compsObj;
+
             entries.Add(e);
         }
-        root["entries"] = entries; root["revision"] = "database";
+
+        root["entries"] = entries;
+        root["revision"] = "database-v4";
+
         var routes = (JsonArray)root["routes"]!;
-        foreach (var code in rows.Select(w => w.RouteCode).Distinct())
-            if (!routes.Any(r => r!["code"]!.GetValue<string>() == code)) routes.Add(new JsonObject { ["code"] = code, ["name"] = code, ["coverage"] = "Partial" });
+        var dbRoutes = await _db.TransmissionRoutes.AsNoTracking().ToListAsync(cancellationToken);
+        foreach (var r in dbRoutes)
+        {
+            if (!routes.Any(x => x!["code"]!.GetValue<string>() == r.Code))
+            {
+                routes.Add(new JsonObject
+                {
+                    ["code"] = r.Code,
+                    ["name"] = r.NameArabic,
+                    ["coverage"] = r.CoverageStatus
+                });
+            }
+        }
+
         return Ok(root);
     }
+
+    [HttpGet]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<ActionResult<List<WajhDto>>> Search([FromQuery] AwjuhSearchFilter filter, CancellationToken cancellationToken)
+    {
+        var results = await _awjuhService.SearchAsync(filter, cancellationToken);
+        return Ok(results);
+    }
+
+    [HttpGet("{id:int}")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<ActionResult<WajhDto>> GetById(int id, CancellationToken cancellationToken)
+    {
+        var w = await _awjuhService.GetByIdAsync(id, cancellationToken);
+        if (w == null) return NotFound(new { message = $"الوجه برقم {id} غير موجود." });
+        return Ok(w);
+    }
+
+    [HttpGet("{id:int}/usages")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<ActionResult<WajhUsageReportDto>> GetUsageReport(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var report = await _awjuhService.GetUsageReportAsync(id, cancellationToken);
+            return Ok(report);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("reader-available")]
+    [AllowAnonymous]
+    public async Task<ActionResult<List<WajhDto>>> GetAvailableForReader([FromQuery] int? surahNumber, [FromQuery] string? reference, CancellationToken cancellationToken)
+    {
+        var result = await _awjuhService.GetAvailableAwjuhForReaderAsync(surahNumber, reference, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("editor-candidates")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<ActionResult<List<WajhDto>>> GetCandidatesForEditor([FromQuery] int? surahNumber, [FromQuery] string? reference, CancellationToken cancellationToken)
+    {
+        var result = await _awjuhService.GetCandidateAwjuhForEditorAsync(surahNumber, reference, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create(Edit input)
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<IActionResult> Create([FromBody] CreateWajhDto input, CancellationToken cancellationToken)
     {
-        if (Validate(input) is { } error) return BadRequest(new { message = error });
-        if (!System.Text.RegularExpressions.Regex.IsMatch(input.Code ?? "", "^[a-z0-9-]{3,50}$")) return BadRequest(new { message = "الرمز: حروف لاتينية صغيرة وأرقام وشرطة، من 3 إلى 50." });
-        if (await db.Awjuh.AnyAsync(w => w.Code == input.Code)) return Conflict(new { message = "الرمز مستخدم." });
-        var row = new Wajh { Code = input.Code, NameArabic = input.NameArabic.Trim(), RouteCode = input.RouteCode.Trim(), Description = input.Description.Trim(), SourceCitation = input.SourceCitation.Trim(), ReviewStatus = input.ReviewStatus };
-        db.Awjuh.Add(row); await db.SaveChangesAsync(); return Ok(new { row.Id, row.Version });
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "admin";
+            var result = await _awjuhService.CreateDraftAsync(input, userId, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
+
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(int id, Edit input)
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateWajhDto input, CancellationToken cancellationToken)
     {
-        if (Validate(input) is { } error) return BadRequest(new { message = error });
-        var row = await db.Awjuh.FindAsync(id); if (row == null) return NotFound();
-        if (input.Version != row.Version) return Conflict(new { message = "تغير الوجه في جلسة أخرى. أعد التحميل." });
-        if (input.Code != row.Code) return BadRequest(new { message = "الرمز ثابت حفاظًا على الروابط." });
-        row.NameArabic = input.NameArabic.Trim(); row.RouteCode = input.RouteCode.Trim(); row.Description = input.Description.Trim();
-        row.SourceCitation = input.SourceCitation.Trim(); row.ReviewStatus = input.ReviewStatus; row.Version++;
-        // Any edit invalidates prior use; re-review the occurrence against the revised definition.
-        foreach (var p in await db.MushafPassages.Where(p => p.WajhId == id).ToListAsync()) { p.Status = "Draft"; p.Version++; }
-        foreach (var r in await db.Recitations.Where(r => r.WajhId == id).ToListAsync()) { r.IsPublished = false; r.Status = RecitationStatus.Imported; }
-        foreach (var s in await db.AudioSegments.Where(s => s.WajhId == id).ToListAsync()) { s.Status = AudioSegmentStatus.Draft; s.ValidatedAt = null; s.ValidatedByUserId = null; s.PublishedAudioAssetId = null; }
-        try { await db.SaveChangesAsync(); } catch (DbUpdateConcurrencyException) { return Conflict(new { message = "تعارض تعديل. أعد التحميل." }); }
-        return Ok(new { row.Id, row.Version });
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "admin";
+            var result = await _awjuhService.UpdateAsync(id, input, userId, cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
+
+    [HttpPost("{id:int}/review")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<IActionResult> Review(int id, [FromBody] ReviewWajhDto input, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "reviewer";
+            var result = await _awjuhService.ReviewAsync(id, input, userId, cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id:int}/duplicate")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<IActionResult> Duplicate(int id, [FromBody] DuplicateRequest input, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "admin";
+            var result = await _awjuhService.DuplicateAsync(id, input.NewCode, userId, cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id, [FromQuery] int version)
+    public async Task<IActionResult> Delete(int id, [FromQuery] int version, CancellationToken cancellationToken)
     {
-        var row = await db.Awjuh.FindAsync(id); if (row == null) return NotFound();
-        if (version != row.Version) return Conflict(new { message = "أعد تحميل المرجع قبل الحذف." });
-        if (await db.MushafPassages.AnyAsync(p => p.WajhId == id) || await db.AudioSegments.AnyAsync(p => p.WajhId == id) || await db.Recitations.AnyAsync(p => p.WajhId == id))
-            return Conflict(new { message = "الوجه مرتبط بمقاطع. اختر حالة مؤرشف بدل الحذف." });
-        db.Remove(row); await db.SaveChangesAsync(); return NoContent();
+        try
+        {
+            await _awjuhService.DeleteDraftAsync(id, version, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
-    private static string? Validate(Edit i) => string.IsNullOrWhiteSpace(i.NameArabic) || i.NameArabic.Length > 150 || string.IsNullOrWhiteSpace(i.RouteCode) || i.RouteCode.Length > 100 || string.IsNullOrWhiteSpace(i.Description) || i.Description.Length > 500 || string.IsNullOrWhiteSpace(i.SourceCitation) || i.SourceCitation.Length > 2000 || !new[] { "PendingReview", "Approved", "Archived" }.Contains(i.ReviewStatus)
-        ? "الاسم والطريق والوصف والمصدر مطلوبة. تحقق من أطوال الحقول والحالة." : null;
+
+    [HttpGet("routes")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<ActionResult<List<TransmissionRouteDto>>> GetRoutes(CancellationToken cancellationToken)
+    {
+        var routes = await _awjuhService.GetRoutesAsync(cancellationToken);
+        return Ok(routes);
+    }
+
+    [HttpGet("sources")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<ActionResult<List<ReferenceSourceDto>>> GetSources(CancellationToken cancellationToken)
+    {
+        var sources = await _awjuhService.GetSourcesAsync(cancellationToken);
+        return Ok(sources);
+    }
+
+    [HttpGet("constraints")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<ActionResult<List<CombinationConstraintDto>>> GetConstraints([FromQuery] string? routeCode, CancellationToken cancellationToken)
+    {
+        var constraints = await _awjuhService.GetConstraintsAsync(routeCode, cancellationToken);
+        return Ok(constraints);
+    }
+
+    [HttpGet("coverage-matrix")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<ActionResult<List<DocumentaryCoverageEntryDto>>> GetCoverageMatrix([FromQuery] string? routeCode, CancellationToken cancellationToken)
+    {
+        var matrix = await _awjuhService.GetCoverageMatrixAsync(routeCode, cancellationToken);
+        return Ok(matrix);
+    }
+
+    [HttpPut("coverage-matrix/{id:int}")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<ActionResult<DocumentaryCoverageEntryDto>> UpdateCoverageEntry(int id, [FromBody] UpdateCoverageEntryDto input, CancellationToken cancellationToken)
+    {
+        if (id != input.Id) return BadRequest(new { message = "عدم تطابق المعرف." });
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "reviewer";
+            var result = await _awjuhService.UpdateCoverageEntryAsync(input, userId, cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 }

@@ -149,12 +149,36 @@ Relevé effectué le 14/09/2026 à 13:00 :
   - Chaque occurrence migrées a reçu sa `SegmentRevision` initiale et son entrée dans `AuditLogs`.
 - **Convergence applicative :** `IAnnotationService` / `AnnotationService` implémenté dans `Quran.Application` et `Quran.Infrastructure`, synchronisant `AnnotationsController` avec l'agrégat canonique.
 
+## 8. Référentiel des Awjuh Structuré et Couverture Documentaire (Lot 4)
+
+- **Modèle de données relationnel structuré (10 entités) :**
+  - `TransmissionRoute` : tariq, sous-tariq, autorité, statut de couverture.
+  - `ReadingRule` & `ReadingRealization` : règles de récitation typées (catégorie, réalisation numérique/textuelle).
+  - `WajhComponent` : décomposition atomique d'un wajh en réalisations concrètes.
+  - `WajhApplicationScope` : périmètre d'application (sourate/ayah début-fin, statut de qualification).
+  - `WajhRevision` : historique immuable des versions d'un wajh.
+  - `CombinationConstraint` : contraintes d'association (condition, effet, explication).
+  - `ReferenceSource` & `EvidenceCitation` : sources documentaires et citations avec locateur précis.
+  - `DocumentaryCoverageEntry` : matrice de couverture par voie, ouvrage source, sourate et statut d'analyse.
+  - `Wajh` étendu : FKs structurées, version de concurrence `Version`, audit d'approbation (`ReviewerUserId`, `ReviewedAt`, `RejectionReason`).
+- **Migration EF Core :** `20260914124335_AddStructuredAwjuhReferentialAndCoverage` appliquée sur `quran_db` et `quran_db_test`.
+- **Garantie d'idempotence et non-résurrection des codes obsolètes :**
+  - Marqueur d'audit `CATALOG_SEEDED_V1` empêchant toute réinjection en boucle.
+  - Interdiction stricte de résurrection des anciens codes supprimés (`istiadha`, `basmala`, `w01`, `w02`, `w03`, `taqlil`, `silat_mim`).
+- **Logique métier (`IAwjuhService` / `AwjuhService`) :**
+  - Cycle de vie : `Draft` -> `UnderReview` -> `Approved` / `Rejected` -> `Archived`.
+  - Modification d'un wajh approuvé : génération automatique d'une nouvelle `WajhRevision` et invalidation des segments audio rattachés en `Draft` pour revue obligatoire.
+  - Règle de suppression sécurisée : rejet strict si le wajh est `Approved`, `Archived` ou référencé dans des segments audio ou passages.
+  - Rapport d'impact (`GetUsageReportAsync`) calculant l'arborescence des dépendances audio et mushaf.
+  - Règle de requête lecteur (`GetForReaderAsync`) : seuls les oujouth approuvés ayant au moins un segment audio publié sont retournés.
+- **Interface d'administration :** `/Admin/Awjuh` en arabe avec 4 onglets (Catalogue, Matrice de couverture documentaire, Contraintes de combinaison, Sources de référence).
+
 ---
 
-## 8. État des Tests Automatisés
+## 9. État des Tests Automatisés
 
 - Commande : `dotnet test`
-- Résultat actuel : **73 tests exécutés, 73 réussis (0 échec, 1 ignoré documenté)**
-  - `Quran.UnitTests` : 59/59 réussis (dont `AnnotationServiceTests` validant la capture atomique, les sessions, les reprises liées et la migration).
-  - `Quran.IntegrationTests` : 14/14 réussis sur `quran_db_test`.
+- Résultat actuel : **83 tests exécutés, 83 réussis (0 échec, 1 ignoré documenté)**
+  - `Quran.UnitTests` : 68/68 réussis (dont `AwjuhServiceTests` validant cycle de vie, invalidation d'occurrences, suppression sécurisée et politiques de visibilité).
+  - `Quran.IntegrationTests` : 15/15 réussis sur `quran_db_test` (dont `AwjuhEndToEndIntegrationTests`).
 

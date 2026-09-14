@@ -63,11 +63,11 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **3.5** Persister la session d'annotation (`AnnotationSession` : curseur temporel, dernière occurrence, reprise liée sans incrément d'ayah).
 
 ### Lot 4 — Achever le référentiel administrable
-- [ ] **4.1** Déployer les tables relationnelles structurées du référentiel (`TransmissionRoute`, `ReadingRule`, `WajhDefinition`, etc.).
-- [ ] **4.2** Migrer les 14 propositions existantes sans recréer les anciens codes supprimés.
-- [ ] **4.3** Développer le CRUD back-office complet des oujouth avec gestion des révisions et statuts.
-- [ ] **4.4** Fournir la recherche, le rapport d'impact et la matrice de couverture documentaire.
-- [ ] **4.5** Remplacer le bootstrap destructif par un seed versionné immuable.
+- [x] **4.1** Déployer les tables relationnelles structurées du référentiel (`TransmissionRoute`, `ReadingRule`, `ReadingRealization`, `WajhComponent`, `WajhApplicationScope`, `WajhRevision`, `CombinationConstraint`, `ReferenceSource`, `EvidenceCitation`, `DocumentaryCoverageEntry`).
+- [x] **4.2** Migrer les propositions existantes avec garde d'idempotence (`CATALOG_SEEDED_V1`) sans recréer les anciens codes supprimés (`istiadha`, `basmala`, `w01`, `w02`, `w03`, `taqlil`, `silat_mim`).
+- [x] **4.3** Développer le service applicatif et CRUD back-office complet des oujouth (`IAwjuhService` / `AwjuhService`) avec machine à états (`Draft`, `UnderReview`, `Approved`, `Rejected`, `Archived`), révisions versionnées, duplication et suppression sécurisée (rejet si approuvé/archivé ou référencé).
+- [x] **4.4** Fournir la recherche multicritères, le rapport d'impact (`GetUsageReportAsync`) et la matrice de couverture documentaire (`DocumentaryCoverageEntry`).
+- [x] **4.5** Remplacer le bootstrap destructif par un seed versionné immuable avec audit trail, et créer l'interface d'administration `/Admin/Awjuh` en arabe.
 
 ### Lot 5 — Livrer l’éditeur unique et simple
 - [ ] **5.1** Créer l'interface unifiée d'édition audio en arabe (mode simple par défaut + panneau avancé WaveSurfer).

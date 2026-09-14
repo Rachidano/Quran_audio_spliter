@@ -35,6 +35,16 @@ public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole
     public DbSet<SegmentTextSpan> SegmentTextSpans => Set<SegmentTextSpan>();
     public DbSet<AnnotationSession> AnnotationSessions => Set<AnnotationSession>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<TransmissionRoute> TransmissionRoutes => Set<TransmissionRoute>();
+    public DbSet<ReferenceSource> ReferenceSources => Set<ReferenceSource>();
+    public DbSet<ReadingRule> ReadingRules => Set<ReadingRule>();
+    public DbSet<ReadingRealization> ReadingRealizations => Set<ReadingRealization>();
+    public DbSet<WajhComponent> WajhComponents => Set<WajhComponent>();
+    public DbSet<WajhApplicationScope> WajhApplicationScopes => Set<WajhApplicationScope>();
+    public DbSet<WajhRevision> WajhRevisions => Set<WajhRevision>();
+    public DbSet<CombinationConstraint> CombinationConstraints => Set<CombinationConstraint>();
+    public DbSet<EvidenceCitation> EvidenceCitations => Set<EvidenceCitation>();
+    public DbSet<DocumentaryCoverageEntry> DocumentaryCoverageEntries => Set<DocumentaryCoverageEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -104,8 +114,22 @@ public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole
             entity.HasIndex(e => e.Code).IsUnique();
             entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
             entity.Property(e => e.NameArabic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.RouteCode).HasMaxLength(100);
+            entity.Property(e => e.Category).HasMaxLength(50);
+            entity.Property(e => e.RuleGroup).HasMaxLength(100);
+            entity.Property(e => e.ReviewStatus).HasMaxLength(50);
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Version).IsConcurrencyToken();
+
+            entity.HasOne(e => e.TransmissionRoute)
+                  .WithMany(r => r.Awjuh)
+                  .HasForeignKey(e => e.TransmissionRouteId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ReadingRule)
+                  .WithMany(r => r.Awjuh)
+                  .HasForeignKey(e => e.ReadingRuleId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Source
@@ -485,6 +509,164 @@ public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole
                   .WithMany(p => p.SegmentImageRegions)
                   .HasForeignKey(e => e.MushafPageId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TransmissionRoute
+        modelBuilder.Entity<TransmissionRoute>(entity =>
+        {
+            entity.ToTable("TransmissionRoutes");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.NameArabic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Riwaya).HasMaxLength(100);
+            entity.Property(e => e.Tariq).HasMaxLength(100);
+            entity.Property(e => e.SubTariq).HasMaxLength(100);
+            entity.Property(e => e.CoverageStatus).HasMaxLength(50);
+
+            entity.HasOne(e => e.ParentRoute)
+                  .WithMany(r => r.SubRoutes)
+                  .HasForeignKey(e => e.ParentRouteId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ReferenceSource
+        modelBuilder.Entity<ReferenceSource>(entity =>
+        {
+            entity.ToTable("ReferenceSources");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.SourceCode).IsUnique();
+            entity.Property(e => e.SourceCode).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(250);
+            entity.Property(e => e.Kind).HasMaxLength(50);
+        });
+
+        // ReadingRule
+        modelBuilder.Entity<ReadingRule>(entity =>
+        {
+            entity.ToTable("ReadingRules");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.NameArabic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Category).HasMaxLength(50);
+        });
+
+        // ReadingRealization
+        modelBuilder.Entity<ReadingRealization>(entity =>
+        {
+            entity.ToTable("ReadingRealizations");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Code);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ValueArabic).IsRequired().HasMaxLength(150);
+
+            entity.HasOne(e => e.ReadingRule)
+                  .WithMany(r => r.Realizations)
+                  .HasForeignKey(e => e.ReadingRuleId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // WajhComponent
+        modelBuilder.Entity<WajhComponent>(entity =>
+        {
+            entity.ToTable("WajhComponents");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.WajhId);
+            entity.Property(e => e.ComponentKey).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ValueArabic).IsRequired().HasMaxLength(150);
+
+            entity.HasOne(e => e.Wajh)
+                  .WithMany(w => w.Components)
+                  .HasForeignKey(e => e.WajhId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // WajhApplicationScope
+        modelBuilder.Entity<WajhApplicationScope>(entity =>
+        {
+            entity.ToTable("WajhApplicationScopes");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.WajhId);
+            entity.Property(e => e.MarwMappingStatus).HasMaxLength(50);
+
+            entity.HasOne(e => e.Wajh)
+                  .WithMany(w => w.Scopes)
+                  .HasForeignKey(e => e.WajhId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // WajhRevision
+        modelBuilder.Entity<WajhRevision>(entity =>
+        {
+            entity.ToTable("WajhRevisions");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.WajhId, e.RevisionNumber });
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.NameArabic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.RouteCode).HasMaxLength(100);
+            entity.Property(e => e.ReviewStatus).HasMaxLength(50);
+
+            entity.HasOne(e => e.Wajh)
+                  .WithMany(w => w.Revisions)
+                  .HasForeignKey(e => e.WajhId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // CombinationConstraint
+        modelBuilder.Entity<CombinationConstraint>(entity =>
+        {
+            entity.ToTable("CombinationConstraints");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.RouteCode).HasMaxLength(100);
+            entity.Property(e => e.NameArabic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.ReviewStatus).HasMaxLength(50);
+            entity.Property(e => e.MarwMappingStatus).HasMaxLength(50);
+
+            entity.HasOne(e => e.TransmissionRoute)
+                  .WithMany(r => r.Constraints)
+                  .HasForeignKey(e => e.TransmissionRouteId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // EvidenceCitation
+        modelBuilder.Entity<EvidenceCitation>(entity =>
+        {
+            entity.ToTable("EvidenceCitations");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ReferenceSourceId);
+            entity.HasIndex(e => e.WajhId);
+            entity.HasIndex(e => e.CombinationConstraintId);
+
+            entity.HasOne(e => e.ReferenceSource)
+                  .WithMany(s => s.Citations)
+                  .HasForeignKey(e => e.ReferenceSourceId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Wajh)
+                  .WithMany(w => w.Citations)
+                  .HasForeignKey(e => e.WajhId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.CombinationConstraint)
+                  .WithMany(c => c.Citations)
+                  .HasForeignKey(e => e.CombinationConstraintId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // DocumentaryCoverageEntry
+        modelBuilder.Entity<DocumentaryCoverageEntry>(entity =>
+        {
+            entity.ToTable("DocumentaryCoverageEntries");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TransmissionRouteCode, e.ChapterOrSection });
+            entity.Property(e => e.TransmissionRouteCode).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.SourceWorkTitle).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ChapterOrSection).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ScopeContext).HasMaxLength(250);
+            entity.Property(e => e.AnalysisStatus).IsRequired().HasMaxLength(50);
         });
     }
 }

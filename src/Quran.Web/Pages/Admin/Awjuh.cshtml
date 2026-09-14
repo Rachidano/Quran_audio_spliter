@@ -1,0 +1,846 @@
+@page
+@model Quran.Web.Pages.Admin.AwjuhModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "مرجع أوجه القراءة ومصفوفة التغطية";
+}
+
+<div class="container-fluid pb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h1 class="h2 text-dark fw-bold mb-1">📚 مرجع أوجه رواية ورش ومصفوفة التغطية</h1>
+            <p class="text-muted mb-0">إدارة الأوجه التحريرية، القيود، المصادر المرجعية، ومصفوفة التغطية التوثيقية لقراءات ورش عن نافع.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success fw-bold" onclick="openCreateModal()">
+                ➕ إضافة وجه جديد (مسودة)
+            </button>
+            <a href="/api/awjuh/catalog" target="_blank" class="btn btn-outline-secondary">
+                📥 تصدير الكتالوج JSON
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ✅ @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            ❌ @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-pills mb-4 border p-2 rounded bg-white shadow-sm" id="awjuhTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="catalog-tab" data-bs-toggle="pill" data-bs-target="#tab-catalog" type="button" role="tab">
+                📖 فهرس الأوجه المسجلة (@Model.AwjuhList.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="coverage-tab" data-bs-toggle="pill" data-bs-target="#tab-coverage" type="button" role="tab">
+                📊 مصفوفة التغطية التوثيقية (@Model.CoverageMatrix.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="constraints-tab" data-bs-toggle="pill" data-bs-target="#tab-constraints" type="button" role="tab">
+                🔒 قيود الجمع والمنع (@Model.Constraints.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="sources-tab" data-bs-toggle="pill" data-bs-target="#tab-sources" type="button" role="tab">
+                📜 المصادر والمراجع (@Model.Sources.Count)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="awjuhTabsContent">
+        <!-- TAB 1: Awjuh Catalog -->
+        <div class="tab-pane fade show active" id="tab-catalog" role="tabpanel">
+            <!-- Filter Bar -->
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-body bg-light rounded">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">الطريق / الرواية</label>
+                            <select name="RouteCode" class="form-select" onchange="this.form.submit()">
+                                <option value="">— جميع الطرق —</option>
+                                @foreach (var r in Model.Routes)
+                                {
+                                    <option value="@r.Code" selected="@(Model.RouteCode == r.Code)">@r.NameArabic</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">الحالة الإدارية</label>
+                            <select name="Status" class="form-select" onchange="this.form.submit()">
+                                <option value="">— جميع الحالات —</option>
+                                <option value="Approved" selected="@(Model.Status == "Approved")">معتمد (Approved)</option>
+                                <option value="PendingReview" selected="@(Model.Status == "PendingReview")">قيد المراجعة (PendingReview)</option>
+                                <option value="Draft" selected="@(Model.Status == "Draft")">مسودة (Draft)</option>
+                                <option value="Rejected" selected="@(Model.Status == "Rejected")">مرفوض (Rejected)</option>
+                                <option value="Archived" selected="@(Model.Status == "Archived")">مؤرشف / مسحوب (Archived)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">بحث في الاسم أو الرمز أو الوصف</label>
+                            <input type="text" name="Query" value="@Model.Query" class="form-control" placeholder="مثال: بدل، لين، يس..." />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary w-100 fw-bold">تصفية</button>
+                            <a href="/Admin/Awjuh" class="btn btn-outline-secondary">إعادة ضبط</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Awjuh Table -->
+            <div class="card shadow-sm border-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 140px;">الرمز الثابت</th>
+                                <th>الاسم والتركيب</th>
+                                <th>الطريق</th>
+                                <th>التركيبات المنطقية</th>
+                                <th>النطاق والتطبيق</th>
+                                <th style="width: 110px;">الحالة</th>
+                                <th style="width: 90px;">الاستخدام</th>
+                                <th style="width: 220px;" class="text-center">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.AwjuhList.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-5 text-muted">
+                                        لا توجد أوجه مطابقة لمعايير البحث الحالية.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var w in Model.AwjuhList)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="code-ltr fw-bold text-primary">@w.Code</span>
+                                        <div class="small text-muted">نسخة v@(w.Version) (@w.Revisions.Count مراجعة)</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark fs-6">@w.NameArabic</div>
+                                        <div class="small text-muted text-truncate" style="max-width: 320px;" title="@w.Description">
+                                            @w.Description
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@(w.TransmissionRouteName ?? w.RouteCode)</span>
+                                    </td>
+                                    <td>
+                                        @if (w.Components.Count > 0)
+                                        {
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach (var c in w.Components)
+                                                {
+                                                    <span class="badge bg-light text-dark border">
+                                                        @c.ComponentKey: <strong>@c.ValueArabic</strong>
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">غير محدد</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (w.Scopes.Count > 0)
+                                        {
+                                            @foreach (var sc in w.Scopes)
+                                            {
+                                                <span class="badge bg-info text-dark">
+                                                    @(sc.SourceSurah.HasValue ? $"سورة {sc.SourceSurah}" : "عام")
+                                                    @if (sc.SourceAyahStart.HasValue)
+                                                    {
+                                                        <span>(آية @sc.SourceAyahStart–@sc.SourceAyahEnd)</span>
+                                                    }
+                                                </span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">عام / غير مقيد بسورة</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @switch (w.ReviewStatus)
+                                        {
+                                            case "Approved":
+                                                <span class="badge bg-success">معتمد</span>
+                                                break;
+                                            case "PendingReview":
+                                                <span class="badge bg-warning text-dark">قيد المراجعة</span>
+                                                break;
+                                            case "Draft":
+                                                <span class="badge bg-secondary">مسودة</span>
+                                                break;
+                                            case "Rejected":
+                                                <span class="badge bg-danger">مرفوض</span>
+                                                break;
+                                            case "Archived":
+                                                <span class="badge bg-dark">مؤرشف</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-light text-dark">@w.ReviewStatus</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (w.UsageCount > 0)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-info" onclick="openUsageModal(@w.Id)">
+                                                🔗 @w.UsageCount
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">0</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary" onclick="openEditModal(@w.Id)" title="تعديل">
+                                                ✏️
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success" onclick="openReviewModal(@w.Id, '@w.Code', '@w.ReviewStatus')" title="مراجعة واعتماد">
+                                                ⚖️
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="openDuplicateModal(@w.Id, '@w.Code')" title="نسخ كمسودة">
+                                                📋
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info" onclick="openUsageModal(@w.Id)" title="تقرير التأثير">
+                                                📊
+                                            </button>
+                                            @if (w.ReviewStatus == "Draft" && w.UsageCount == 0)
+                                            {
+                                                <button type="button" class="btn btn-outline-danger" onclick="deleteDraft(@w.Id, @w.Version, '@w.Code')" title="حذف المسودة">
+                                                    🗑️
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Coverage Matrix -->
+        <div class="tab-pane fade" id="tab-coverage" role="tabpanel">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">📊 مصفوفة التغطية التوثيقية (Documentary Coverage Matrix)</h5>
+                    <span class="badge bg-light text-dark">تغطية معللة وممنهجة</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الطريق</th>
+                                    <th>المصدر المعتمد</th>
+                                    <th>الباب / السورة</th>
+                                    <th>موضوع التحرير</th>
+                                    <th>حالة الاستخراج والتحرير</th>
+                                    <th>الأوجه الموثقة</th>
+                                    <th>القيود المرتبطة</th>
+                                    <th>ملاحظات التحرير</th>
+                                    <th>آخر مراجعة</th>
+                                    <th>تعديل الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in Model.CoverageMatrix)
+                                {
+                                    <tr>
+                                        <td><strong>@c.RouteName</strong></td>
+                                        <td>@c.SourceWorkTitle</td>
+                                        <td>@c.ChapterOrSection @(c.SurahNumber.HasValue ? $"({c.SurahNumber})" : "")</td>
+                                        <td>@c.ScopeContext</td>
+                                        <td>
+                                            @switch (c.AnalysisStatus)
+                                            {
+                                                case "Revue":
+                                                    <span class="badge bg-success">تمت المراجعة والاعتماد</span>
+                                                    break;
+                                                case "AResoudre":
+                                                    <span class="badge bg-warning text-dark">قيد الحل والمطابقة</span>
+                                                    break;
+                                                case "Extraite":
+                                                    <span class="badge bg-info text-dark">مستخرجة من المصدر</span>
+                                                    break;
+                                                case "NonEtudiee":
+                                                    <span class="badge bg-secondary">غير مدروسة بعد</span>
+                                                    break;
+                                                case "HorsPerimetre":
+                                                    <span class="badge bg-dark">خارج نطاق المشروع</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-light text-dark">@c.AnalysisStatus</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td class="text-center fw-bold">@c.EntriesCount</td>
+                                        <td class="text-center fw-bold">@c.ConstraintsCount</td>
+                                        <td><small class="text-muted">@c.Notes</small></td>
+                                        <td><small>@(c.LastReviewedAt?.ToString("yyyy-MM-dd") ?? "—")</small></td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openCoverageModal(@c.Id, '@c.AnalysisStatus', '@c.Notes')">
+                                                تحديث
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Constraints -->
+        <div class="tab-pane fade" id="tab-constraints" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0 fw-bold">🔒 قيود الجمع والمنع التحريرية (Combination Constraints)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>رمز القيد</th>
+                                    <th>اسم القيد</th>
+                                    <th>الطريق</th>
+                                    <th>السياق والشرط</th>
+                                    <th>الأثر التحريري</th>
+                                    <th>الشرح والتعليل</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var con in Model.Constraints)
+                                {
+                                    <tr>
+                                        <td><span class="code-ltr text-primary fw-bold">@con.Code</span></td>
+                                        <td class="fw-bold">@con.NameArabic</td>
+                                        <td><span class="badge bg-secondary">@con.RouteCode</span></td>
+                                        <td>
+                                            <div>@con.ContextArabic</div>
+                                            <code class="small text-muted code-ltr">@con.ConditionJson</code>
+                                        </td>
+                                        <td>
+                                            <code class="small text-danger code-ltr">@con.EffectJson</code>
+                                        </td>
+                                        <td><small class="text-muted">@con.ExplanationArabic</small></td>
+                                        <td><span class="badge bg-warning text-dark">@con.ReviewStatus</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Sources -->
+        <div class="tab-pane fade" id="tab-sources" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0 fw-bold">📜 المصادر والمراجع التوثيقية (Reference Sources)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>رمز المصدر</th>
+                                    <th>العنوان</th>
+                                    <th>الموضع / الصفحات</th>
+                                    <th>النوع</th>
+                                    <th>الرابط المرجعي</th>
+                                    <th>بصمة التوثيق SHA-256</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in Model.Sources)
+                                {
+                                    <tr>
+                                        <td><span class="code-ltr fw-bold text-dark">@s.SourceCode</span></td>
+                                        <td class="fw-bold">@s.Title</td>
+                                        <td>@s.Locator</td>
+                                        <td><span class="badge bg-info text-dark">@s.Kind</span></td>
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(s.Url))
+                                            {
+                                                <a href="@s.Url" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">
+                                                    🔗 فتح المصدر
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(s.Sha256))
+                                            {
+                                                <span class="code-ltr small text-muted" title="@s.Sha256">
+                                                    @(s.Sha256.Substring(0, 12))...
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Create / Edit Wajh -->
+<div class="modal fade" id="wajhModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="wajhModalTitle">إضافة وجه جديد</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="wajhForm" onsubmit="saveWajh(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="editWajhId" value="0" />
+                    <input type="hidden" id="editWajhVersion" value="1" />
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">الرمز الثابت (a-z0-9-)</label>
+                            <input type="text" id="wajhCode" class="form-control code-ltr" required pattern="[a-z0-9-]{3,50}" placeholder="az-sh-badal2-lin4" />
+                            <small class="text-muted">الرمز ثابت للحفاظ على المعرفات والروابط.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">الطريق / الرواية</label>
+                            <select id="wajhRoute" class="form-select" required>
+                                @foreach (var r in Model.Routes)
+                                {
+                                    <option value="@r.Code">@r.NameArabic</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">الاسم بالعربية</label>
+                            <input type="text" id="wajhName" class="form-control" required maxlength="150" placeholder="مثال: البدل: حركتان؛ اللين: 4 حركات" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">التصنيف</label>
+                            <select id="wajhCategory" class="form-select">
+                                <option value="Tahrirat">تحريرات (Tahrirat)</option>
+                                <option value="Usul">أصول (Usul)</option>
+                                <option value="Farsh">فرش حروف (Farsh)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">مجموعة القاعدة (Rule Group)</label>
+                            <input type="text" id="wajhRuleGroup" class="form-control code-ltr" placeholder="badal-lin أو yasin-opening" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">الوصف وشروط التطبيق (Scope)</label>
+                            <textarea id="wajhScope" class="form-control" rows="2" required maxlength="500" placeholder="شروط انطباق هذا الوجه وسياقه..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">القيود والاستثناءات (Excluded Scope)</label>
+                            <textarea id="wajhExcluded" class="form-control" rows="2" maxlength="500" placeholder="الحالات المستثناة من هذا الوجه..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">التوثيق والمرجع (Citation)</label>
+                            <textarea id="wajhSource" class="form-control" rows="2" required maxlength="2000" placeholder="اسم الكتاب، الجزء والصفحة..."></textarea>
+                        </div>
+                        <div class="col-12" id="changeReasonContainer" style="display: none;">
+                            <label class="form-label fw-bold text-danger">سبب التعديل على الوجه المعتمد (إلزامي للنسخ المعتمدة)</label>
+                            <input type="text" id="wajhChangeReason" class="form-control" placeholder="بيان سبب إنشاء مراجعة جديدة للوجه المعتمد..." />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success fw-bold" id="saveWajhBtn">حفظ في المرجع</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Review Decision -->
+<div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">قرار مراجعة الوجه: <span id="reviewTargetCode" class="code-ltr"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="Review">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="reviewTargetId" />
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">القرار الإداري</label>
+                        <select name="action" id="reviewActionSelect" class="form-select" onchange="toggleReasonRequirement()">
+                            <option value="Approve">اعتماد الوجه (Approve)</option>
+                            <option value="Reject">رفض الوجه مع ذكر السبب (Reject)</option>
+                            <option value="Archive">أرشفة / سحب الوجه مع ذكر السبب (Archive)</option>
+                            <option value="Submit">إعادة إلى قيد المراجعة (Submit)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" id="reviewReasonLabel">السبب / الملاحظات</label>
+                        <textarea name="reason" id="reviewReasonInput" class="form-control" rows="3" placeholder="اكتب سبب القرار الإداري هنا..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary fw-bold">تنفيذ القرار</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Usage & Impact Report -->
+<div class="modal fade" id="usageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">📊 تقرير التأثير والاستخدامات للوجه: <span id="usageTargetCode" class="code-ltr"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="usageLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">جاري تحميل الاستخدامات المرتبطة...</p>
+                </div>
+                <div id="usageContent" style="display: none;">
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded">
+                                <h3 class="fw-bold mb-0" id="totalUsagesCount">0</h3>
+                                <small class="text-muted">إجمالي الارتباطات</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded">
+                                <h3 class="fw-bold mb-0" id="segmentsCount">0</h3>
+                                <small class="text-muted">مقاطع صوتية (Segments)</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded">
+                                <h3 class="fw-bold mb-0" id="recitationsCount">0</h3>
+                                <small class="text-muted">تلاوات (Recitations)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 300px;">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>النوع</th>
+                                    <th>المرجع</th>
+                                    <th>التوقيت</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usageDetailsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Update Coverage -->
+<div class="modal fade" id="coverageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">تحديث حالة التغطية التوثيقية</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="UpdateCoverage">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="coverageIdInput" />
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">حالة الاستخراج والتحرير</label>
+                        <select name="status" id="coverageStatusInput" class="form-select">
+                            <option value="NonEtudiee">غير مدروسة بعد (NonEtudiee)</option>
+                            <option value="Extraite">مستخرجة من المصدر (Extraite)</option>
+                            <option value="AResoudre">قيد الحل والمطابقة (AResoudre)</option>
+                            <option value="Revue">تمت المراجعة والاعتماد (Revue)</option>
+                            <option value="HorsPerimetre">خارج نطاق المشروع (HorsPerimetre)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظات التحرير</label>
+                        <textarea name="notes" id="coverageNotesInput" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary fw-bold">حفظ التحديث</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let wajhModalInstance = null;
+    let reviewModalInstance = null;
+    let usageModalInstance = null;
+    let coverageModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        wajhModalInstance = new bootstrap.Modal(document.getElementById('wajhModal'));
+        reviewModalInstance = new bootstrap.Modal(document.getElementById('reviewModal'));
+        usageModalInstance = new bootstrap.Modal(document.getElementById('usageModal'));
+        coverageModalInstance = new bootstrap.Modal(document.getElementById('coverageModal'));
+    });
+
+    function openCreateModal() {
+        document.getElementById('wajhModalTitle').textContent = 'إضافة وجه جديد (مسودة)';
+        document.getElementById('editWajhId').value = '0';
+        document.getElementById('editWajhVersion').value = '1';
+        document.getElementById('wajhCode').readOnly = false;
+        document.getElementById('wajhCode').value = '';
+        document.getElementById('wajhName').value = '';
+        document.getElementById('wajhCategory').value = 'Tahrirat';
+        document.getElementById('wajhRuleGroup').value = '';
+        document.getElementById('wajhScope').value = '';
+        document.getElementById('wajhExcluded').value = '';
+        document.getElementById('wajhSource').value = '';
+        document.getElementById('changeReasonContainer').style.display = 'none';
+        wajhModalInstance.show();
+    }
+
+    async function openEditModal(id) {
+        try {
+            const res = await fetch(`/api/awjuh/${id}`);
+            if (!res.ok) throw new Error('تعذر تحميل بيانات الوجه');
+            const data = await res.json();
+
+            document.getElementById('wajhModalTitle').textContent = `تعديل الوجه: ${data.nameArabic}`;
+            document.getElementById('editWajhId').value = data.id;
+            document.getElementById('editWajhVersion').value = data.version;
+            document.getElementById('wajhCode').value = data.code;
+            document.getElementById('wajhCode').readOnly = true;
+            document.getElementById('wajhRoute').value = data.routeCode;
+            document.getElementById('wajhName').value = data.nameArabic;
+            document.getElementById('wajhCategory').value = data.category || 'Tahrirat';
+            document.getElementById('wajhRuleGroup').value = data.ruleGroup || '';
+            document.getElementById('wajhScope').value = data.description || '';
+            document.getElementById('wajhExcluded').value = data.excludedScope || '';
+            document.getElementById('wajhSource').value = data.sourceCitation || '';
+
+            if (data.reviewStatus === 'Approved') {
+                document.getElementById('changeReasonContainer').style.display = 'block';
+                document.getElementById('wajhChangeReason').required = true;
+            } else {
+                document.getElementById('changeReasonContainer').style.display = 'none';
+                document.getElementById('wajhChangeReason').required = false;
+            }
+
+            wajhModalInstance.show();
+        } catch (e) {
+            alert(e.message);
+        }
+    }
+
+    async function saveWajh(e) {
+        e.preventDefault();
+        const id = parseInt(document.getElementById('editWajhId').value, 10);
+        const version = parseInt(document.getElementById('editWajhVersion').value, 10);
+
+        const payload = {
+            code: document.getElementById('wajhCode').value.trim(),
+            nameArabic: document.getElementById('wajhName').value.trim(),
+            routeCode: document.getElementById('wajhRoute').value.trim(),
+            category: document.getElementById('wajhCategory').value,
+            ruleGroup: document.getElementById('wajhRuleGroup').value.trim() || null,
+            description: document.getElementById('wajhScope').value.trim(),
+            excludedScope: document.getElementById('wajhExcluded').value.trim() || null,
+            sourceCitation: document.getElementById('wajhSource').value.trim(),
+            version: version,
+            changeReason: document.getElementById('wajhChangeReason')?.value.trim() || null
+        };
+
+        const isNew = (id === 0);
+        const url = isNew ? '/api/awjuh' : `/api/awjuh/${id}`;
+        const method = isNew ? 'POST' : 'PUT';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || 'فشل حفظ الوجه');
+            }
+
+            location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    function openReviewModal(id, code, currentStatus) {
+        document.getElementById('reviewTargetId').value = id;
+        document.getElementById('reviewTargetCode').textContent = code;
+        document.getElementById('reviewReasonInput').value = '';
+        reviewModalInstance.show();
+    }
+
+    function toggleReasonRequirement() {
+        const action = document.getElementById('reviewActionSelect').value;
+        const input = document.getElementById('reviewReasonInput');
+        if (action === 'Reject' || action === 'Archive') {
+            input.required = true;
+            document.getElementById('reviewReasonLabel').innerHTML = 'السبب / الملاحظات <span class="text-danger">* (إلزامي)</span>';
+        } else {
+            input.required = false;
+            document.getElementById('reviewReasonLabel').textContent = 'السبب / الملاحظات (اختياري)';
+        }
+    }
+
+    async function openDuplicateModal(id, sourceCode) {
+        const newCode = prompt(`أدخل الرمز الثابت للنسخة الجديدة من (${sourceCode}):`, `${sourceCode}-copy`);
+        if (!newCode || !newCode.trim()) return;
+
+        try {
+            const res = await fetch(`/api/awjuh/${id}/duplicate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newCode: newCode.trim() })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || 'فشل نسخ الوجه');
+            }
+
+            location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function openUsageModal(id) {
+        document.getElementById('usageLoading').style.display = 'block';
+        document.getElementById('usageContent').style.display = 'none';
+        usageModalInstance.show();
+
+        try {
+            const res = await fetch(`/api/awjuh/${id}/usages`);
+            if (!res.ok) throw new Error('تعذر جلب تقرير التأثير');
+            const data = await res.json();
+
+            document.getElementById('usageTargetCode').textContent = data.code;
+            document.getElementById('totalUsagesCount').textContent = data.totalUsages;
+            document.getElementById('segmentsCount').textContent = data.audioSegmentsCount;
+            document.getElementById('recitationsCount').textContent = data.recitationsCount;
+
+            const tbody = document.getElementById('usageDetailsBody');
+            tbody.replaceChildren();
+
+            if (data.audioSegments.length === 0 && data.recitations.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="4" class="text-center text-muted">لا توجد استخدامات مرتبطة حالياً.</td>';
+                tbody.appendChild(tr);
+            }
+
+            data.audioSegments.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="badge bg-primary">مقطع صوتي</span></td>
+                    <td>${s.reference || 'غير محدد'}</td>
+                    <td>${(s.startMs / 1000).toFixed(2)}–${(s.endMs / 1000).toFixed(2)} ث</td>
+                    <td><span class="badge bg-secondary">${s.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            data.recitations.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="badge bg-success">تلاوة</span></td>
+                    <td>سورة ${r.surahNumber} آية ${r.ayahNumber}</td>
+                    <td>—</td>
+                    <td><span class="badge bg-secondary">${r.status} (${r.isPublished ? 'منشور' : 'غير منشور'})</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('usageLoading').style.display = 'none';
+            document.getElementById('usageContent').style.display = 'block';
+        } catch (err) {
+            alert(err.message);
+            usageModalInstance.hide();
+        }
+    }
+
+    async function deleteDraft(id, version, code) {
+        if (!confirm(`هل أنت متأكد من حذف مسودة الوجه (${code}) نهائياً؟`)) return;
+
+        try {
+            const res = await fetch(`/api/awjuh/${id}?version=${version}`, {
+                method: 'DELETE'
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || 'فشل حذف المسودة');
+            }
+
+            location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    function openCoverageModal(id, status, notes) {
+        document.getElementById('coverageIdInput').value = id;
+        document.getElementById('coverageStatusInput').value = status;
+        document.getElementById('coverageNotesInput').value = notes || '';
+        coverageModalInstance.show();
+    }
+</script>
+}
