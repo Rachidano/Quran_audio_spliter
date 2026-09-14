@@ -1,4 +1,25 @@
 services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quran_web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=quran_warsh_db;Username=quran_user;Password=quran_secure_pwd
+      - Storage__LocalStorageRoot=/app/data
+      - Audio__FfmpegPath=ffmpeg
+      - Audio__FfprobePath=ffprobe
+    volumes:
+      - quran_data:/app/data
+      - quran_appdata:/app/App_Data
+
   postgres:
     image: postgres:17-alpine
     container_name: quran_postgres
@@ -35,3 +56,5 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  quran_data:
+  quran_appdata:

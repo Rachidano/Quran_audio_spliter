@@ -22,7 +22,7 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 | **Lot 7** | Terminer le site public cohérent | Lots 2, 4, 6 | ✅ **Terminé** | 14/09/2026 |
 | **Lot 8** | Industrialiser l’ingestion et la qualité | Lots 3, 6, 7 | ✅ **Terminé** | 14/09/2026 |
 | **Lot 9** | Nettoyer le projet et rendre l’exécution reproductible | Remplacements recettés | ✅ **Terminé** | 14/09/2026 |
-| **Lot 10** | Recette, exploitation et livraison | Lots 0 à 9 | ⏳ **En cours** | |
+| **Lot 10** | Recette, exploitation et livraison | Lots 0 à 9 | ✅ **Terminé** | 14/09/2026 |
 
 ---
 
@@ -98,6 +98,6 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **9.3** Documentation README épurée et reproductibilité multi-environnements (`README.md` à la racine, commandes pas-à-pas, tests unitaires et intégration).
 
 ### Lot 10 — Recette, exploitation et livraison
-- [ ] **10.1** Configuration Docker Compose complète (Web, DB, Worker, volumes persistants).
-- [ ] **10.2** Exécution et consignation de l'ensemble des 28 scénarios de recette (T01 à T28).
-- [ ] **10.3** Dossier de livraison distinguant logiciel fonctionnel et contenu restant à qualifier.
+- [x] **10.1** Configuration Docker Compose complète (Dockerfile multi-stage .NET 9 + FFmpeg, service web, PostgreSQL 17, MinIO, volumes persistants `quran_data` et `quran_appdata`).
+- [x] **10.2** Exécution et consignation de l'ensemble des 28 scénarios de recette (T01 à T28 consignés et validés dans `docs/RECETTE.md`, 110 tests automatisés au vert).
+- [x] **10.3** Dossier de livraison distinguant logiciel fonctionnel et contenu restant à qualifier (`docs/RAPPORT_DE_LIVRAISON.md`).

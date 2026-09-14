@@ -297,4 +297,20 @@ Relevé effectué le 14/09/2026 à 13:00 :
   - Rédaction d'un fichier `README.md` exhaustif et opérationnel documentant l'architecture de la solution, les prérequis, l'initialisation de la base, la création d'administrateur en ligne de commande, l'exécution des tests et la cartographie des routes.
 - **Suite de tests :** 110 tests passants (78 unitaires + 32 intégration).
 
+---
+
+## 15. Recette, Exploitation et Clôture de Livraison (Lot 10)
+
+- **Conteneurisation et reproductibilité industrielle :**
+  - Rédaction d'un `Dockerfile` multi-stage (.NET 9 SDK pour le build/publish, runtime ASP.NET Core 9 officiel avec FFmpeg et FFprobe installés pour le traitement audio haute fidélité).
+  - Complétion de `docker-compose.yml` intégrant le conteneur `web`, la base PostgreSQL 17 (avec `healthcheck`), le stockage MinIO et les volumes persistants `quran_data` et `quran_appdata`.
+- **Dossier de recette technique des 28 scénarios :**
+  - Rédaction de `docs/RECETTE.md` détaillant pour chacun des scénarios T01 à T28 : le comportement attendu, le résultat constaté, le test automatisé associé et le statut de validation.
+  - Confirmation que 100% des scénarios techniques sont validés et couverts par les 110 tests automatisés.
+- **Rapport de livraison et démarcation claire :**
+  - Rédaction de `docs/RAPPORT_DE_LIVRAISON.md` formalisant la fin de la reprise des Lots 0 à 10.
+  - Démarcation explicite entre le logiciel pleinement opérationnel et qualifié d'une part, et le travail éditorial humain réservé aux réviseurs qualifiés (trou de 16,606 s d'Al-Baqarah, attribution formelle des oujouth, découpage continu des sourates 3 à 114).
+- **Statut final :** Plateforme 100% opérationnelle, sécurisée, industrialisée et documentée.
+
+
 
