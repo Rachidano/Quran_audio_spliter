@@ -4,12 +4,21 @@
     if (!root) return;
     const polygons = [...root.querySelectorAll('path[data-reference]')];
     const buttons = [...root.querySelectorAll('button[data-reference]')];
-    const selection = document.getElementById('pilot-selection');
+    const permalinkBox = document.getElementById('ayah-permalink-box');
+    const permalinkBtn = document.getElementById('ayah-permalink-btn');
     function select(reference, updateUrl = true) {
         const valid = polygons.some(p => p.dataset.reference === reference);
         polygons.forEach(p => p.classList.toggle('selected', valid && p.dataset.reference === reference));
         buttons.forEach(b => b.setAttribute('aria-pressed', String(valid && b.dataset.reference === reference)));
         selection.textContent = valid ? `سورة ${reference.split(':')[0]} — آية ${reference.split(':')[1]}` : 'لم تُحدَّد آية بعد';
+        if (permalinkBox && permalinkBtn) {
+            if (valid) {
+                permalinkBtn.href = `/quran/${reference.replace(':', '/')}`;
+                permalinkBox.hidden = false;
+            } else {
+                permalinkBox.hidden = true;
+            }
+        }
         root.dispatchEvent(new CustomEvent('ayah-selected',{detail:valid?reference:null}));
         if (updateUrl) {
             const url = new URL(location.href);
@@ -33,4 +42,28 @@
     image.addEventListener('error', imageFailed);
     if (image.complete && image.naturalWidth === 0) imageFailed();
     select(root.dataset.initialReference, false);
+
+    // Keyboard navigation
+    document.addEventListener('keydown', e => {
+        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            const uniqueRefs = [...new Set(buttons.map(b => b.dataset.reference))];
+            if (uniqueRefs.length === 0) return;
+            const currentRef = root.dataset.selectedReference || (buttons.find(b => b.getAttribute('aria-pressed') === 'true')?.dataset.reference);
+            let idx = uniqueRefs.indexOf(currentRef);
+            if (e.key === 'ArrowLeft') {
+                idx = (idx + 1) % uniqueRefs.length;
+            } else {
+                idx = (idx - 1 + uniqueRefs.length) % uniqueRefs.length;
+            }
+            select(uniqueRefs[idx]);
+        } else if (e.code === 'Space') {
+            const player = document.getElementById('passage-player');
+            if (player && player.src) {
+                e.preventDefault();
+                if (player.paused) player.play();
+                else player.pause();
+            }
+        }
+    });
 })();

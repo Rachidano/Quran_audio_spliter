@@ -83,10 +83,10 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **6.4** Publication et dépublication explicites avec vérification des assets générés (contrôle de somme de contrôle SHA-256).
 
 ### Lot 7 — Terminer le site public cohérent
-- [ ] **7.1** Aligner les pages publiques (`/`, `/surah/{number}`, `/quran/{surah}/{ayah}`, `/mushaf/page/{pageNumber}`).
-- [ ] **7.2** Lecteur partagé sur les images MARW avec surlignage fidèle et filtrage par وجه disponible.
-- [ ] **7.3** Téléchargement propre du passage découpé et partage par URL canonique qualifiée.
-- [ ] **7.4** Prise en charge RTL, responsive mobile, navigation clavier et gestion des cas sans audio publié.
+- [x] **7.1** Aligner les pages publiques (`/`, `/surah/{number}`, `/quran/{surah}/{ayah}`, `/mushaf/page/{pageNumber}`).
+- [x] **7.2** Lecteur partagé sur les images MARW avec surlignage fidèle et filtrage par وجه disponible.
+- [x] **7.3** Téléchargement propre du passage découpé et partage par URL canonique qualifiée.
+- [x] **7.4** Prise en charge RTL, responsive mobile, navigation clavier et gestion des cas sans audio publié.
 
 ### Lot 8 — Industrialiser l’ingestion et la qualité
 - [ ] **8.1** Inventaire et ingestion automatisée des 114 sourates Archive.org.

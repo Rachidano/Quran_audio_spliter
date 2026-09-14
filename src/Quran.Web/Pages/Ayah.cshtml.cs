@@ -22,8 +22,12 @@ public class AyahModel : PageModel
     [BindProperty(SupportsGet = true)]
     public int Ayah { get; set; } = 1;
 
+    [BindProperty(SupportsGet = true)]
+    public string? Wajh { get; set; }
+
     public SurahDto? SurahInfo { get; set; }
     public AyahDto? AyahInfo { get; set; }
+    public RecitationDto? SelectedRecitation { get; set; }
     public IReadOnlyList<AyahImageRegionDto> MushafRegions { get; set; } = new List<AyahImageRegionDto>();
     public MushafPageDto? MushafPage { get; set; }
 
@@ -42,6 +46,12 @@ public class AyahModel : PageModel
         AyahInfo = await _quranReaderService.GetAyahAsync(Surah, Ayah, cancellationToken);
         if (AyahInfo == null)
             return NotFound();
+
+        if (!string.IsNullOrEmpty(Wajh))
+        {
+            SelectedRecitation = AyahInfo.Recitations.FirstOrDefault(r => string.Equals(r.WajhCode, Wajh, StringComparison.OrdinalIgnoreCase));
+        }
+        SelectedRecitation ??= AyahInfo.Recitations.FirstOrDefault();
 
         MushafRegions = await _mushafService.GetAyahRegionsAsync(AyahInfo.Id, cancellationToken);
         if (MushafRegions.Count > 0)

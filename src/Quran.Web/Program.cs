@@ -33,6 +33,8 @@ if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>(
     builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
 }
 
+builder.Services.AddSingleton(System.Text.Encodings.Web.HtmlEncoder.Create(System.Text.Unicode.UnicodeRanges.All));
+
 // Add services to the container.
 builder.Services.AddRazorPages(options =>
 {

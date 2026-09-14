@@ -69,22 +69,34 @@
             <label for="pilot-zoom">تكبير الصفحة</label>
             <input id="pilot-zoom" type="range" min="100" max="200" step="25" value="100" />
             <button type="button" id="pilot-clear" class="btn btn-outline-secondary">إلغاء التحديد</button>
-            <hr />
-            <h2>تسجيل السورة الأصلي</h2>
-            @if (Model.SourceAudios.Count > 0)
+            <div id="ayah-permalink-box" class="my-2" hidden>
+                <a id="ayah-permalink-btn" href="#" class="btn btn-sm btn-outline-primary w-100">
+                    🔗 فتح صفحة الآية المستقلة وتحميل التلاوة
+                </a>
+            </div>
+            @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Reviewer") || User.IsInRole("Annotator")))
             {
-                @foreach (var source in Model.SourceAudios)
+                <hr />
+                <h2>تسجيل السورة الأصلي (خاص بالتدقيق)</h2>
+                @if (Model.SourceAudios.Count > 0)
                 {
-                    <p>سورة @Model.GetSurahName(source.Surah)</p>
-                    <audio controls preload="none" src="@source.Url" aria-label="تسجيل السورة @source.Surah"></audio>
+                    @foreach (var source in Model.SourceAudios)
+                    {
+                        <p>سورة @Model.GetSurahName(source.Surah)</p>
+                        <audio controls preload="none" src="@source.Url" aria-label="تسجيل السورة @source.Surah"></audio>
+                    }
+                    <p class="small text-muted">تسجيل السورة كاملاً، غير متزامن مع الآية المحددة.</p>
                 }
-                <p class="small text-muted">تسجيل السورة كاملاً، غير متزامن مع الآية المحددة.</p>
+                else
+                {
+                    <p>تسجيل السورة غير متاح محلياً.</p>
+                }
             }
-            else
-            {
-                <p>تسجيل السورة غير متاح محلياً.</p>
-            }
-            <p class="small">اختيار الوجه والاستماع إلى الآية سيتاحان بعد مراجعة الربط بالتسجيلات.</p>
+            <div class="mt-3 p-2 bg-light rounded small text-muted">
+                <strong>اختصارات لوحة المفاتيح :</strong>
+                <div>← أو → : التنقل بين الصفحات والآيات</div>
+                <div>مسافة (Space) : تشغيل / إيقاف التلاوة</div>
+            </div>
         </aside>
     </div>
     <p id="pilot-image-error" class="alert alert-danger" hidden>تعذّر تحميل الصورة. أعد تحميل الصفحة.</p>

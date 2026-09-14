@@ -20,7 +20,7 @@
             <div class="list-group">
                 @foreach (var item in Model.SearchResults)
                 {
-                    <a asp-page="/Ayah" asp-route-surah="@item.SurahNumber" asp-route-ayah="@item.AyahNumber" class="list-group-item list-group-item-action p-3 mb-2 rounded border">
+                    <a href="/quran/@item.SurahNumber/@item.AyahNumber" class="list-group-item list-group-item-action p-3 mb-2 rounded border">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="badge bg-success">سورة @item.SurahNameArabic (@item.SurahNameLatin) — آية @item.AyahNumber</span>
                             <span class="text-muted small">عرض وتلاوة الآية ←</span>
@@ -38,9 +38,10 @@
 <div class="text-center py-4 px-3 mb-4 rounded-4" style="background: linear-gradient(180deg, #f0fdf4, #ffffff); border: 1px solid #d1fae5;">
     <h1 class="display-6 fw-bold text-success mb-2">مصحف رواية ورش عن نافع بجميع الأوجه الشاطبية</h1>
     <p class="lead text-secondary mb-3">بصوت فضيلة الشيخ القارئ <strong>صابر عبد الحكم</strong></p>
-    <div class="d-inline-flex gap-2">
-        <a asp-page="/Surah" asp-route-number="1" class="btn btn-quran-primary">سورة الفاتحة مباشرة</a>
-        <a href="#surahs-grid" class="btn btn-quran-outline">تصفح السور (114)</a>
+    <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
+        <a href="/surah/1" class="btn btn-quran-primary">سورة الفاتحة مباشرة</a>
+        <a href="/mushaf/page/1" class="btn btn-outline-success">📖 تصفح المصحف الشريف (MARW)</a>
+        <a href="#surahs-grid" class="btn btn-quran-outline">فهرس السور (114)</a>
     </div>
 </div>
 
@@ -54,10 +55,13 @@
     @if (Model.Surahs.Count == 0)
     {
         <div class="alert alert-info d-flex justify-content-between align-items-center">
-            <span>البيانات المرجعية لم تُستورد بعد في قاعدة البيانات. اضغط للتهيئة الأولية السريعة :</span>
-            <form method="post" action="/api/admin/import/seed-reference" onsubmit="event.preventDefault(); fetch('/api/admin/import/seed-reference', {method: 'POST'}).then(() => fetch('/api/admin/import/import-fatiha', {method: 'POST'})).then(() => location.reload());">
-                <button type="submit" class="btn btn-sm btn-primary">تهيئة 114 سورة و الفاتحة الآن</button>
-            </form>
+            <span>البيانات المرجعية لم تُستورد بعد في قاعدة البيانات.</span>
+            @if (User.IsInRole("Admin"))
+            {
+                <form method="post" action="/api/admin/import/seed-reference" onsubmit="event.preventDefault(); fetch('/api/admin/import/seed-reference', {method: 'POST'}).then(() => fetch('/api/admin/import/import-fatiha', {method: 'POST'})).then(() => location.reload());">
+                    <button type="submit" class="btn btn-sm btn-primary">تهيئة 114 سورة و الفاتحة الآن</button>
+                </form>
+            }
         </div>
     }
     else
@@ -66,7 +70,7 @@
             @foreach (var surah in Model.Surahs)
             {
                 <div class="col">
-                    <a asp-page="/Surah" asp-route-number="@surah.Number" class="text-decoration-none text-dark">
+                    <a href="/surah/@surah.Number" class="text-decoration-none text-dark">
                         <div class="card h-100 p-3 ayah-card">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-3">

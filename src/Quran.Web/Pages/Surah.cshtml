@@ -1,4 +1,4 @@
-@page "{number:int?}"
+@page "/surah/{number:int?}"
 @model SurahModel
 @{
     ViewData["Title"] = $"سورة {Model.Surah?.NameArabic ?? ""}";
@@ -11,7 +11,7 @@
         <div class="d-flex justify-content-between align-items-center mb-2">
             @if (Model.Surah.Number > 1)
             {
-                <a asp-page="/Surah" asp-route-number="@(Model.Surah.Number - 1)" class="btn btn-outline-light btn-sm">← السورة السابقة</a>
+                <a href="/surah/@(Model.Surah.Number - 1)" class="btn btn-outline-light btn-sm" id="btn-prev-surah">← السورة السابقة</a>
             }
             else
             {
@@ -22,7 +22,7 @@
 
             @if (Model.Surah.Number < 114)
             {
-                <a asp-page="/Surah" asp-route-number="@(Model.Surah.Number + 1)" class="btn btn-outline-light btn-sm">السورة التالية →</a>
+                <a href="/surah/@(Model.Surah.Number + 1)" class="btn btn-outline-light btn-sm" id="btn-next-surah">السورة التالية →</a>
             }
             else
             {
@@ -60,7 +60,7 @@
                             <div class="p-2 border rounded-3 bg-white text-start">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <span class="fw-bold small text-success">@(rec.WajhNameArabic ?? rec.WajhCode)</span>
-                                    <a href="@rec.AudioUrl" download class="btn btn-outline-success btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">⬇ تحميل</a>
+                                    <a href="@rec.AudioUrl" download="سورة_@(Model.Surah.NameArabic)_الاستعاذة_والبسملة_@(rec.WajhCode ?? "ورش").mp3" class="btn btn-outline-success btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">⬇ تحميل</a>
                                 </div>
                                 <audio controls class="w-100" style="height: 36px;" preload="none">
                                     <source src="@rec.AudioUrl" type="audio/mpeg">
@@ -99,10 +99,10 @@
                             <span class="text-muted small">الآية @ayah.AyahNumber من سورة @Model.Surah.NameArabic</span>
                         </div>
                         <div class="d-flex gap-2">
-                            <a href="/Mushaf/Page/@(ayah.PageNumber ?? (Model.Surah.Number == 1 ? 1 : 2))?highlightAyahId=@ayah.Id" class="btn btn-sm btn-outline-success">
+                            <a href="/mushaf/page/@(ayah.PageNumber ?? (Model.Surah.Number == 1 ? 1 : 2))?reference=@Model.Surah.Number:@ayah.AyahNumber" class="btn btn-sm btn-outline-success">
                                 📖 في المصحف
                             </a>
-                            <a asp-page="/Ayah" asp-route-surah="@Model.Surah.Number" asp-route-ayah="@ayah.AyahNumber" class="btn btn-sm btn-outline-secondary">
+                            <a href="/quran/@Model.Surah.Number/@ayah.AyahNumber" class="btn btn-sm btn-outline-secondary">
                                 رابط دائم 🔗
                             </a>
                         </div>
@@ -137,7 +137,9 @@
                                     <source src="@ayah.Recitations.First().AudioUrl" type="audio/mpeg">
                                     متصفحك لا يدعم تشغيل الصوت المباشر.
                                 </audio>
-                                <a href="@ayah.Recitations.First().AudioUrl" download class="btn btn-outline-success btn-sm text-nowrap">
+                                <a href="@ayah.Recitations.First().AudioUrl"
+                                   download="سورة_@(Model.Surah.NameArabic)_الآية_@(ayah.AyahNumber)_@(ayah.Recitations.First().WajhCode ?? "ورش").mp3"
+                                   class="btn btn-outline-success btn-sm text-nowrap">
                                     ⬇ تحميل
                                 </a>
                             </div>
@@ -153,4 +155,21 @@
             }
         </div>
     }
+}
+
+@section Scripts {
+    <script>
+        // Navigation rapide entre sourates avec flèches
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+            if (e.key === 'ArrowLeft') {
+                const next = document.getElementById('btn-next-surah');
+                if (next) next.click();
+            } else if (e.key === 'ArrowRight') {
+                const prev = document.getElementById('btn-prev-surah');
+                if (prev) prev.click();
+            }
+        });
+    </script>
 }

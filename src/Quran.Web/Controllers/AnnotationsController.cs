@@ -199,6 +199,36 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
     [AllowAnonymous]
     public async Task<IActionResult> Playback([FromQuery] string reference)
     {
+        var segments = await db.AudioSegments
+            .Include(s => s.Wajh)
+            .Include(s => s.PublishedAudioAsset)
+            .Where(s => s.Reference == reference && s.Status == Quran.Domain.Enums.AudioSegmentStatus.Published && (s.Wajh == null || s.Wajh.ReviewStatus == "Approved"))
+            .OrderBy(s => s.StartMs)
+            .ToListAsync();
+
+        if (segments.Count > 0)
+        {
+            var results = segments.Select(s => new
+            {
+                id = s.Id.ToString(),
+                startMs = s.StartMs,
+                endMs = s.EndMs,
+                reference = s.Reference,
+                segmentType = (int)s.SegmentType,
+                repeatOfId = s.RepeatOfId?.ToString(),
+                notes = s.Notes,
+                serverVersion = s.Version,
+                status = s.Status.ToString(),
+                wajhCatalogCode = s.Wajh?.Code,
+                wajhName = s.Wajh?.NameArabic,
+                wajhStatus = s.Wajh?.ReviewStatus ?? "Unqualified",
+                audioUrl = s.PublishedAudioAsset != null ? "/audio/" + s.PublishedAudioAsset.StorageKey : null,
+                isCutAsset = s.PublishedAudioAsset != null,
+                downloadUrl = s.PublishedAudioAsset != null ? "/audio/" + s.PublishedAudioAsset.StorageKey : null
+            });
+            return Ok(results);
+        }
+
         var query = db.MushafPassages.Include(p => p.Wajh)
             .Where(p => p.Edition == MarwPilotCorpus.EditionCode && p.Reference == reference && p.Status == "Published" && (p.Wajh == null || p.Wajh.ReviewStatus == "Approved"));
         return Ok((await query.OrderBy(p => p.StartMs).ToListAsync()).Select(View));
@@ -208,6 +238,37 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
     [Authorize(Roles = "Reviewer,Admin")]
     public async Task<IActionResult> Preview([FromQuery] string reference)
     {
+        var segments = await db.AudioSegments
+            .Include(s => s.Wajh)
+            .Include(s => s.PublishedAudioAsset)
+            .Include(s => s.SourceAudio)
+            .Where(s => s.Reference == reference)
+            .OrderBy(s => s.StartMs)
+            .ToListAsync();
+
+        if (segments.Count > 0)
+        {
+            var results = segments.Select(s => new
+            {
+                id = s.Id.ToString(),
+                startMs = s.StartMs,
+                endMs = s.EndMs,
+                reference = s.Reference,
+                segmentType = (int)s.SegmentType,
+                repeatOfId = s.RepeatOfId?.ToString(),
+                notes = s.Notes,
+                serverVersion = s.Version,
+                status = s.Status.ToString(),
+                wajhCatalogCode = s.Wajh?.Code,
+                wajhName = s.Wajh?.NameArabic,
+                wajhStatus = s.Wajh?.ReviewStatus ?? "Unqualified",
+                audioUrl = s.PublishedAudioAsset != null ? "/audio/" + s.PublishedAudioAsset.StorageKey : (s.SourceAudio != null ? $"/api/audio/stream/{s.SourceAudio.Id}" : null),
+                isCutAsset = s.PublishedAudioAsset != null,
+                downloadUrl = s.PublishedAudioAsset != null ? "/audio/" + s.PublishedAudioAsset.StorageKey : null
+            });
+            return Ok(results);
+        }
+
         var query = db.MushafPassages.Include(p => p.Wajh)
             .Where(p => p.Edition == MarwPilotCorpus.EditionCode && p.Reference == reference);
         return Ok((await query.OrderBy(p => p.StartMs).ToListAsync()).Select(View));

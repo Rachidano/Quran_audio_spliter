@@ -45,10 +45,13 @@ public class PageModelCustom(MarwPilotCorpus corpus, IStorageService storage, Qu
         if (corpus.GetPage(PageNumber) is not { } page) return NotFound();
         MushafPage = page;
         if (Reference != null && !page.Regions.Any(r => r.Reference == Reference)) return NotFound();
-        foreach (var surah in page.Regions.Select(r => r.SurahNumber).Distinct())
+        if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Reviewer") || User.IsInRole("Annotator")))
         {
-            var key = $"sources/{surah:D3}/original.mp3";
-            if (await storage.FileExistsAsync(key, cancellationToken)) SourceAudios.Add((surah, storage.GetPublicUrl(key)));
+            foreach (var surah in page.Regions.Select(r => r.SurahNumber).Distinct())
+            {
+                var key = $"sources/{surah:D3}/original.mp3";
+                if (await storage.FileExistsAsync(key, cancellationToken)) SourceAudios.Add((surah, storage.GetPublicUrl(key)));
+            }
         }
         return Page();
     }

@@ -230,11 +230,38 @@ Relevé effectué le 14/09/2026 à 13:00 :
 
 ---
 
-## 11. État des Tests Automatisés
+---
+
+## 11. Site Public Cohérent, Lecteur MARW Unifié et Téléchargements Propres (Lot 7)
+
+- **Harmonisation des routes canoniques :**
+  - Accueil : `/` (avec recherche plein texte/référence, liens canoniques vers `/surah/{number}` et `/mushaf/page/1`).
+  - Sourate : `/surah/{number}` (navigation séquentielle, permalinks vers `/quran/{surah}/{ayah}`, téléchargement direct avec nom de fichier propre).
+  - Ayah canonique : `/quran/{surah}/{ayah}` (fil d'ariane, découpage vectoriel fidèle du Mushaf Warsh MARW officiel, sélecteur interactif d'أوجه avec synchronisation de l'URL `?wajh=...`, partage de permalien canonique, téléchargement MP3 identifié `سورة_{nom}_{ayah}_{wajh}.mp3`, navigation au clavier flèches gauche/droite et espace).
+  - Page Mushaf MARW : `/mushaf/page/{pageNumber}` (planche officielle 604 pages, surlignage vectoriel SVG des ayat, lecteur partagé avec sélecteur de وجه, gestion propre des segments découpés publiés vs prévisualisations autorisées, raccourcis clavier).
+- **Protection stricte des médias privés :**
+  - Fichiers sources bruts `/audio/sources/*` masqués aux visiteurs anonymes et réservés aux relecteurs/administrateurs authentifiés.
+  - Prévisualisation `/api/annotations/preview` réservée aux rôles `Reviewer`/`Admin`.
+  - Point d'accès public unifié `/api/annotations/playback` servant les segments canoniques `AudioSegment` publiés avec métadonnées de durée et wajh.
+- **Rendu typographique et internationalisation :**
+  - Enregistrement du service `HtmlEncoder.Create(UnicodeRanges.All)` garantissant l'émission directe du texte arabe sans échappement HTML numérique `&#x...;`.
+  - Support complet RTL, styles responsives et navigation clavier (flèches pour défilement des versets, barre d'espace pour bascule lecture/pause).
+- **Tests d'intégration de bout en bout (`PublicSiteIntegrationTests`) :**
+  - `HomePage_LoadsSuccessfully_WithCanonicalLinks` : validation de l'index et des liens canoniques.
+  - `SurahPage_CanonicalRoute_LoadsSuccessfully` : affichage des sourates et permaliens d'ayat.
+  - `AyahPage_CanonicalRoute_LoadsSuccessfully_WithPermaAndWajhSelector` : découpage MARW, titre arabe, lecteur et partage.
+  - `AyahPage_WithWajhQueryParameter_BindsWajhCorrectly` : liaison du paramètre d'URL wajh.
+  - `MushafPage_CanonicalRoute_LoadsSuccessfully_WithRegionsAndViewer` : planche MARW, SVG et lecteur.
+  - `PlaybackApi_ForValidReference_ReturnsOk` : endpoint public de lecture.
+  - `PreviewApi_Anonymous_IsRejected` : rejet sécurisé des prévisualisations anonymes.
+
+---
+
+## 12. État des Tests Automatisés
 
 - Commande : `dotnet test`
-- Résultat actuel : **97 tests exécutés, 97 réussis (0 échec, 1 ignoré documenté)**
-  - `Quran.UnitTests` : 74/74 réussis (dont `AudioEditorServiceTests.ReviewWorkflow_SubmitApproveRejectUnpublish_Lifecycle`).
-  - `Quran.IntegrationTests` : 23/23 réussis sur `quran_db_test` (dont `ReviewWorkflowIntegrationTests` et `AudioEditorEndToEndIntegrationTests`).
+- Résultat actuel : **104 tests exécutés, 104 réussis (0 échec, 1 ignoré documenté)**
+  - `Quran.UnitTests` : 74/74 réussis.
+  - `Quran.IntegrationTests` : 30/30 réussis sur `quran_db_test` (dont `PublicSiteIntegrationTests`, `ReviewWorkflowIntegrationTests`, `AudioEditorEndToEndIntegrationTests`, `AwjuhEndToEndIntegrationTests`, `SecurityAccessIntegrationTests`).
 
 
