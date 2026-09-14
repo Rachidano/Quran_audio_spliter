@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Quran.Application.DTOs;
 using Quran.Application.Interfaces;
@@ -6,6 +7,7 @@ namespace Quran.Web.Controllers;
 
 [ApiController]
 [Route("api/admin/[controller]")]
+[Authorize(Roles = "Admin")]
 public class CorpusCheckController : ControllerBase
 {
     private readonly ICorpusCheckerService _corpusCheckerService;

@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Quran.Domain.Entities;
+using Quran.Infrastructure.Identity;
 
 namespace Quran.Infrastructure.Persistence;
 
-public class QuranDbContext : DbContext
+public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
 {
     public QuranDbContext(DbContextOptions<QuranDbContext> options) : base(options)
     {

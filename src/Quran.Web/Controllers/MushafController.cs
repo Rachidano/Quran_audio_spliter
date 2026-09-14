@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Quran.Application.DTOs;
 using Quran.Application.Interfaces;
@@ -52,6 +53,7 @@ public class MushafController : ControllerBase
     }
 
     [HttpPost("/api/admin/mushaf/ayahs/{ayahId:long}/regions")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<AyahImageRegionDto>> CreateAyahRegion(long ayahId, [FromBody] CreateAyahRegionRequest request, CancellationToken cancellationToken)
     {
         try
@@ -72,6 +74,7 @@ public class MushafController : ControllerBase
     }
 
     [HttpPut("/api/admin/mushaf/ayah-regions/{id:long}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<AyahImageRegionDto>> UpdateAyahRegion(long id, [FromBody] UpdateAyahRegionRequest request, CancellationToken cancellationToken)
     {
         try
@@ -91,6 +94,7 @@ public class MushafController : ControllerBase
     }
 
     [HttpDelete("/api/admin/mushaf/ayah-regions/{id:long}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteAyahRegion(long id, CancellationToken cancellationToken)
     {
         try
@@ -107,6 +111,7 @@ public class MushafController : ControllerBase
 
     [HttpPost("/api/admin/audio-segments/{segmentId:guid}/image-regions")]
     [HttpPost("/api/admin/mushaf/audio-segments/{segmentId:guid}/image-regions")]
+    [Authorize(Roles = "Reviewer,Admin")]
     public async Task<ActionResult<AudioSegmentImageRegionDto>> CreateSegmentImageRegion(Guid segmentId, [FromBody] CreateSegmentImageRegionRequest request, CancellationToken cancellationToken)
     {
         try
@@ -128,6 +133,7 @@ public class MushafController : ControllerBase
 
     [HttpGet("/api/admin/audio-segments/{segmentId:guid}/image-regions")]
     [HttpGet("/api/admin/mushaf/audio-segments/{segmentId:guid}/image-regions")]
+    [Authorize(Roles = "Reviewer,Admin")]
     public async Task<ActionResult<IReadOnlyList<AudioSegmentImageRegionDto>>> GetSegmentImageRegions(Guid segmentId, CancellationToken cancellationToken)
     {
         var regions = await _mushafService.GetSegmentImageRegionsAsync(segmentId, cancellationToken);
@@ -136,6 +142,7 @@ public class MushafController : ControllerBase
 
     [HttpDelete("/api/admin/audio-segment-image-regions/{id:long}")]
     [HttpDelete("/api/admin/mushaf/audio-segment-image-regions/{id:long}")]
+    [Authorize(Roles = "Reviewer,Admin")]
     public async Task<IActionResult> DeleteSegmentImageRegion(long id, CancellationToken cancellationToken)
     {
         try

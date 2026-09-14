@@ -1,0 +1,47 @@
+@page
+@model Quran.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "تسجيل الدخول — إدارة المنصة";
+}
+
+<div class="container py-5" dir="rtl">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <h4 class="mb-0 fw-bold">تسجيل الدخول لإدارة مصحف ورش</h4>
+                    <small class="text-white-50">فريق التحرير والتدقيق والمراجعة</small>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" asp-route-returnUrl="@Model.ReturnUrl">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Email" class="form-label fw-bold"></label>
+                            <input asp-for="Input.Email" class="form-control text-start" dir="ltr" placeholder="admin@quranwarsh.local" autocomplete="username" />
+                            <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Password" class="form-label fw-bold"></label>
+                            <input asp-for="Input.Password" class="form-control text-start" dir="ltr" autocomplete="current-password" />
+                            <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input asp-for="Input.RememberMe" class="form-check-input" />
+                            <label asp-for="Input.RememberMe" class="form-check-label"></label>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold">دخول إلى لوحة التحكم</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light text-center py-3 text-muted small">
+                    منصة مصحف ورش عن نافع — وصول محمي للمحررين والمراجعين فقط
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

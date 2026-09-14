@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quran.Application.Interfaces;
@@ -34,10 +35,12 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
         node["audioUrl"] = "/audio/" + p.SourceKey; return node;
     }
     [HttpGet]
+    [Authorize(Roles = "Reviewer,Admin")]
     public async Task<IActionResult> List([FromQuery] string sourceHash)
         => Ok((await db.MushafPassages.Include(p => p.Wajh).Where(p => p.SourceHash == sourceHash).OrderBy(p => p.StartMs).ToListAsync()).Select(View));
 
     [HttpPost("import")]
+    [Authorize(Roles = "Reviewer,Admin")]
     public async Task<IActionResult> Import(ImportInput input, CancellationToken ct)
     {
         if (input.Edition != MarwPilotCorpus.EditionCode || input.Source == null || input.Passages == null || input.Passages.Length > 10000 || !System.Text.RegularExpressions.Regex.IsMatch(input.Source.StorageKey ?? "", @"^sources/[0-9]{3}/original\.mp3$")) return BadRequest(new { message = "نسخة المصحف أو المصدر غير صالح." });
@@ -101,6 +104,7 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
         return Ok(saved.OrderBy(p => p.StartMs).Select(View));
     }
     [HttpPost("{id:guid}/publish")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Publish(Guid id, ReviewInput input)
     {
         var p = await db.MushafPassages.Include(p => p.Wajh).FirstOrDefaultAsync(p => p.Id == id); if (p == null) return NotFound();
@@ -109,6 +113,7 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
         p.Status = "Published"; p.Version++; await db.SaveChangesAsync(); return Ok(View(p));
     }
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Reviewer,Admin")]
     public async Task<IActionResult> Delete(Guid id, [FromQuery] int version)
     {
         var p = await db.MushafPassages.FindAsync(id); if (p == null) return NotFound();
@@ -117,10 +122,20 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
         db.Remove(p); await db.SaveChangesAsync(); return NoContent();
     }
     [HttpGet("playback")]
-    public async Task<IActionResult> Playback([FromQuery] string reference, [FromQuery] bool preview = false)
+    [AllowAnonymous]
+    public async Task<IActionResult> Playback([FromQuery] string reference)
     {
-        var query = db.MushafPassages.Include(p => p.Wajh).Where(p => p.Edition == MarwPilotCorpus.EditionCode && p.Reference == reference);
-        if (!preview) query = query.Where(p => p.Status == "Published" && (p.Wajh == null || p.Wajh.ReviewStatus == "Approved"));
+        var query = db.MushafPassages.Include(p => p.Wajh)
+            .Where(p => p.Edition == MarwPilotCorpus.EditionCode && p.Reference == reference && p.Status == "Published" && (p.Wajh == null || p.Wajh.ReviewStatus == "Approved"));
+        return Ok((await query.OrderBy(p => p.StartMs).ToListAsync()).Select(View));
+    }
+
+    [HttpGet("preview")]
+    [Authorize(Roles = "Reviewer,Admin")]
+    public async Task<IActionResult> Preview([FromQuery] string reference)
+    {
+        var query = db.MushafPassages.Include(p => p.Wajh)
+            .Where(p => p.Edition == MarwPilotCorpus.EditionCode && p.Reference == reference);
         return Ok((await query.OrderBy(p => p.StartMs).ToListAsync()).Select(View));
     }
 }

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quran.Domain.Entities;
@@ -14,6 +15,7 @@ public class AwjuhController(QuranDbContext db) : ControllerBase
 {
     public record Edit(string Code, string NameArabic, string RouteCode, string Description, string SourceCitation, string ReviewStatus, int Version);
     [HttpGet("catalog")]
+    [AllowAnonymous]
     public async Task<IActionResult> Catalog()
     {
         var root = JsonNode.Parse(AwjuhCatalog.Read().GetRawText())!;
@@ -34,6 +36,7 @@ public class AwjuhController(QuranDbContext db) : ControllerBase
         return Ok(root);
     }
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create(Edit input)
     {
         if (Validate(input) is { } error) return BadRequest(new { message = error });
@@ -43,6 +46,7 @@ public class AwjuhController(QuranDbContext db) : ControllerBase
         db.Awjuh.Add(row); await db.SaveChangesAsync(); return Ok(new { row.Id, row.Version });
     }
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, Edit input)
     {
         if (Validate(input) is { } error) return BadRequest(new { message = error });
@@ -59,6 +63,7 @@ public class AwjuhController(QuranDbContext db) : ControllerBase
         return Ok(new { row.Id, row.Version });
     }
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id, [FromQuery] int version)
     {
         var row = await db.Awjuh.FindAsync(id); if (row == null) return NotFound();

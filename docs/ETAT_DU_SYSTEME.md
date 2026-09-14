@@ -59,13 +59,18 @@ Relevé effectué le 14/09/2026 à 13:00 :
 | `SourceAudios` | 1 | Sourate 2 (Al-Baqarah, 247 Mo, durée ~4h 18min) |
 | `Sources` | 2 | Métadonnées de provenance Archive.org |
 | `ValidationReviews` | 0 | Historique de revue (à alimenter par le workflow) |
-| `__EFMigrationsHistory` | 4 | Historique des migrations EF Core appliquées |
+| `AspNetRoles` | 2 | Rôles système (`Admin`, `Reviewer`) |
+| `AspNetUsers` | 1 | Utilisateur administrateur local initialisé |
+| `AspNetUserRoles` | 1 | Attribution rôle Admin |
+| `AspNetUserClaims`, `AspNetRoleClaims`, `AspNetUserLogins`, `AspNetUserTokens` | 0 | Tables Identity prêtes |
+| `__EFMigrationsHistory` | 5 | Historique des migrations EF Core appliquées |
 
 ### Migrations EF Core appliquées
 1. `20260912203115_InitialCreate`
 2. `20260912214609_AddAudioEditorModels`
 3. `20260912220235_AddMushafImagesSystem`
 4. `20260914102312_IntegratedAwjuhAndMushafPassages`
+5. `20260914120743_AddIdentitySupport`
 
 ---
 
@@ -92,9 +97,25 @@ Relevé effectué le 14/09/2026 à 13:00 :
 
 ---
 
-## 5. État des Tests Automatisés
+## 5. Sécurité et Protection des Médias (Lot 1)
+
+- **Authentification & Rôles :** ASP.NET Core Identity avec tables `AspNet*`, rôles `Admin` et `Reviewer`, cookies HttpOnly / SameSite Lax, redirection vers `/Account/Login`.
+- **Protection des accès administratifs :**
+  - Pages Razor `/Admin/*` protégées par convention `RequireReviewer`.
+  - Contrôleurs d'administration (`AdminRecitationsController`, `AudioEditorController`, `ImportController`, `InventoryController`, `CorpusCheckController`, mutations `AwjuhController`, mutations `MushafController`) protégés par `[Authorize]`.
+  - Layouts séparés : `_AdminLayout.cshtml` avec navigation dédiée arabe/RTL, temps/codes en LTR ; `_Layout.cshtml` public épuré.
+- **Protection des médias privés :**
+  - Exposition statique générale `/audio` supprimée.
+  - Seul `/audio/published` est servi statiquement avec en-têtes de cache immuables.
+  - `/audio/sources/*` et `/audio/working/*` sont strictement privés, accessibles via `AudioStreamController` réservé aux rôles `Reviewer` et `Admin`, avec support natif du streaming HTTP 206 Range requests (scrubbing audio / WaveSurfer).
+  - Paramètre public `preview=true` supprimé ; prévisualisation réservée via `/api/annotations/preview` aux utilisateurs autorisés.
+
+---
+
+## 6. État des Tests Automatisés
 
 - Commande : `dotnet test`
-- Résultat de référence : **50 tests exécutés, 50 réussis (0 échec, 1 ignoré documenté)**
+- Résultat actuel : **62 tests exécutés, 62 réussis (0 échec, 1 ignoré documenté)**
   - `Quran.UnitTests` : 49/49 réussis
-  - `Quran.IntegrationTests` : 1 réussi sur `quran_db_test`, 1 ancien import déprécié ignoré (`Skip`)
+  - `Quran.IntegrationTests` : 13/13 réussis sur `quran_db_test`, 1 ancien import déprécié ignoré (`Skip`)
+  - Suite de sécurité `SecurityAccessIntegrationTests` : 12 tests validant le blocage anonyme, le support Range et l'authentification admin.

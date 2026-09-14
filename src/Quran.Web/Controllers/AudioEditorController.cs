@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quran.Application.DTOs;
@@ -7,6 +8,7 @@ namespace Quran.Web.Controllers;
 
 [ApiController]
 [Route("api/admin/audio-editor")]
+[Authorize(Roles = "Reviewer,Admin")]
 public class AudioEditorController : ControllerBase
 {
     private readonly IAudioEditorService _editorService;

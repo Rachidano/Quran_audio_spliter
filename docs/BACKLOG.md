@@ -13,8 +13,8 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 | Lot | Titre | Dépendance | Statut | Date de réalisation |
 |---|---|---|---|---|
 | **Lot 0** | Sécuriser la reprise et établir la référence | Aucune | ✅ **Terminé** | 14/09/2026 |
-| **Lot 1** | Fermer les accès administratifs et les médias privés | Lot 0 | ⏳ **En cours** | |
-| **Lot 2** | Fixer le corpus et les références | Lots 0, 1 | ⏳ À venir | |
+| **Lot 1** | Fermer les accès administratifs et les médias privés | Lot 0 | ✅ **Terminé** | 14/09/2026 |
+| **Lot 2** | Fixer le corpus et les références | Lots 0, 1 | ⏳ **En cours** | |
 | **Lot 3** | Réunifier les occurrences et migrer les brouillons | Lot 2 | ⏳ À venir | |
 | **Lot 4** | Achever le référentiel administrable | Lots 2, 3 | ⏳ À venir | |
 | **Lot 5** | Livrer l’éditeur unique et simple | Lots 3, 4 | ⏳ À venir | |
@@ -39,13 +39,14 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **0.8** Rédiger `docs/ETAT_DU_SYSTEME.md` et `docs/BACKLOG.md`.
 
 ### Lot 1 — Fermer les accès administratifs et les médias privés
-- [ ] **1.1** Installer ASP.NET Core Identity (EF Core Stores, tables Identity, rôles `Admin` et `Reviewer`).
-- [ ] **1.2** Configurer l’authentification par cookie sécurisé et ordonner `UseAuthentication()` avant `UseAuthorization()`.
-- [ ] **1.3** Séparer la navigation publique et le back-office dans les layouts Razor.
-- [ ] **1.4** Protéger toutes les routes d’administration (`/Admin/*`, `/api/admin/*`, endpoints de mutation).
-- [ ] **1.5** Supprimer l’accès public direct aux répertoires `sources/` et `working/` ; n’exposer via middleware autorisé qu’avec support Range HTTP 206.
-- [ ] **1.6** Supprimer le paramètre `preview=true` public et réserver la prévisualisation aux utilisateurs autorisés (`Reviewer`/`Admin`).
-- [ ] **1.7** Tests automatisés d’autorisation négatifs (anonyme refusé sur API admin, mutations et médias privés).
+- [x] **1.1** Installer ASP.NET Core Identity (EF Core Stores, migration `20260914120743_AddIdentitySupport`, rôles `Admin` et `Reviewer`).
+- [x] **1.2** Configurer l’authentification par cookie sécurisé et ordonner `UseAuthentication()` avant `UseAuthorization()`.
+- [x] **1.3** Séparer la navigation publique et le back-office (`_AdminLayout.cshtml` et `_ViewStart.cshtml` dans `/Admin`, navbar publique épurée).
+- [x] **1.4** Protéger toutes les routes d’administration (`/Admin/*`, `/api/admin/*`, endpoints de mutation dans `AnnotationsController`, `AwjuhController`, `MushafController`).
+- [x] **1.5** Supprimer l’accès public direct aux répertoires `sources/` et `working/` ; seuls les fichiers sous `/audio/published` restent servis statiquement ; streaming sécurisé implémenté dans `AudioStreamController` avec support HTTP 206 Partial Content (Range).
+- [x] **1.6** Supprimer le paramètre `preview=true` public et réserver la prévisualisation aux utilisateurs autorisés via `/api/annotations/preview` (`Reviewer`/`Admin`).
+- [x] **1.7** Tests automatisés d’autorisation négatifs et positifs (`SecurityAccessIntegrationTests.cs`, 12 tests nouveaux, 62 tests totaux au vert).
+- [x] **1.8** Commande CLI d'initialisation de l'administrateur sans credentials codés en dur (`--create-admin <email> <password>`).
 
 ### Lot 2 — Fixer le corpus et les références
 - [ ] **2.1** Introduire le modèle canonique corpus/édition (`QuranCorpus`, `CorpusAyah`, `MushafEdition`, `ReferenceMapping`).

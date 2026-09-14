@@ -3,8 +3,10 @@ using Quran.Infrastructure;
 using Quran.Import;
 using Quran.AudioProcessor;
 using Quran.Infrastructure.Services;
+using Quran.Infrastructure.Identity;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 if (args.Length == 3 && args[0] == "--import-warsh-pilot")
 {
@@ -35,19 +37,63 @@ if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>(
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AddPageRoute("/Mushaf/Page", "mushaf/warsh/page/{pageNumber:int?}");
-    // /Mushaf/Page/{pageNumber?} already comes from the Razor page's @page directive.
-    // Routing is case-insensitive, so a lowercase alias would duplicate that endpoint.
+    options.Conventions.AuthorizeFolder("/Admin", "RequireReviewer");
+    options.Conventions.AllowAnonymousToPage("/Account/Login");
+    options.Conventions.AllowAnonymousToPage("/Account/AccessDenied");
 });
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    options.SlidingExpiration = true;
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole(IdentitySeeder.RoleAdmin));
+    options.AddPolicy("RequireReviewer", policy => policy.RequireRole(IdentitySeeder.RoleReviewer, IdentitySeeder.RoleAdmin));
+});
+
 builder.Services.AddControllers();
 builder.Services.AddSingleton(_ => new WarshPilotCorpus(pilotDirectory));
 builder.Services.AddSingleton(_ => new MarwPilotCorpus(Path.Combine(AppContext.BaseDirectory, "App_Data", "marw-newMushaf", MarwPilotCorpus.Revision)));
 
 // Clean Architecture: Infrastructure, AudioProcessor, Import & EF Core 9
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+{
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<Quran.Infrastructure.Persistence.QuranDbContext>()
+.AddDefaultTokenProviders();
+
 builder.Services.AddAudioProcessorServices();
 builder.Services.AddImportServices();
 
 var app = builder.Build();
+
+if (args.Length >= 3 && args[0] == "--create-admin")
+{
+    using var scope = app.Services.CreateScope();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    await IdentitySeeder.SeedRolesAsync(roleManager);
+    var email = args[1];
+    var password = args[2];
+    var res = await IdentitySeeder.CreateUserAsync(userManager, email, password, IdentitySeeder.RoleAdmin);
+    Console.WriteLine(res.Succeeded ? $"Admin {email} created successfully." : $"Failed to create admin: {string.Join(", ", res.Errors.Select(e => e.Description))}");
+    return;
+}
 
 if (args.Contains("--replace-legacy-awjuh"))
 {
@@ -62,8 +108,24 @@ if (args.Contains("--initialize-system"))
     var db = scope.ServiceProvider.GetRequiredService<Quran.Infrastructure.Persistence.QuranDbContext>();
     await db.Database.MigrateAsync();
     await AwjuhCatalog.InitializeAsync(db);
-    Console.WriteLine("Database migration and catalog bootstrap completed.");
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+    await IdentitySeeder.SeedRolesAsync(roleManager);
+    Console.WriteLine("Database migration, catalog bootstrap and roles initialization completed.");
     return;
+}
+
+// Seed default roles if not present
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        await IdentitySeeder.SeedRolesAsync(roleManager);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Could not seed initial roles during startup.");
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -75,11 +137,12 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
 
-// Streaming Audio avec support des requêtes HTTP Range (audio scrubbing/seeking)
+// Storage setup
 var baseStoragePath = builder.Configuration["Storage:BasePath"];
 if (string.IsNullOrWhiteSpace(baseStoragePath))
 {
@@ -94,10 +157,16 @@ Directory.CreateDirectory(Path.Combine(baseStoragePath, "sources"));
 Directory.CreateDirectory(Path.Combine(baseStoragePath, "working"));
 Directory.CreateDirectory(Path.Combine(baseStoragePath, "published"));
 
+// Seuls les dérivés audio validés et publiés sont accessibles en direct statique
+var publishedPath = Path.Combine(baseStoragePath, "published");
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(baseStoragePath),
-    RequestPath = "/audio"
+    FileProvider = new PhysicalFileProvider(publishedPath),
+    RequestPath = "/audio/published",
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
+    }
 });
 
 var mushafPath = Path.Combine(Path.GetDirectoryName(baseStoragePath)!, "mushaf");
@@ -118,3 +187,5 @@ app.MapRazorPages().WithStaticAssets();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

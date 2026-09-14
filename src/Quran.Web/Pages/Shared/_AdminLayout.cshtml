@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — لوحة الإدارة — مصحف ورش</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        :root {
+            --admin-header-bg: #111827;
+            --admin-sidebar-bg: #1f2937;
+            --primary-emerald: #0d5c46;
+            --accent-gold: #c59b27;
+            --font-ui: 'Tajawal', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: #f8fafc;
+            color: #1e293b;
+            direction: rtl;
+            text-align: right;
+            margin: 0;
+            padding: 0;
+        }
+
+        .admin-navbar {
+            background-color: var(--admin-header-bg);
+            border-bottom: 3px solid var(--accent-gold);
+            padding: 0.75rem 1.5rem;
+        }
+
+        .admin-brand {
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.25rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .admin-brand:hover {
+            color: var(--accent-gold);
+        }
+
+        .admin-nav-link {
+            color: #cbd5e1 !important;
+            font-weight: 500;
+            margin: 0 0.25rem;
+            padding: 0.5rem 0.75rem !important;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .admin-nav-link:hover, .admin-nav-link.active {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .badge-role {
+            background-color: #3b82f6;
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .code-ltr, .time-ltr {
+            direction: ltr;
+            unicode-bidi: isolate;
+            font-family: var(--font-mono);
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark admin-navbar">
+            <div class="container-fluid">
+                <a class="admin-brand" asp-page="/Admin/Index">
+                    <span>⚙️ لوحة الإدارة والتحرير</span>
+                    <span class="badge badge-role">ورش عن نافع</span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbarContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="adminNavbarContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link admin-nav-link" asp-page="/Admin/Index">📊 الإحصائيات العامة</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link admin-nav-link" asp-page="/Admin/AudioEditor">🎧 محرر الصوت المتقدم</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link admin-nav-link" asp-page="/Admin/MushafRegionEditor" asp-route-pageNumber="1">📐 محرر مناطق المصحف</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link admin-nav-link" asp-page="/Admin/Validation">✅ مراجعة واعتماد التسجيلات</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link admin-nav-link" asp-page="/Admin/Inventory">📁 مستودع الأرشيف</a>
+                        </li>
+                    </ul>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <a asp-page="/Index" class="btn btn-sm btn-outline-light">
+                            🌐 الموقع العام
+                        </a>
+                        <span class="text-light small">
+                            👤 @(User.Identity?.Name ?? "مشرف")
+                        </span>
+                        <a asp-page="/Account/Logout" class="btn btn-sm btn-outline-danger">
+                            خروج
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid py-4 px-4">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

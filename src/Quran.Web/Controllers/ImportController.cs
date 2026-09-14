@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Quran.Import.Services;
 
@@ -6,6 +7,7 @@ namespace Quran.Web.Controllers;
 
 [ApiController]
 [Route("api/admin/[controller]")]
+[Authorize(Roles = "Admin")]
 public class ImportController : ControllerBase
 {
     private readonly QuranSeedService _seedService;
