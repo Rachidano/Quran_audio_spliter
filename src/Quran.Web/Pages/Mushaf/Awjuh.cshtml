@@ -3,22 +3,14 @@
 <section dir="rtl" lang="ar">
  <h1>مرجع أوجه رواية ورش عن نافع</h1>
  <p>مرجع جزئي موثّق وقابل للتوسعة. لا تعني إضافة وجه اعتماد نسبته إلى تسجيل، ولا جواز جمعه مع أي وجه آخر.</p>
- <p>تُحفظ التغييرات في قاعدة النظام وتظهر في المحرر. تعديل وجه مرتبط يعيد مقاطعه إلى المراجعة. لا تُحذف الأوجه المستخدمة؛ يمكن أرشفتها.</p>
- <details id="wajh-form-panel" class="border rounded p-3 my-3">
-  <summary>إضافة وجه / تعديل وجه</summary>
-  <form id="wajh-form">
-   <input id="wajh-edit-id" type="hidden" /><input id="wajh-edit-version" type="hidden" value="0" />
-   <label>رمز ثابت <input id="wajh-code" class="form-control" required maxlength="50" pattern="[a-z0-9-]{3,50}" dir="ltr" /></label>
-   <label>الاسم بالعربية <input id="wajh-name" class="form-control" required maxlength="150" /></label>
-   <label>الطريق <input id="wajh-route" class="form-control" required maxlength="100" list="wajh-routes" /></label>
-   <datalist id="wajh-routes"><option value="azraq-shatibiyya"/><option value="azraq-tayyiba"/><option value="asbahani-tayyiba"/></datalist>
-   <label class="d-block">الوصف وشروط التطبيق <textarea id="wajh-scope" class="form-control" required maxlength="500"></textarea></label>
-   <label class="d-block">المرجع والتوثيق <textarea id="wajh-source" class="form-control" required maxlength="2000"></textarea></label>
-   <label>الحالة <select id="wajh-state" class="form-select"><option value="PendingReview">قيد المراجعة</option><option value="Approved">معتمد</option><option value="Archived">مؤرشف</option></select></label>
-   <button class="btn btn-success">حفظ في النظام</button><button type="button" id="wajh-new" class="btn btn-outline-secondary">إضافة جديدة</button>
-  </form>
-  <p id="wajh-feedback" role="status"></p>
- </details>
+  <p>مرجع موثّق مستمد من طريقي الأزرق والأصبهاني، متاح للاطلاع والبحث وتنزيل البيانات المرجعية بصيغة JSON.</p>
+  @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Reviewer")))
+  {
+   <div class="alert alert-info d-flex justify-content-between align-items-center my-3">
+    <span>⚙️ بصفتك مشرفًا، يمكنك إضافة وتعديل واعتماد الأوجه وسلاسل الرواية مباشرة من لوحة الإدارة المعتمدة.</span>
+    <a href="/Admin/Awjuh" class="btn btn-primary btn-sm">الانتقال إلى إدارة الأوجه المتقدمة</a>
+   </div>
+  }
  <label>الطريق <select id="catalog-route" class="form-select"><option value="">جميع الطرق</option></select></label>
  <label class="mt-2">بحث <input id="catalog-search" class="form-control" type="search" /></label>
  <p id="catalog-status" role="status"></p>

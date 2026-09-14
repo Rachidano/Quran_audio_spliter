@@ -19,10 +19,10 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 | **Lot 4** | Achever le référentiel administrable | Lots 2, 3 | ✅ **Terminé** | 14/09/2026 |
 | **Lot 5** | Livrer l’éditeur unique et simple | Lots 3, 4 | ✅ **Terminé** | 14/09/2026 |
 | **Lot 6** | Achever revue, rendu et publication | Lots 3, 4, 5 | ✅ **Terminé** | 14/09/2026 |
-| **Lot 7** | Terminer le site public cohérent | Lots 2, 4, 6 | ⏳ **En cours** | |
-| **Lot 8** | Industrialiser l’ingestion et la qualité | Lots 3, 6, 7 | ⏳ À venir | |
-| **Lot 9** | Nettoyer le projet et rendre l’exécution reproductible | Remplacements recettés | ⏳ À venir | |
-| **Lot 10** | Recette, exploitation et livraison | Lots 0 à 9 | ⏳ À venir | |
+| **Lot 7** | Terminer le site public cohérent | Lots 2, 4, 6 | ✅ **Terminé** | 14/09/2026 |
+| **Lot 8** | Industrialiser l’ingestion et la qualité | Lots 3, 6, 7 | ✅ **Terminé** | 14/09/2026 |
+| **Lot 9** | Nettoyer le projet et rendre l’exécution reproductible | Remplacements recettés | ✅ **Terminé** | 14/09/2026 |
+| **Lot 10** | Recette, exploitation et livraison | Lots 0 à 9 | ⏳ **En cours** | |
 
 ---
 
@@ -93,9 +93,9 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **8.2** Tableaux de bord de couverture et rapports de cohérence (trous, chevauchements, dépendances).
 
 ### Lot 9 — Nettoyer le projet et rendre l’exécution reproductible
-- [ ] **9.1** Nettoyage des contrôleurs, vues d'essai et scripts obsolètes.
-- [ ] **9.2** Autonomie complète des tests Playwright sans dépendance externe.
-- [ ] **9.3** Documentation README épurée et reproductibilité multi-environnements.
+- [x] **9.1** Nettoyage des contrôleurs, vues d'essai et scripts obsolètes (harmonisation des layouts, sécurisation lecture seule catalogue Awjuh, redirection douce des démonstrateurs).
+- [x] **9.2** Autonomie complète des tests Playwright sans dépendance externe (`package.json`, scripts npm standardisés et exécutables en isolation).
+- [x] **9.3** Documentation README épurée et reproductibilité multi-environnements (`README.md` à la racine, commandes pas-à-pas, tests unitaires et intégration).
 
 ### Lot 10 — Recette, exploitation et livraison
 - [ ] **10.1** Configuration Docker Compose complète (Web, DB, Worker, volumes persistants).

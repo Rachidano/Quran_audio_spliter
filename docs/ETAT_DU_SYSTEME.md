@@ -284,11 +284,17 @@ Relevé effectué le 14/09/2026 à 13:00 :
 
 ---
 
-## 13. État des Tests Automatisés
+## 14. Nettoyage, Standardisation et Reproductibilité (Lot 9)
 
-- Commande : `dotnet test`
-- Résultat actuel : **110 tests exécutés, 110 réussis (0 échec, 1 ignoré documenté)**
-  - `Quran.UnitTests` : 78/78 réussis (dont `QuranQualityAuditServiceTests`).
-  - `Quran.IntegrationTests` : 32/32 réussis sur `quran_db_test` (dont `QualityReportIntegrationTests`, `PublicSiteIntegrationTests`, `ReviewWorkflowIntegrationTests`, `AudioEditorEndToEndIntegrationTests`, `AwjuhEndToEndIntegrationTests`, `SecurityAccessIntegrationTests`).
+- **Nettoyage et sécurisation des écrans et vues :**
+  - La page publique `/mushaf/awjuh` a été épurée : suppression des formulaires et boutons de mutation côté client non autorisés, conservation du moteur de recherche, du filtrage par voie (الأزرق / الأصبهاني), des contraintes de lecture et de l'export JSON (`/api/awjuh/catalog`). Les utilisateurs autorisés disposent d'un lien direct vers le back-office officiel `/Admin/Awjuh`.
+  - `/mushaf/audioreview` redirige de manière fluide vers le studio d'édition unifié `/Admin/AudioEditor?surahNumber=2`.
+  - `/mushaf/audiodemo` affiche un bandeau explicatif redirigeant vers le lecteur complet du Mushaf MARW `/mushaf/page/1`, tout en préservant l'intégrité de ses composants pour les scripts d'audit automatisés.
+  - Harmonisation complète des layouts et menus : `_Layout.cshtml` et `_AdminLayout.cshtml` regroupent l'accès direct à l'ensemble des modules canoniques (`ReviewQueue`, `QualityReport`, `Awjuh`, `CorpusMapping`, `AudioEditor`, `Inventory`).
+- **Autonomie des scripts et reproductibilité :**
+  - Ajout d'un `package.json` à la racine pour standardiser les dépendances et commandes des tests de validation Playwright sans chemins externes en dur.
+  - Exclusion stricte de `node_modules/` dans `.gitignore`.
+  - Rédaction d'un fichier `README.md` exhaustif et opérationnel documentant l'architecture de la solution, les prérequis, l'initialisation de la base, la création d'administrateur en ligne de commande, l'exécution des tests et la cartographie des routes.
+- **Suite de tests :** 110 tests passants (78 unitaires + 32 intégration).
 
 

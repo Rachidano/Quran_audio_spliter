@@ -46,11 +46,15 @@ appsettings.Production.json
 *.env
 *.env.local
 
-## Test & Playwright outputs
+## Node & Playwright
+node_modules/
 test-results/
 playwright-report/
 
-## OS files
+## OS & archives
 .DS_Store
 Thumbs.db
 desktop.ini
+*.zip
+docs/UthmanicWarsh1 Ver5*
+

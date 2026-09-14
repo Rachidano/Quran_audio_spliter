@@ -3,6 +3,10 @@
 @{ ViewData["Title"] = "تجربة التزامن مع المصحف"; }
 <link rel="stylesheet" href="~/css/warsh-pilot.css" asp-append-version="true" />
 <section dir="rtl" lang="ar">
+ <div class="alert alert-secondary d-flex justify-content-between align-items-center mb-3">
+  <span>💡 هذه الصفحة نموذج تجريبي أولي لتزامن مقاطع سورة البقرة. المصحف المصور التفاعلي الكامل متاح في الموقع العام:</span>
+  <a href="/mushaf/page/1" class="btn btn-sm btn-success">فتح المصحف المصور (ص 1)</a>
+ </div>
  <h1>تجربة التزامن مع المصحف</h1>
  <p class="alert alert-warning">تجربة حسب ملف ملاحظاتك الأخير، وليست مزامنة معتمدة. أرقام الآيات كما أدخلتها؛ يجب مقارنة التلاوة بالنص لأن الترقيم قد يختلف. لا يوجد تظليل في الفترة غير المعلَّمة من 67.986 إلى 84.592 ثانية.</p>
  <audio id="demo-audio" controls preload="metadata" src="/audio/sources/002/original.mp3" style="width:100%"></audio>

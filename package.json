@@ -1,0 +1,16 @@
+{
+  "name": "quran-warsh-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Validation and audit scripts for Quran Warsh platform",
+  "scripts": {
+    "test:pilot": "node scripts/check-warsh-pilot.cjs",
+    "test:awjuh": "node scripts/check-awjuh.cjs",
+    "test:audio-demo": "node scripts/check-audio-demo.cjs",
+    "test:gallery": "node scripts/check-marw-gallery.cjs",
+    "test:system": "node scripts/check-integrated-system.cjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
