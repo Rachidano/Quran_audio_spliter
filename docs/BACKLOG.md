@@ -15,8 +15,8 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 | **Lot 0** | Sécuriser la reprise et établir la référence | Aucune | ✅ **Terminé** | 14/09/2026 |
 | **Lot 1** | Fermer les accès administratifs et les médias privés | Lot 0 | ✅ **Terminé** | 14/09/2026 |
 | **Lot 2** | Fixer le corpus et les références | Lots 0, 1 | ✅ **Terminé** | 14/09/2026 |
-| **Lot 3** | Réunifier les occurrences et migrer les brouillons | Lot 2 | ⏳ **En cours** | |
-| **Lot 4** | Achever le référentiel administrable | Lots 2, 3 | ⏳ À venir | |
+| **Lot 3** | Réunifier les occurrences et migrer les brouillons | Lot 2 | ✅ **Terminé** | 14/09/2026 |
+| **Lot 4** | Achever le référentiel administrable | Lots 2, 3 | ⏳ **En cours** | |
 | **Lot 5** | Livrer l’éditeur unique et simple | Lots 3, 4 | ⏳ À venir | |
 | **Lot 6** | Achever revue, rendu et publication | Lots 3, 4, 5 | ⏳ À venir | |
 | **Lot 7** | Terminer le site public cohérent | Lots 2, 4, 6 | ⏳ À venir | |
@@ -56,11 +56,11 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **2.5** Conserver la géométrie MARW et les revues d'ouvertures de sourates sans écrasement ; interface d'administration `/Admin/CorpusMapping`.
 
 ### Lot 3 — Réunifier les occurrences et migrer les brouillons
-- [ ] **3.1** Étendre `AudioSegment` comme agrégat canonique (révisions, spans de texte, portions graphiques, liens de reprise).
-- [ ] **3.2** Migrer les 5 `MushafPassages` existants vers `AudioSegment` en préservant leurs GUID, timestamps et notes.
-- [ ] **3.3** Traiter les deux fichiers d'export utilisateur (zone 67 986 ms à 84 592 ms marquée comme trou explicite à qualifier).
-- [ ] **3.4** Extraire la logique métier de `AnnotationsController` et `AudioEditorController` dans la couche `Quran.Application`.
-- [ ] **3.5** Persister la session d'annotation (curseur temporel, dernière occurrence, reprise).
+- [x] **3.1** Étendre `AudioSegment` comme agrégat canonique (`SegmentRevision`, `SegmentTextSpan`, `AnnotationSession`, `AuditLog`, `RepeatOfId`, `Reference`, `Edition`, `SourceHash`, `Version` de concurrence).
+- [x] **3.2** Migrer les 5 `MushafPassages` existants vers `AudioSegment` en préservant leurs GUID, timestamps et notes (migration additive sans perte).
+- [x] **3.3** Traiter les deux fichiers d'export utilisateur (zone 67 986 ms à 84 592 ms marquée et conservée comme trou audible explicite de 16,606 s à qualifier humainement).
+- [x] **3.4** Extraire la logique métier de `AnnotationsController` et de l'éditeur dans la couche `Quran.Application` (`IAnnotationService` / `AnnotationService`).
+- [x] **3.5** Persister la session d'annotation (`AnnotationSession` : curseur temporel, dernière occurrence, reprise liée sans incrément d'ayah).
 
 ### Lot 4 — Achever le référentiel administrable
 - [ ] **4.1** Déployer les tables relationnelles structurées du référentiel (`TransmissionRoute`, `ReadingRule`, `WajhDefinition`, etc.).

@@ -128,6 +128,53 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.AnnotationSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CurrentAyahNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentSurahNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("CurrentTimeMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsRepeatMode")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("LastSegmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RepeatTargetSegmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SourceAudioId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastSegmentId");
+
+                    b.HasIndex("SourceAudioId");
+
+                    b.HasIndex("UserId", "SourceAudioId")
+                        .IsUnique();
+
+                    b.ToTable("AnnotationSessions", (string)null);
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.AudioAsset", b =>
                 {
                     b.Property<long>("Id")
@@ -186,7 +233,7 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<long>("AyahId")
+                    b.Property<long?>("AyahId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -194,6 +241,10 @@ namespace Quran.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("CreatedByUserId")
                         .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Edition")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
@@ -207,8 +258,18 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<string>("ObservationJson")
+                        .HasColumnType("text");
+
                     b.Property<long?>("PublishedAudioAssetId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("RepeatOfId")
+                        .HasColumnType("uuid");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -223,6 +284,10 @@ namespace Quran.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("SourceAudioId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("SourceHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<long>("StartMs")
                         .HasColumnType("bigint");
@@ -247,6 +312,10 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
                     b.Property<int?>("WajhId")
                         .HasColumnType("integer");
 
@@ -255,6 +324,10 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.HasIndex("AyahId");
 
                     b.HasIndex("PublishedAudioAssetId");
+
+                    b.HasIndex("Reference");
+
+                    b.HasIndex("RepeatOfId");
 
                     b.HasIndex("SourceAudioId");
 
@@ -310,6 +383,60 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.HasIndex("MushafPageId");
 
                     b.ToTable("AudioSegmentImageRegions", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.AuditLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NewValuesJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OldValuesJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserEmail")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.Ayah", b =>
@@ -880,6 +1007,96 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.ToTable("Riwayas", (string)null);
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.SegmentRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AudioSegmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("EndMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProofNotes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("RevisionNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SegmentType")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("StartMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("WajhAssignmentStatus")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("WajhId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WajhId");
+
+                    b.HasIndex("AudioSegmentId", "RevisionNumber")
+                        .IsUnique();
+
+                    b.ToTable("SegmentRevisions", (string)null);
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.SegmentTextSpan", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid>("AudioSegmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AyahNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CorpusCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("EndWordIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("StartWordIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SurahNumber")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AudioSegmentId", "Order");
+
+                    b.ToTable("SegmentTextSpans", (string)null);
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.Source", b =>
                 {
                     b.Property<int>("Id")
@@ -1258,6 +1475,24 @@ namespace Quran.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.AnnotationSession", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.AudioSegment", "LastSegment")
+                        .WithMany()
+                        .HasForeignKey("LastSegmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Quran.Domain.Entities.SourceAudio", "SourceAudio")
+                        .WithMany()
+                        .HasForeignKey("SourceAudioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LastSegment");
+
+                    b.Navigation("SourceAudio");
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.AudioAsset", b =>
                 {
                     b.HasOne("Quran.Domain.Entities.Source", "Source")
@@ -1273,13 +1508,17 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.HasOne("Quran.Domain.Entities.Ayah", "Ayah")
                         .WithMany("AudioSegments")
                         .HasForeignKey("AyahId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Quran.Domain.Entities.AudioAsset", "PublishedAudioAsset")
                         .WithMany()
                         .HasForeignKey("PublishedAudioAssetId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Quran.Domain.Entities.AudioSegment", "RepeatOf")
+                        .WithMany()
+                        .HasForeignKey("RepeatOfId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Quran.Domain.Entities.SourceAudio", "SourceAudio")
                         .WithMany("AudioSegments")
@@ -1295,6 +1534,8 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("Ayah");
 
                     b.Navigation("PublishedAudioAsset");
+
+                    b.Navigation("RepeatOf");
 
                     b.Navigation("SourceAudio");
 
@@ -1477,6 +1718,35 @@ namespace Quran.Infrastructure.Persistence.Migrations
                     b.Navigation("TargetCorpus");
                 });
 
+            modelBuilder.Entity("Quran.Domain.Entities.SegmentRevision", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.AudioSegment", "AudioSegment")
+                        .WithMany("Revisions")
+                        .HasForeignKey("AudioSegmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Quran.Domain.Entities.Wajh", "Wajh")
+                        .WithMany()
+                        .HasForeignKey("WajhId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AudioSegment");
+
+                    b.Navigation("Wajh");
+                });
+
+            modelBuilder.Entity("Quran.Domain.Entities.SegmentTextSpan", b =>
+                {
+                    b.HasOne("Quran.Domain.Entities.AudioSegment", "AudioSegment")
+                        .WithMany("TextSpans")
+                        .HasForeignKey("AudioSegmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AudioSegment");
+                });
+
             modelBuilder.Entity("Quran.Domain.Entities.SourceAudio", b =>
                 {
                     b.HasOne("Quran.Domain.Entities.Reciter", "Reciter")
@@ -1522,7 +1792,11 @@ namespace Quran.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Quran.Domain.Entities.AudioSegment", b =>
                 {
+                    b.Navigation("Revisions");
+
                     b.Navigation("SegmentImageRegions");
+
+                    b.Navigation("TextSpans");
                 });
 
             modelBuilder.Entity("Quran.Domain.Entities.Ayah", b =>

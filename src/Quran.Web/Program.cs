@@ -102,15 +102,30 @@ if (args.Contains("--replace-legacy-awjuh"))
     Console.WriteLine($"Obsolete awjuh removed: {await AwjuhCatalog.ReplaceLegacyAsync(db)}");
     return;
 }
+if (args.Contains("--migrate-passages"))
+{
+    using var scope = app.Services.CreateScope();
+    var annotationService = scope.ServiceProvider.GetRequiredService<Quran.Application.Interfaces.IAnnotationService>();
+    var report = await annotationService.MigrateMushafPassagesToAudioSegmentsAsync();
+    Console.WriteLine($"Passages migration: Migrated={report.MigratedCount}, ExistingPreserved={report.ExistingPreservedCount}, Errors={report.Errors.Count}");
+    foreach (var d in report.Details) Console.WriteLine($" - {d}");
+    foreach (var e in report.Errors) Console.Error.WriteLine($" ! {e}");
+    return;
+}
+
 if (args.Contains("--initialize-system"))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<Quran.Infrastructure.Persistence.QuranDbContext>();
     await db.Database.MigrateAsync();
     await AwjuhCatalog.InitializeAsync(db);
+    var corpusService = scope.ServiceProvider.GetRequiredService<Quran.Application.Interfaces.ICorpusResolutionService>();
+    await corpusService.EnsureCorporaInitializedAsync();
+    var annotationService = scope.ServiceProvider.GetRequiredService<Quran.Application.Interfaces.IAnnotationService>();
+    await annotationService.MigrateMushafPassagesToAudioSegmentsAsync();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
     await IdentitySeeder.SeedRolesAsync(roleManager);
-    Console.WriteLine("Database migration, catalog bootstrap and roles initialization completed.");
+    Console.WriteLine("Database migration, catalog bootstrap, corpus and passages initialization completed.");
     return;
 }
 

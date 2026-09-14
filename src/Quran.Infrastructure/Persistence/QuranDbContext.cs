@@ -31,6 +31,10 @@ public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole
     public DbSet<QuranCorpus> QuranCorpora => Set<QuranCorpus>();
     public DbSet<CorpusAyah> CorpusAyahs => Set<CorpusAyah>();
     public DbSet<ReferenceMapping> ReferenceMappings => Set<ReferenceMapping>();
+    public DbSet<SegmentRevision> SegmentRevisions => Set<SegmentRevision>();
+    public DbSet<SegmentTextSpan> SegmentTextSpans => Set<SegmentTextSpan>();
+    public DbSet<AnnotationSession> AnnotationSessions => Set<AnnotationSession>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -232,11 +236,16 @@ public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole
             entity.HasIndex(e => e.SourceAudioId);
             entity.HasIndex(e => e.AyahId);
             entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.Reference);
             entity.HasIndex(e => new { e.SourceAudioId, e.StartMs });
             entity.Property(e => e.CreatedByUserId).IsRequired().HasMaxLength(100);
             entity.Property(e => e.UpdatedByUserId).HasMaxLength(100);
             entity.Property(e => e.ValidatedByUserId).HasMaxLength(100);
             entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.Reference).HasMaxLength(50);
+            entity.Property(e => e.Edition).HasMaxLength(100);
+            entity.Property(e => e.SourceHash).HasMaxLength(64);
+            entity.Property(e => e.Version).IsConcurrencyToken();
             entity.Property(e => e.RowVersion).IsConcurrencyToken();
 
             entity.HasOne(e => e.SourceAudio)
@@ -247,6 +256,12 @@ public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole
             entity.HasOne(e => e.Ayah)
                   .WithMany(a => a.AudioSegments)
                   .HasForeignKey(e => e.AyahId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.RepeatOf)
+                  .WithMany()
+                  .HasForeignKey(e => e.RepeatOfId)
                   .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.Wajh)
@@ -258,6 +273,74 @@ public class QuranDbContext : IdentityDbContext<ApplicationUser, ApplicationRole
                   .WithMany()
                   .HasForeignKey(e => e.PublishedAudioAssetId)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // SegmentRevision
+        modelBuilder.Entity<SegmentRevision>(entity =>
+        {
+            entity.ToTable("SegmentRevisions");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.AudioSegmentId, e.RevisionNumber }).IsUnique();
+            entity.Property(e => e.Reference).HasMaxLength(50);
+            entity.Property(e => e.CreatedByUserId).HasMaxLength(100);
+
+            entity.HasOne(e => e.AudioSegment)
+                  .WithMany(s => s.Revisions)
+                  .HasForeignKey(e => e.AudioSegmentId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Wajh)
+                  .WithMany()
+                  .HasForeignKey(e => e.WajhId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // SegmentTextSpan
+        modelBuilder.Entity<SegmentTextSpan>(entity =>
+        {
+            entity.ToTable("SegmentTextSpans");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.AudioSegmentId, e.Order });
+            entity.Property(e => e.CorpusCode).HasMaxLength(50);
+
+            entity.HasOne(e => e.AudioSegment)
+                  .WithMany(s => s.TextSpans)
+                  .HasForeignKey(e => e.AudioSegmentId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AnnotationSession
+        modelBuilder.Entity<AnnotationSession>(entity =>
+        {
+            entity.ToTable("AnnotationSessions");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.SourceAudioId }).IsUnique();
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(100);
+
+            entity.HasOne(e => e.SourceAudio)
+                  .WithMany()
+                  .HasForeignKey(e => e.SourceAudioId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LastSegment)
+                  .WithMany()
+                  .HasForeignKey(e => e.LastSegmentId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // AuditLog
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.ToTable("AuditLogs");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.EntityType, e.EntityId });
+            entity.HasIndex(e => e.CreatedAt);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.UserEmail).HasMaxLength(200);
+            entity.Property(e => e.Action).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.EntityType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.EntityId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.CorrelationId).HasMaxLength(100);
         });
 
         // MushafEdition

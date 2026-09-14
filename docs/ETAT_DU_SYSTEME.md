@@ -128,10 +128,33 @@ Relevé effectué le 14/09/2026 à 13:00 :
 
 ---
 
-## 7. État des Tests Automatisés
+## 7. Réunification des Occurrences et Sessions (Lot 3)
+
+- **Agrégat canonique `AudioSegment` étendu :**
+  - Référence qualifiée (`Reference`), édition (`Edition`), hash du fichier source (`SourceHash`), jeton de version de concurrence (`Version`).
+  - Lien de reprise typé (`RepeatOfId` / `RepeatOf`), clé étrangère `AyahId` rendue optionnelle pour supporter les segments à référence en cours de qualification.
+  - Snapshot immuable d'historique sémantique : entité `SegmentRevision` (numéro de révision, temps, référence, wajh, auteur, date).
+  - Couverture textuelle multi-unités : entité `SegmentTextSpan`.
+  - Session d'annotation persistante : entité `AnnotationSession` (curseur temporel milliseconde, sourate/ayah courante, dernier segment, mode reprise).
+  - Journal d'audit persistant : entité `AuditLog` (acteur, action, entité, payload avant/après, corrélation).
+- **Migration EF Core :** `20260914122750_AddAudioSegmentCanonicalAndSessions` appliquée sur `quran_db` et `quran_db_test`.
+- **Migration des données exécutée avec succès (`--migrate-passages`) :**
+  - 5 passages de `MushafPassages` migrés vers `AudioSegments` en préservant strictement les GUIDs, timestamps et notes :
+    - `64f93c4a-e13d-4966-8194-a2ce04d04372` : 2:1 (13 974 ms à 22 883 ms)
+    - `1166759a-0396-4eac-b9b6-8cb08c91edb8` : 2:2 (22 883 ms à 34 217 ms)
+    - `b159736e-fdbe-4441-82f0-9098a493023c` : 2:3 (34 217 ms à 48 808 ms)
+    - `262c7734-595b-4ac6-a11f-12b9ccd15d3d` : 2:4 (48 808 ms à 67 986 ms)
+    - `0415c909-b0f3-4e3d-9f2a-ecfebc91b7ef` : 2:5 (84 592 ms à 102 310 ms)
+  - Trou réel de **16 606 ms** (entre 67 986 ms et 84 592 ms) strictement préservé sans interpolation artificielle.
+  - Chaque occurrence migrées a reçu sa `SegmentRevision` initiale et son entrée dans `AuditLogs`.
+- **Convergence applicative :** `IAnnotationService` / `AnnotationService` implémenté dans `Quran.Application` et `Quran.Infrastructure`, synchronisant `AnnotationsController` avec l'agrégat canonique.
+
+---
+
+## 8. État des Tests Automatisés
 
 - Commande : `dotnet test`
-- Résultat actuel : **68 tests exécutés, 68 réussis (0 échec, 1 ignoré documenté)**
-  - `Quran.UnitTests` : 54/54 réussis (dont `CorpusResolutionServiceTests` validant la résolution et la détection d'écarts d'Al-Baqarah).
-  - `Quran.IntegrationTests` : 14/14 réussis sur `quran_db_test`, 1 ancien import déprécié ignoré (`Skip`), incluant la protection et l'accès à `/Admin/CorpusMapping`.
+- Résultat actuel : **73 tests exécutés, 73 réussis (0 échec, 1 ignoré documenté)**
+  - `Quran.UnitTests` : 59/59 réussis (dont `AnnotationServiceTests` validant la capture atomique, les sessions, les reprises liées et la migration).
+  - `Quran.IntegrationTests` : 14/14 réussis sur `quran_db_test`.
 

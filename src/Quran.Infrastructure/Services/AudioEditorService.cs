@@ -157,7 +157,7 @@ public partial class AudioEditorService : IAudioEditorService
                 s.Id,
                 s.SourceAudioId,
                 s.AyahId,
-                s.Ayah.AyahNumber,
+                s.Ayah != null ? (int?)s.Ayah.AyahNumber : null,
                 s.WajhId,
                 s.Wajh != null ? s.Wajh.Code : null,
                 s.Wajh != null ? s.Wajh.NameArabic : null,
@@ -486,7 +486,7 @@ public partial class AudioEditorService : IAudioEditorService
         {
             recitation = new Recitation
             {
-                AyahId = segment.AyahId,
+                AyahId = segment.AyahId ?? 0,
                 ReciterId = segment.SourceAudio.ReciterId,
                 RiwayaId = segment.SourceAudio.RiwayaId,
                 WajhId = segment.WajhId,
@@ -587,7 +587,7 @@ public partial class AudioEditorService : IAudioEditorService
             s.Id,
             s.SourceAudioId,
             s.AyahId,
-            s.Ayah.AyahNumber,
+            s.Ayah != null ? (int?)s.Ayah.AyahNumber : null,
             s.WajhId,
             s.Wajh?.Code,
             s.Wajh?.NameArabic,

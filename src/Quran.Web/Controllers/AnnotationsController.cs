@@ -97,6 +97,68 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
                 var parent = saved.First(p => p.Id == child.RepeatOfId);
                 if (parent.StartMs >= child.StartMs || parent.Reference != child.Reference) throw new ArgumentException("التعديل لا يوافق المقاطع المعادة المرتبطة به.");
             }
+
+            // Sync with canonical AudioSegments
+            var sourceAudio = await db.SourceAudios.FirstOrDefaultAsync(s => s.StorageKey == input.Source.StorageKey, ct);
+            if (sourceAudio != null)
+            {
+                foreach (var p in saved)
+                {
+                    var seg = await db.AudioSegments.FirstOrDefaultAsync(s => s.Id == p.Id, ct);
+                    if (seg == null)
+                    {
+                        seg = new AudioSegment
+                        {
+                            Id = p.Id,
+                            SourceAudioId = sourceAudio.Id,
+                            StartMs = p.StartMs,
+                            EndMs = p.EndMs,
+                            Reference = p.Reference,
+                            SegmentType = (Quran.Domain.Enums.AudioSegmentType)p.SegmentType,
+                            RepeatOfId = p.RepeatOfId,
+                            WajhId = p.WajhId,
+                            Notes = p.Notes,
+                            Edition = p.Edition,
+                            SourceHash = p.SourceHash,
+                            ObservationJson = p.ObservationJson,
+                            Status = p.Status == "Published" ? Quran.Domain.Enums.AudioSegmentStatus.Published : Quran.Domain.Enums.AudioSegmentStatus.Draft,
+                            Version = p.Version,
+                            CreatedByUserId = User.Identity?.Name ?? "Reviewer",
+                            CreatedAt = p.UpdatedAt,
+                            RowVersion = Guid.NewGuid().ToByteArray()
+                        };
+                        db.AudioSegments.Add(seg);
+                        db.SegmentRevisions.Add(new SegmentRevision
+                        {
+                            AudioSegmentId = seg.Id,
+                            RevisionNumber = 1,
+                            StartMs = seg.StartMs,
+                            EndMs = seg.EndMs,
+                            Reference = seg.Reference,
+                            SegmentType = seg.SegmentType,
+                            WajhId = seg.WajhId,
+                            ProofNotes = seg.Notes,
+                            CreatedByUserId = User.Identity?.Name ?? "Reviewer",
+                            CreatedAt = p.UpdatedAt
+                        });
+                    }
+                    else
+                    {
+                        seg.StartMs = p.StartMs;
+                        seg.EndMs = p.EndMs;
+                        seg.Reference = p.Reference;
+                        seg.SegmentType = (Quran.Domain.Enums.AudioSegmentType)p.SegmentType;
+                        seg.RepeatOfId = p.RepeatOfId;
+                        seg.WajhId = p.WajhId;
+                        seg.Notes = p.Notes;
+                        seg.ObservationJson = p.ObservationJson;
+                        seg.Version = p.Version;
+                        seg.UpdatedAt = DateTimeOffset.UtcNow;
+                        seg.UpdatedByUserId = User.Identity?.Name ?? "Reviewer";
+                    }
+                }
+            }
+
             await db.SaveChangesAsync(ct);
         }
         catch (Exception e) when (e is ArgumentException or InvalidOperationException or KeyNotFoundException or FormatException) { return BadRequest(new { message = e.Message }); }
@@ -110,7 +172,16 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
         var p = await db.MushafPassages.Include(p => p.Wajh).FirstOrDefaultAsync(p => p.Id == id); if (p == null) return NotFound();
         if (p.Version != input.Version) return Conflict(new { message = "أعد تحميل المقاطع." });
         if (!input.ReferenceChecked || p.Reference == null || p.SegmentType == 99 || (p.Wajh != null && p.Wajh.ReviewStatus != "Approved")) return BadRequest(new { message = "تحقق من ربط الآية ونوع المقطع واعتماد الوجه المختار قبل النشر." });
-        p.Status = "Published"; p.Version++; await db.SaveChangesAsync(); return Ok(View(p));
+        p.Status = "Published"; p.Version++;
+        var seg = await db.AudioSegments.FirstOrDefaultAsync(s => s.Id == id);
+        if (seg != null)
+        {
+            seg.Status = Quran.Domain.Enums.AudioSegmentStatus.Published;
+            seg.Version = p.Version;
+            seg.ValidatedAt = DateTimeOffset.UtcNow;
+            seg.ValidatedByUserId = User.Identity?.Name ?? "Admin";
+        }
+        await db.SaveChangesAsync(); return Ok(View(p));
     }
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Reviewer,Admin")]
@@ -119,7 +190,10 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
         var p = await db.MushafPassages.FindAsync(id); if (p == null) return NotFound();
         if (p.Version != version) return Conflict(new { message = "أعد تحميل المقاطع." });
         if (await db.MushafPassages.AnyAsync(c => c.RepeatOfId == id)) return Conflict(new { message = "احذف أو عدّل روابط الإعادة أولًا." });
-        db.Remove(p); await db.SaveChangesAsync(); return NoContent();
+        db.Remove(p);
+        var seg = await db.AudioSegments.FirstOrDefaultAsync(s => s.Id == id);
+        if (seg != null) db.AudioSegments.Remove(seg);
+        await db.SaveChangesAsync(); return NoContent();
     }
     [HttpGet("playback")]
     [AllowAnonymous]

@@ -45,8 +45,8 @@ public record WajhOptionDto(
 public record AudioSegmentDto(
     Guid Id,
     Guid SourceAudioId,
-    long AyahId,
-    int AyahNumber,
+    long? AyahId,
+    int? AyahNumber,
     int? WajhId,
     string? WajhCode,
     string? WajhNameArabic,
@@ -76,7 +76,7 @@ public record AudioEditorContextDto(
 
 public record CreateAudioSegmentRequest(
     Guid SourceAudioId,
-    long AyahId,
+    long? AyahId,
     int? WajhId,
     long StartMs,
     long EndMs,
@@ -87,7 +87,7 @@ public record CreateAudioSegmentRequest(
 );
 
 public record UpdateAudioSegmentRequest(
-    long AyahId,
+    long? AyahId,
     int? WajhId,
     long StartMs,
     long EndMs,
