@@ -175,10 +175,30 @@ Relevé effectué le 14/09/2026 à 13:00 :
 
 ---
 
-## 9. État des Tests Automatisés
+## 9. Éditeur Unique et Simple d'Édition Audio (Lot 5)
+
+- **Unification complète de l'expérience d'édition :**
+  - Fusion des fonctionnalités avancées (WaveSurfer 7, zoom, timeline, minimap, ajustement fin, découpage de portions) et du mode de capture simple en une seule interface arabe / RTL `/Admin/AudioEditor` (avec sélection de sourate 1 à 114).
+  - Redirection automatique de la page d'expérimentation historique `/Mushaf/AudioReview` vers `/Admin/AudioEditor/2`.
+- **Actions atomiques implémentées côté client et serveur :**
+  - **« إنهاء الآية والانتقال إلى التالية » (`F8` / `Enter`)** : capture instantanée `[currentStartMs, currentTimeMs]`, enregistrement atomique en base avec session persistante, définition du début suivant exactement au temps capturé, avance de l'ayah via le corpus, et rafraîchissement immédiat de la prévisualisation MARW.
+  - **« إنهاء التكرار » (`F9`)** : enregistrement d'un segment de reprise lié (`RepeatOfId`), temps propres, maintien du numéro de verset en attente d'enregistrement.
+  - **« تراجع عن آخر إجراء » (`Ctrl+Z`)** : annulation sécurisée de la dernière occurrence (vérification d'absence de reprises dépendantes), suppression du brouillon, restauration du curseur de session au temps initial et restauration du numéro d'ayah.
+  - **Gestion des pauses de souffle** : boutons dédiés « مقطع من الآية » (`PartialAyah`) et « استكمال الآية » (`Continuation`) pour éviter d'incrémenter artificiellement le verset lors d'un arrêt respiratoire.
+- **Service d'ondes sonores (Peaks) multi-sourates et longue durée :**
+  - Interface `IAudioPeaksService` et service `AudioPeaksService` générant via FFmpeg des signaux de crêtes audio échantillonnés et normalisés à 100 Hz, avec mise en cache disque (`data/cache/peaks/{sourceHash}.json`).
+  - Évite le décodage lourd en mémoire de fichiers de plusieurs heures (ex. Al-Baqarah de 4h) dans le navigateur.
+  - Point d'accès `/api/admin/audio-editor/peaks/{surahNumber}` avec fenêtrage et sous-échantillonnage dynamique.
+- **Synchronisation géographique MARW en temps réel :**
+  - Point d'accès `/api/admin/audio-editor/marw-ayah/{surahNumber}/{ayahNumber}` délivrant la page MARW et le polygone SVG exact de l'ayah.
+  - Affichage direct de la page de مصحف ورش et surlignage SVG superposé à l'ayah active dans l'éditeur.
+
+---
+
+## 10. État des Tests Automatisés
 
 - Commande : `dotnet test`
-- Résultat actuel : **83 tests exécutés, 83 réussis (0 échec, 1 ignoré documenté)**
-  - `Quran.UnitTests` : 68/68 réussis (dont `AwjuhServiceTests` validant cycle de vie, invalidation d'occurrences, suppression sécurisée et politiques de visibilité).
-  - `Quran.IntegrationTests` : 15/15 réussis sur `quran_db_test` (dont `AwjuhEndToEndIntegrationTests`).
+- Résultat actuel : **93 tests exécutés, 93 réussis (0 échec, 1 ignoré documenté)**
+  - `Quran.UnitTests` : 73/73 réussis (dont `AudioPeaksServiceTests`, `AnnotationServiceTests` pour l'annulation, et `AwjuhServiceTests`).
+  - `Quran.IntegrationTests` : 20/20 réussis sur `quran_db_test` (dont `AudioEditorEndToEndIntegrationTests` et `AwjuhEndToEndIntegrationTests`).
 

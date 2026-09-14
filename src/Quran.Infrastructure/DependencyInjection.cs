@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<Quran.Application.Interfaces.ICorpusResolutionService, Services.CorpusResolutionService>();
         services.AddScoped<Quran.Application.Interfaces.IAnnotationService, Services.AnnotationService>();
         services.AddScoped<Quran.Application.Interfaces.IAwjuhService, Services.AwjuhService>();
+        services.AddScoped<Quran.Application.Interfaces.IAudioPeaksService, Services.AudioPeaksService>();
 
         return services;
     }

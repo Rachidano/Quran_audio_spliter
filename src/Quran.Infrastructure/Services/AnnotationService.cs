@@ -550,6 +550,95 @@ public class AnnotationService : IAnnotationService
         return true;
     }
 
+    public async Task<UndoCaptureResult> UndoLastCaptureAsync(Guid sourceAudioId, string userId, CancellationToken ct = default)
+    {
+        var session = await _db.AnnotationSessions
+            .FirstOrDefaultAsync(s => s.UserId == userId && s.SourceAudioId == sourceAudioId, ct);
+
+        var lastSegment = await _db.AudioSegments
+            .Where(s => s.SourceAudioId == sourceAudioId && s.Status == AudioSegmentStatus.Draft)
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        if (lastSegment == null)
+        {
+            return new UndoCaptureResult(
+                Success: false,
+                RemovedSegmentId: Guid.Empty,
+                RestoredTimeMs: session?.CurrentTimeMs ?? 0,
+                RestoredSurahNumber: session?.CurrentSurahNumber ?? 1,
+                RestoredAyahNumber: session?.CurrentAyahNumber ?? 1,
+                RestoredReference: null,
+                Message: "لا توجد مقاطع حديثة يمكن التراجع عنها."
+            );
+        }
+
+        if (await _db.AudioSegments.AnyAsync(s => s.RepeatOfId == lastSegment.Id, ct))
+        {
+            return new UndoCaptureResult(
+                Success: false,
+                RemovedSegmentId: lastSegment.Id,
+                RestoredTimeMs: session?.CurrentTimeMs ?? 0,
+                RestoredSurahNumber: session?.CurrentSurahNumber ?? 1,
+                RestoredAyahNumber: session?.CurrentAyahNumber ?? 1,
+                RestoredReference: lastSegment.Reference,
+                Message: "لا يمكن التراجع عن هذا المقطع لوجود مقاطع تكرار مرتبطة به."
+            );
+        }
+
+        var removedId = lastSegment.Id;
+        var restoredTimeMs = lastSegment.StartMs;
+        int restoredSurah = session?.CurrentSurahNumber ?? 1;
+        int restoredAyah = session?.CurrentAyahNumber ?? 1;
+        string? restoredRef = lastSegment.Reference;
+
+        if (!string.IsNullOrEmpty(lastSegment.Reference))
+        {
+            var parts = lastSegment.Reference.Split(':');
+            if (parts.Length == 2 && int.TryParse(parts[0], out var s) && int.TryParse(parts[1], out var a))
+            {
+                restoredSurah = s;
+                restoredAyah = a;
+            }
+        }
+
+        var revisions = await _db.SegmentRevisions.Where(r => r.AudioSegmentId == removedId).ToListAsync(ct);
+        _db.SegmentRevisions.RemoveRange(revisions);
+        _db.AudioSegments.Remove(lastSegment);
+
+        if (session != null)
+        {
+            session.CurrentTimeMs = restoredTimeMs;
+            session.CurrentSurahNumber = restoredSurah;
+            session.CurrentAyahNumber = restoredAyah;
+            session.LastSegmentId = null;
+            session.IsRepeatMode = false;
+            session.RepeatTargetSegmentId = null;
+            session.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        _db.AuditLogs.Add(new AuditLog
+        {
+            UserId = userId,
+            Action = "UndoCapture",
+            EntityType = "AudioSegment",
+            EntityId = removedId.ToString(),
+            OldValuesJson = System.Text.Json.JsonSerializer.Serialize(new { lastSegment.StartMs, lastSegment.EndMs, lastSegment.Reference })
+        });
+
+        await _db.SaveChangesAsync(ct);
+
+        return new UndoCaptureResult(
+            Success: true,
+            RemovedSegmentId: removedId,
+            RestoredTimeMs: restoredTimeMs,
+            RestoredSurahNumber: restoredSurah,
+            RestoredAyahNumber: restoredAyah,
+            RestoredReference: restoredRef,
+            Message: $"تم التراجع عن تسجيل الآية {restoredRef} واستعادة الموضع {restoredTimeMs}ms بنجاح."
+        );
+    }
+
     private static AudioSegmentDto ToDto(AudioSegment s)
     {
         return new AudioSegmentDto(

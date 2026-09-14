@@ -13,4 +13,5 @@ public interface IAnnotationService
     Task<AnnotationSessionDto> UpdateSessionAsync(UpdateSessionRequest request, string userId, CancellationToken ct = default);
     Task<OccurrenceMigrationReport> MigrateMushafPassagesToAudioSegmentsAsync(CancellationToken ct = default);
     Task<bool> DeleteOccurrenceAsync(Guid id, int clientVersion, string userId, CancellationToken ct = default);
+    Task<UndoCaptureResult> UndoLastCaptureAsync(Guid sourceAudioId, string userId, CancellationToken ct = default);
 }

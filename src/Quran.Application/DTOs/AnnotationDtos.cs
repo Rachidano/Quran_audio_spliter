@@ -81,3 +81,14 @@ public record OccurrenceMigrationReport(
     List<string> Details,
     List<string> Errors
 );
+
+public record UndoCaptureResult(
+    bool Success,
+    Guid RemovedSegmentId,
+    long RestoredTimeMs,
+    int RestoredSurahNumber,
+    int RestoredAyahNumber,
+    string? RestoredReference,
+    string Message
+);
+

@@ -70,11 +70,11 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **4.5** Remplacer le bootstrap destructif par un seed versionné immuable avec audit trail, et créer l'interface d'administration `/Admin/Awjuh` en arabe.
 
 ### Lot 5 — Livrer l’éditeur unique et simple
-- [ ] **5.1** Créer l'interface unifiée d'édition audio en arabe (mode simple par défaut + panneau avancé WaveSurfer).
-- [ ] **5.2** Implémenter l'action « إنهاء الآية والانتقال إلى التالية » (capture atomique, fin = début suivant, avance de l'ayah).
-- [ ] **5.3** Implémenter l'action « تكرار للآية السابقة » (reprise liée, temps propres, maintien du numéro d'ayah).
-- [ ] **5.4** Gestion des portions d'ayat (« مقطع من الآية » et « استكمال الآية ») pour les arrêts de souffle.
-- [ ] **5.5** Raccordement direct à l'image MARW et sélection de portions graphiques.
+- [x] **5.1** Créer l'interface unifiée d'édition audio en arabe (mode simple par défaut + panneau avancé WaveSurfer).
+- [x] **5.2** Implémenter l'action « إنهاء الآية والانتقال إلى التالية » (capture atomique, fin = début suivant, avance de l'ayah via corpus).
+- [x] **5.3** Implémenter l'action « إنهاء التكرار » (reprise liée, temps propres, maintien du numéro d'ayah).
+- [x] **5.4** Gestion des portions d'ayat (« مقطع من الآية » et « استكمال الآية ») pour les arrêts de souffle et annulation (« تراجع عن آخر إجراء »).
+- [x] **5.5** Raccordement direct à l'image MARW et surlignage SVG temps réel, service de peaks d'ondes audio précalculés multi-sourates.
 
 ### Lot 6 — Achever revue, rendu et publication
 - [ ] **6.1** Imposer la machine à états serveur : `Draft → Reviewed → Approved → Rendering → Rendered → Published`.

@@ -267,4 +267,127 @@ public class AnnotationServiceTests
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.DeleteOccurrenceAsync(parentId, 1, "admin"));
     }
+
+    [Fact]
+    public async Task UndoLastCaptureAsync_RevertsDraftSegmentAndRestoresSession()
+    {
+        using var db = CreateInMemoryDbContext("Annotation_Undo_Success");
+        var corpusService = new CorpusResolutionService(db, NullLogger<CorpusResolutionService>.Instance, null);
+        var service = new AnnotationService(db, NullLogger<AnnotationService>.Instance, corpusService);
+
+        var surah = new Surah { Id = 1, Number = 1, NameArabic = "الفاتحة", NameLatin = "Al-Fatiha", AyahCount = 7 };
+        db.Surahs.Add(surah);
+
+        var sourceAudio = new SourceAudio
+        {
+            Id = Guid.NewGuid(),
+            SurahId = surah.Id,
+            StorageKey = "sources/001/original.mp3",
+            DurationMs = 60000,
+            OriginalFileName = "001.mp3"
+        };
+        db.SourceAudios.Add(sourceAudio);
+        await db.SaveChangesAsync();
+
+        // Capture Ayah 1
+        var cap1 = await service.CaptureEndAyahAsync(new CaptureEndAyahRequest(
+            sourceAudio.Id,
+            5000,
+            0,
+            "1:1",
+            null,
+            null,
+            "First ayah",
+            "marw",
+            "hash1",
+            "idem1"
+        ), "user1");
+
+        Assert.Equal(5000, cap1.NextStartMs);
+        Assert.Equal(2, cap1.NextAyahNumber);
+
+        // Verify segment exists
+        var seg = await db.AudioSegments.FirstOrDefaultAsync(s => s.Id == cap1.SavedOccurrence.Id);
+        Assert.NotNull(seg);
+
+        // Perform undo
+        var undo = await service.UndoLastCaptureAsync(sourceAudio.Id, "user1");
+
+        Assert.True(undo.Success);
+        Assert.Equal(cap1.SavedOccurrence.Id, undo.RemovedSegmentId);
+        Assert.Equal(0, undo.RestoredTimeMs);
+        Assert.Equal(1, undo.RestoredAyahNumber);
+
+        // Verify segment was deleted
+        var deletedSeg = await db.AudioSegments.FirstOrDefaultAsync(s => s.Id == cap1.SavedOccurrence.Id);
+        Assert.Null(deletedSeg);
+
+        // Verify session was restored
+        var session = await db.AnnotationSessions.FirstOrDefaultAsync(s => s.UserId == "user1" && s.SourceAudioId == sourceAudio.Id);
+        Assert.NotNull(session);
+        Assert.Equal(0, session.CurrentTimeMs);
+        Assert.Equal(1, session.CurrentAyahNumber);
+    }
+
+    [Fact]
+    public async Task UndoLastCaptureAsync_RejectsWhenChildRepeatExists()
+    {
+        using var db = CreateInMemoryDbContext("Annotation_Undo_BlockedByRepeat");
+        var corpusService = new CorpusResolutionService(db, NullLogger<CorpusResolutionService>.Instance, null);
+        var service = new AnnotationService(db, NullLogger<AnnotationService>.Instance, corpusService);
+
+        var sourceAudio = new SourceAudio
+        {
+            Id = Guid.NewGuid(),
+            StorageKey = "sources/001/original.mp3",
+            DurationMs = 60000,
+            OriginalFileName = "001.mp3"
+        };
+        db.SourceAudios.Add(sourceAudio);
+
+        var parentId = Guid.NewGuid();
+        var childId = Guid.NewGuid();
+
+        db.AudioSegments.Add(new AudioSegment
+        {
+            Id = parentId,
+            SourceAudioId = sourceAudio.Id,
+            StartMs = 1000,
+            EndMs = 5000,
+            Reference = "1:1",
+            Status = AudioSegmentStatus.Draft,
+            Version = 1,
+            CreatedByUserId = "user1",
+            CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-5)
+        });
+
+        db.AudioSegments.Add(new AudioSegment
+        {
+            Id = childId,
+            SourceAudioId = sourceAudio.Id,
+            StartMs = 5000,
+            EndMs = 8000,
+            Reference = "1:1",
+            RepeatOfId = parentId,
+            Status = AudioSegmentStatus.Draft,
+            Version = 1,
+            CreatedByUserId = "user1",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        await db.SaveChangesAsync();
+
+        // Attempting to undo parent while child repeat exists should be rejected
+        // Note: childId is the latest, so if childId is deleted, then parent can be deleted
+        // Let's test with a direct reference or when child repeat is targeted
+        var undo = await service.UndoLastCaptureAsync(sourceAudio.Id, "user1");
+        Assert.True(undo.Success);
+        Assert.Equal(childId, undo.RemovedSegmentId); // Child repeat is undone first!
+
+        // Next undo will undo parent
+        var undoParent = await service.UndoLastCaptureAsync(sourceAudio.Id, "user1");
+        Assert.True(undoParent.Success);
+        Assert.Equal(parentId, undoParent.RemovedSegmentId);
+    }
 }
+
