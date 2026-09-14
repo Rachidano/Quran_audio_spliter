@@ -16,10 +16,10 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 | **Lot 1** | Fermer les accès administratifs et les médias privés | Lot 0 | ✅ **Terminé** | 14/09/2026 |
 | **Lot 2** | Fixer le corpus et les références | Lots 0, 1 | ✅ **Terminé** | 14/09/2026 |
 | **Lot 3** | Réunifier les occurrences et migrer les brouillons | Lot 2 | ✅ **Terminé** | 14/09/2026 |
-| **Lot 4** | Achever le référentiel administrable | Lots 2, 3 | ⏳ **En cours** | |
-| **Lot 5** | Livrer l’éditeur unique et simple | Lots 3, 4 | ⏳ À venir | |
-| **Lot 6** | Achever revue, rendu et publication | Lots 3, 4, 5 | ⏳ À venir | |
-| **Lot 7** | Terminer le site public cohérent | Lots 2, 4, 6 | ⏳ À venir | |
+| **Lot 4** | Achever le référentiel administrable | Lots 2, 3 | ✅ **Terminé** | 14/09/2026 |
+| **Lot 5** | Livrer l’éditeur unique et simple | Lots 3, 4 | ✅ **Terminé** | 14/09/2026 |
+| **Lot 6** | Achever revue, rendu et publication | Lots 3, 4, 5 | ✅ **Terminé** | 14/09/2026 |
+| **Lot 7** | Terminer le site public cohérent | Lots 2, 4, 6 | ⏳ **En cours** | |
 | **Lot 8** | Industrialiser l’ingestion et la qualité | Lots 3, 6, 7 | ⏳ À venir | |
 | **Lot 9** | Nettoyer le projet et rendre l’exécution reproductible | Remplacements recettés | ⏳ À venir | |
 | **Lot 10** | Recette, exploitation et livraison | Lots 0 à 9 | ⏳ À venir | |
@@ -77,10 +77,10 @@ Ce backlog suit l’état d’avancement réel des lots définis dans le dossier
 - [x] **5.5** Raccordement direct à l'image MARW et surlignage SVG temps réel, service de peaks d'ondes audio précalculés multi-sourates.
 
 ### Lot 6 — Achever revue, rendu et publication
-- [ ] **6.1** Imposer la machine à états serveur : `Draft → Reviewed → Approved → Rendering → Rendered → Published`.
-- [ ] **6.2** File d'attente de revue administrative avec motifs de rejet motivés et traçabilité de l'acteur.
-- [ ] **6.3** Découpage FFmpeg idempotent, asynchrone et persistant lié à la révision exacte.
-- [ ] **6.4** Publication et dépublication explicites avec vérification des assets générés.
+- [x] **6.1** Imposer la machine à états serveur : `Draft → Reviewed → Approved → Rendering → Rendered → Published`.
+- [x] **6.2** File d'attente de revue administrative avec motifs de rejet motivés et traçabilité de l'acteur (`/Admin/ReviewQueue`).
+- [x] **6.3** Découpage FFmpeg idempotent, asynchrone et persistant lié à la révision exacte (`_rev{version}`).
+- [x] **6.4** Publication et dépublication explicites avec vérification des assets générés (contrôle de somme de contrôle SHA-256).
 
 ### Lot 7 — Terminer le site public cohérent
 - [ ] **7.1** Aligner les pages publiques (`/`, `/surah/{number}`, `/quran/{surah}/{ayah}`, `/mushaf/page/{pageNumber}`).

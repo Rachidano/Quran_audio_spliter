@@ -238,18 +238,46 @@ public class AudioEditorController : ControllerBase
         }
     }
 
+    [HttpPost("segments/{id:guid}/submit-review")]
+    public async Task<ActionResult<AudioSegmentDto>> SubmitForReview(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.Identity?.Name ?? "reviewer";
+            var segment = await _editorService.SubmitForReviewAsync(id, userId, cancellationToken);
+            return Ok(segment);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la soumission pour revue du segment {Id}", id);
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
     [HttpPost("segments/{id:guid}/approve")]
     public async Task<ActionResult<AudioSegmentDto>> ApproveSegment(Guid id, CancellationToken cancellationToken)
     {
         try
         {
-            var userId = User.Identity?.Name ?? "admin";
+            var userId = User.Identity?.Name ?? "reviewer";
             var segment = await _editorService.ApproveSegmentAsync(id, userId, cancellationToken);
             return Ok(segment);
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -258,7 +286,32 @@ public class AudioEditorController : ControllerBase
         }
     }
 
+    [HttpPost("segments/{id:guid}/reject")]
+    public async Task<ActionResult<AudioSegmentDto>> RejectSegment(Guid id, [FromBody] RejectSegmentRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.Identity?.Name ?? "reviewer";
+            var segment = await _editorService.RejectSegmentAsync(id, request.Reason, userId, cancellationToken);
+            return Ok(segment);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors du rejet du segment {Id}", id);
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
     [HttpPost("segments/{id:guid}/render")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<AudioSegmentDto>> RenderSegment(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -271,6 +324,10 @@ public class AudioEditorController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erreur lors du rendu du segment {Id}", id);
@@ -279,6 +336,7 @@ public class AudioEditorController : ControllerBase
     }
 
     [HttpPost("segments/{id:guid}/publish")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<AudioSegmentDto>> PublishSegment(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -291,6 +349,10 @@ public class AudioEditorController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erreur lors de la publication du segment {Id}", id);
@@ -298,7 +360,51 @@ public class AudioEditorController : ControllerBase
         }
     }
 
+    [HttpPost("segments/{id:guid}/unpublish")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<AudioSegmentDto>> UnpublishSegment(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.Identity?.Name ?? "admin";
+            var segment = await _editorService.UnpublishSegmentAsync(id, userId, cancellationToken);
+            return Ok(segment);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors du retrait de publication du segment {Id}", id);
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("review-queue")]
+    public async Task<ActionResult<IReadOnlyList<AudioSegmentDto>>> GetReviewQueue(
+        [FromQuery] int? surahNumber,
+        [FromQuery] Quran.Domain.Enums.AudioSegmentStatus? status,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var items = await _editorService.GetReviewQueueAsync(surahNumber, status, cancellationToken);
+            return Ok(items);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la récupération de la file de revue");
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
     [HttpPost("surah/{surahNumber:int}/tokenize")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TokenizeSurah(int surahNumber, CancellationToken cancellationToken)
     {
         try

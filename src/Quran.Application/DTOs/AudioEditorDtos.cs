@@ -60,7 +60,13 @@ public record AudioSegmentDto(
     string? Notes,
     string? PublishedUrl,
     string RowVersionBase64,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    string? RejectionReason = null,
+    string? ReviewedByUserId = null,
+    DateTimeOffset? ReviewedAt = null,
+    string? ApprovedByUserId = null,
+    DateTimeOffset? ApprovedAt = null,
+    int RevisionNumber = 1
 );
 
 public record AudioEditorContextDto(
@@ -97,3 +103,6 @@ public record UpdateAudioSegmentRequest(
     string? Notes,
     string RowVersionBase64
 );
+
+public record RejectSegmentRequest(string Reason);
+

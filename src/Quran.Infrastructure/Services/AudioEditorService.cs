@@ -171,7 +171,13 @@ public partial class AudioEditorService : IAudioEditorService
                 s.Notes,
                 s.PublishedAudioAsset != null ? _storage.GetPublicUrl(s.PublishedAudioAsset.StorageKey) : null,
                 Convert.ToBase64String(s.RowVersion),
-                s.CreatedAt
+                s.CreatedAt,
+                s.RejectionReason,
+                s.ReviewedByUserId,
+                s.ReviewedAt,
+                s.ApprovedByUserId,
+                s.ApprovedAt,
+                s.Version
             ))
             .ToListAsync(cancellationToken);
 
@@ -266,6 +272,9 @@ public partial class AudioEditorService : IAudioEditorService
         _db.AudioSegments.Add(segment);
         await _db.SaveChangesAsync(cancellationToken);
 
+        _logger.LogInformation("Nouveau segment {Id} créé pour la source {SourceAudioId}, ayah {AyahId}",
+            segment.Id, segment.SourceAudioId, segment.AyahId);
+
         return await GetSegmentDtoAsync(segment.Id, cancellationToken);
     }
 
@@ -325,9 +334,15 @@ public partial class AudioEditorService : IAudioEditorService
         // Si les limites temporelles changent et que le segment était rendu ou publié, repasser en Brouillon pour nécessiter un nouveau rendu
         if (contentChanged)
         {
+            segment.Version++;
             segment.Status = AudioSegmentStatus.Draft;
             segment.ValidatedAt = null;
             segment.ValidatedByUserId = null;
+            segment.ReviewedAt = null;
+            segment.ReviewedByUserId = null;
+            segment.ApprovedAt = null;
+            segment.ApprovedByUserId = null;
+            segment.RejectionReason = null;
             // The previous published asset remains a snapshot, not the new draft.
             segment.PublishedAudioAssetId = null;
         }
@@ -343,19 +358,78 @@ public partial class AudioEditorService : IAudioEditorService
         if (segment == null)
             return;
 
+        if (segment.Status == AudioSegmentStatus.Published)
+            throw new InvalidOperationException("Impossible de supprimer directement un segment publié. Veuillez d'abord retirer sa publication.");
+
         _db.AudioSegments.Remove(segment);
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<AudioSegmentDto> ApproveSegmentAsync(Guid id, string userId, CancellationToken cancellationToken = default)
+    public async Task<AudioSegmentDto> SubmitForReviewAsync(Guid id, string userId, CancellationToken cancellationToken = default)
     {
         var segment = await _db.AudioSegments.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
         if (segment == null)
             throw new KeyNotFoundException($"Segment {id} introuvable.");
 
+        if (segment.Status != AudioSegmentStatus.Draft && segment.Status != AudioSegmentStatus.Rejected)
+            throw new InvalidOperationException("Seul un segment au statut Brouillon ou Rejeté peut être soumis pour revue.");
+
+        segment.Status = AudioSegmentStatus.Reviewed;
+        segment.ReviewedByUserId = userId;
+        segment.ReviewedAt = DateTimeOffset.UtcNow;
+        segment.UpdatedByUserId = userId;
+        segment.UpdatedAt = DateTimeOffset.UtcNow;
+        segment.RowVersion = Guid.NewGuid().ToByteArray();
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return await GetSegmentDtoAsync(segment.Id, cancellationToken);
+    }
+
+    public async Task<AudioSegmentDto> ApproveSegmentAsync(Guid id, string userId, CancellationToken cancellationToken = default)
+    {
+        var segment = await _db.AudioSegments
+            .Include(s => s.Wajh)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (segment == null)
+            throw new KeyNotFoundException($"Segment {id} introuvable.");
+
+        if (segment.StartMs < 0 || segment.EndMs <= segment.StartMs)
+            throw new InvalidOperationException("Les limites temporelles du segment sont invalides.");
+
+        if (segment.WajhId.HasValue && segment.Wajh != null && segment.Wajh.ReviewStatus != "Approved")
+            throw new InvalidOperationException("Le وجه assigné doit être au statut 'Approved' dans le référentiel avant d'approuver le segment.");
+
         segment.Status = AudioSegmentStatus.Approved;
+        segment.ApprovedByUserId = userId;
+        segment.ApprovedAt = DateTimeOffset.UtcNow;
         segment.ValidatedByUserId = userId;
-        segment.ValidatedAt = DateTime.UtcNow;
+        segment.ValidatedAt = DateTimeOffset.UtcNow;
+        segment.RejectionReason = null;
+        segment.RowVersion = Guid.NewGuid().ToByteArray();
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return await GetSegmentDtoAsync(segment.Id, cancellationToken);
+    }
+
+    public async Task<AudioSegmentDto> RejectSegmentAsync(Guid id, string reason, string userId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("Le motif de rejet est obligatoire.", nameof(reason));
+
+        var segment = await _db.AudioSegments.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (segment == null)
+            throw new KeyNotFoundException($"Segment {id} introuvable.");
+
+        segment.Status = AudioSegmentStatus.Rejected;
+        segment.RejectionReason = reason.Trim();
+        segment.ReviewedByUserId = userId;
+        segment.ReviewedAt = DateTimeOffset.UtcNow;
+        segment.ApprovedByUserId = null;
+        segment.ApprovedAt = null;
+        segment.ValidatedByUserId = null;
+        segment.ValidatedAt = null;
         segment.RowVersion = Guid.NewGuid().ToByteArray();
 
         await _db.SaveChangesAsync(cancellationToken);
@@ -374,8 +448,8 @@ public partial class AudioEditorService : IAudioEditorService
         if (segment == null)
             throw new KeyNotFoundException($"Segment {id} introuvable.");
 
-        if (segment.Status != AudioSegmentStatus.Approved)
-            throw new InvalidOperationException("Valider le segment avant de générer son fichier audio.");
+        if (segment.Status != AudioSegmentStatus.Approved && segment.Status != AudioSegmentStatus.Rendered)
+            throw new InvalidOperationException("Valider et approuver le segment avant de générer son fichier audio.");
 
         segment.Status = AudioSegmentStatus.Rendering;
         segment.RowVersion = Guid.NewGuid().ToByteArray();
@@ -385,10 +459,11 @@ public partial class AudioEditorService : IAudioEditorService
         if (!File.Exists(sourcePhysical))
             throw new FileNotFoundException("Fichier audio source introuvable sur le disque.", sourcePhysical);
 
-        var surahNum = segment.Ayah.Surah.Number;
-        var ayahNum = segment.Ayah.AyahNumber;
+        var surahNum = segment.Ayah?.Surah?.Number ?? 0;
+        var ayahNum = segment.Ayah?.AyahNumber ?? 0;
         var wajhSuffix = segment.Wajh != null ? $"_{segment.Wajh.Code}" : "";
-        var relativeWorkingKey = $"working/segments/{surahNum:D3}/{ayahNum:D3}_{segment.Id:N}{wajhSuffix}.mp3";
+        var rev = segment.Version > 0 ? segment.Version : 1;
+        var relativeWorkingKey = $"working/segments/{surahNum:D3}/{ayahNum:D3}_{segment.Id:N}_rev{rev}{wajhSuffix}.mp3";
         var outputPhysical = _storage.GetPhysicalPath(relativeWorkingKey);
 
         var startTime = TimeSpan.FromMilliseconds(segment.StartMs);
@@ -418,7 +493,7 @@ public partial class AudioEditorService : IAudioEditorService
         segment.RowVersion = Guid.NewGuid().ToByteArray();
         await _db.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Segment {Id} rendu avec succès vers {Path}", id, outputPhysical);
+        _logger.LogInformation("Segment {Id} rev{Rev} rendu avec succès vers {Path}", id, rev, outputPhysical);
 
         return await GetSegmentDtoAsync(segment.Id, cancellationToken);
     }
@@ -437,10 +512,12 @@ public partial class AudioEditorService : IAudioEditorService
 
         if (segment.Status == AudioSegmentStatus.Published)
             return await GetSegmentDtoAsync(id, cancellationToken);
+
         if (segment.WajhId.HasValue && segment.Wajh?.ReviewStatus != "Approved")
             throw new InvalidOperationException("Le wajh doit être approuvé dans le référentiel avant publication.");
+
         if (segment.Status is not (AudioSegmentStatus.Approved or AudioSegmentStatus.Rendered))
-            throw new InvalidOperationException("Valider le segment avant publication.");
+            throw new InvalidOperationException("Valider et rendre le segment avant publication.");
 
         if (segment.PublishedAudioAsset == null || segment.Status != AudioSegmentStatus.Rendered)
         {
@@ -454,15 +531,24 @@ public partial class AudioEditorService : IAudioEditorService
                 .FirstAsync(s => s.Id == id, cancellationToken);
         }
 
-        var surahNum = segment.Ayah.Surah.Number;
-        var ayahNum = segment.Ayah.AyahNumber;
-        var wajhSuffix = segment.Wajh != null ? $"_{segment.Wajh.Code}" : "";
-        // Each occurrence keeps its own asset, including unknown-wajh repetitions.
-        var publishedKey = $"published/{surahNum:D3}/{ayahNum:D3}/{segment.Id:N}{wajhSuffix}.mp3";
-
         var workingPhysical = _storage.GetPhysicalPath(segment.PublishedAudioAsset!.StorageKey);
-        var publishedPhysical = _storage.GetPhysicalPath(publishedKey);
+        if (!File.Exists(workingPhysical))
+            throw new FileNotFoundException("L'asset audio rendu est introuvable sur le disque.", workingPhysical);
 
+        // Vérification de l'empreinte SHA-256
+        var currentChecksum = _audioProcessor.ComputeChecksum(workingPhysical);
+        if (!string.Equals(currentChecksum, segment.PublishedAudioAsset.Checksum, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"L'empreinte du fichier rendu ({currentChecksum}) ne correspond pas à l'asset enregistré ({segment.PublishedAudioAsset.Checksum}).");
+        }
+
+        var surahNum = segment.Ayah?.Surah?.Number ?? 0;
+        var ayahNum = segment.Ayah?.AyahNumber ?? 0;
+        var wajhSuffix = segment.Wajh != null ? $"_{segment.Wajh.Code}" : "";
+        var rev = segment.Version > 0 ? segment.Version : 1;
+        var publishedKey = $"published/{surahNum:D3}/{ayahNum:D3}/{segment.Id:N}_rev{rev}{wajhSuffix}.mp3";
+
+        var publishedPhysical = _storage.GetPhysicalPath(publishedKey);
         var pubDir = Path.GetDirectoryName(publishedPhysical);
         if (!string.IsNullOrEmpty(pubDir)) Directory.CreateDirectory(pubDir);
         File.Copy(workingPhysical, publishedPhysical, overwrite: true);
@@ -471,51 +557,146 @@ public partial class AudioEditorService : IAudioEditorService
         segment.PublishedAudioAsset.StorageKey = publishedKey;
         segment.PublishedAudioAsset.OriginalFileName = Path.GetFileName(publishedPhysical);
 
-        // Only a complete ayah may be offered as the canonical recitation.
-        // Partial repetitions stay available as AudioSegments with their own assets.
+        // Recitation canonique si verset complet
         if (segment.SegmentType == AudioSegmentType.FullAyah
-            && !segment.StartWordIndex.HasValue && !segment.EndWordIndex.HasValue)
+            && !segment.StartWordIndex.HasValue && !segment.EndWordIndex.HasValue
+            && segment.AyahId.HasValue)
         {
-        var recitation = await _db.Recitations
-            .FirstOrDefaultAsync(r => r.AyahId == segment.AyahId
-                                   && r.ReciterId == segment.SourceAudio.ReciterId
-                                   && r.RiwayaId == segment.SourceAudio.RiwayaId
-                                   && r.WajhId == segment.WajhId, cancellationToken);
+            var recitation = await _db.Recitations
+                .FirstOrDefaultAsync(r => r.AyahId == segment.AyahId.Value
+                                       && r.ReciterId == segment.SourceAudio.ReciterId
+                                       && r.RiwayaId == segment.SourceAudio.RiwayaId
+                                       && r.WajhId == segment.WajhId, cancellationToken);
 
-        if (recitation == null)
-        {
-            recitation = new Recitation
+            if (recitation == null)
             {
-                AyahId = segment.AyahId ?? 0,
-                ReciterId = segment.SourceAudio.ReciterId,
-                RiwayaId = segment.SourceAudio.RiwayaId,
-                WajhId = segment.WajhId,
-                AudioAssetId = segment.PublishedAudioAsset.Id,
-                Status = RecitationStatus.Published,
-                IsPublished = true,
-                CreatedAt = DateTime.UtcNow
-            };
-            _db.Recitations.Add(recitation);
-        }
-        else
-        {
-            recitation.AudioAssetId = segment.PublishedAudioAsset.Id;
-            recitation.Status = RecitationStatus.Published;
-            recitation.IsPublished = true;
-            recitation.UpdatedAt = DateTime.UtcNow;
-        }
+                recitation = new Recitation
+                {
+                    AyahId = segment.AyahId.Value,
+                    ReciterId = segment.SourceAudio.ReciterId,
+                    RiwayaId = segment.SourceAudio.RiwayaId,
+                    WajhId = segment.WajhId,
+                    AudioAssetId = segment.PublishedAudioAsset.Id,
+                    Status = RecitationStatus.Published,
+                    IsPublished = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _db.Recitations.Add(recitation);
+            }
+            else
+            {
+                recitation.AudioAssetId = segment.PublishedAudioAsset.Id;
+                recitation.Status = RecitationStatus.Published;
+                recitation.IsPublished = true;
+                recitation.UpdatedAt = DateTime.UtcNow;
+            }
         }
 
         segment.Status = AudioSegmentStatus.Published;
+        segment.ApprovedByUserId = userId;
+        segment.ApprovedAt = DateTimeOffset.UtcNow;
         segment.ValidatedByUserId = userId;
-        segment.ValidatedAt = DateTime.UtcNow;
+        segment.ValidatedAt = DateTimeOffset.UtcNow;
         segment.RowVersion = Guid.NewGuid().ToByteArray();
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Segment {Id} publié canoniquement vers {Path}", id, publishedPhysical);
+        _logger.LogInformation("Segment {Id} rev{Rev} publié canoniquement vers {Path}", id, rev, publishedPhysical);
 
         return await GetSegmentDtoAsync(segment.Id, cancellationToken);
+    }
+
+    public async Task<AudioSegmentDto> UnpublishSegmentAsync(Guid id, string userId, CancellationToken cancellationToken = default)
+    {
+        var segment = await _db.AudioSegments
+            .Include(s => s.SourceAudio)
+            .Include(s => s.Ayah)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+
+        if (segment == null)
+            throw new KeyNotFoundException($"Segment {id} introuvable.");
+
+        if (segment.Status != AudioSegmentStatus.Published)
+            throw new InvalidOperationException("Seul un segment publié peut être retiré de la publication.");
+
+        // Si relié à une récitation, la désactiver
+        if (segment.AyahId.HasValue && segment.SourceAudio != null)
+        {
+            var recitation = await _db.Recitations
+                .FirstOrDefaultAsync(r => r.AyahId == segment.AyahId
+                                       && r.ReciterId == segment.SourceAudio.ReciterId
+                                       && r.RiwayaId == segment.SourceAudio.RiwayaId
+                                       && r.WajhId == segment.WajhId
+                                       && r.AudioAssetId == segment.PublishedAudioAssetId, cancellationToken);
+            if (recitation != null)
+            {
+                recitation.IsPublished = false;
+                recitation.Status = RecitationStatus.Approved;
+                recitation.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        segment.Status = AudioSegmentStatus.Rendered;
+        segment.UpdatedByUserId = userId;
+        segment.UpdatedAt = DateTimeOffset.UtcNow;
+        segment.RowVersion = Guid.NewGuid().ToByteArray();
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Publication du segment {Id} retirée par {User}", id, userId);
+
+        return await GetSegmentDtoAsync(segment.Id, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AudioSegmentDto>> GetReviewQueueAsync(int? surahNumber = null, AudioSegmentStatus? status = null, CancellationToken cancellationToken = default)
+    {
+        var query = _db.AudioSegments
+            .Include(s => s.Ayah).ThenInclude(a => a.Surah)
+            .Include(s => s.Wajh)
+            .Include(s => s.PublishedAudioAsset)
+            .AsNoTracking();
+
+        if (surahNumber.HasValue)
+        {
+            query = query.Where(s => s.Ayah != null && s.Ayah.Surah != null && s.Ayah.Surah.Number == surahNumber.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(s => s.Status == status.Value);
+        }
+
+        var list = await query
+            .OrderByDescending(s => s.CreatedAt)
+            .Select(s => new AudioSegmentDto(
+                s.Id,
+                s.SourceAudioId,
+                s.AyahId,
+                s.Ayah != null ? (int?)s.Ayah.AyahNumber : null,
+                s.WajhId,
+                s.Wajh != null ? s.Wajh.Code : null,
+                s.Wajh != null ? s.Wajh.NameArabic : null,
+                s.StartMs,
+                s.EndMs,
+                s.StartWordIndex,
+                s.EndWordIndex,
+                s.SegmentType,
+                s.SequenceNumber,
+                s.Status,
+                s.Notes,
+                s.PublishedAudioAsset != null ? _storage.GetPublicUrl(s.PublishedAudioAsset.StorageKey) : null,
+                Convert.ToBase64String(s.RowVersion),
+                s.CreatedAt,
+                s.RejectionReason,
+                s.ReviewedByUserId,
+                s.ReviewedAt,
+                s.ApprovedByUserId,
+                s.ApprovedAt,
+                s.Version
+            ))
+            .ToListAsync(cancellationToken);
+
+        return list;
     }
 
     public async Task<int> TokenizeAyahsAsync(int surahNumber, CancellationToken cancellationToken = default)
@@ -601,7 +782,13 @@ public partial class AudioEditorService : IAudioEditorService
             s.Notes,
             s.PublishedAudioAsset != null ? _storage.GetPublicUrl(s.PublishedAudioAsset.StorageKey) : null,
             Convert.ToBase64String(s.RowVersion),
-            s.CreatedAt
+            s.CreatedAt,
+            s.RejectionReason,
+            s.ReviewedByUserId,
+            s.ReviewedAt,
+            s.ApprovedByUserId,
+            s.ApprovedAt,
+            s.Version
         );
     }
 }

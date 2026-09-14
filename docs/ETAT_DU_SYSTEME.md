@@ -195,10 +195,46 @@ Relevé effectué le 14/09/2026 à 13:00 :
 
 ---
 
-## 10. État des Tests Automatisés
+---
+
+## 10. Circuit de Revue, Rendu FFmpeg par Révision et Publication/Dépublication (Lot 6)
+
+- **Machine à états stricte côté serveur :**
+  - Cycle de vie : `Draft` → `Reviewed` → `Approved` → `Rendering` → `Rendered` → `Published`.
+  - Branche de rejet motivé : `Draft / Reviewed / Approved` → `Rejected` (motif non vide obligatoire `RejectionReason`, traçabilité de l'acteur `ReviewedByUserId` et date `ReviewedAt`).
+  - Dépublication explicite : `Published` → `Rendered` (retrait immédiat de la visibilité publique, désactivation de la récitation liée `IsPublished = false`, conservation des fichiers générés et de l'audit trail).
+- **Champs d'audit ajoutés sur `AudioSegment` :**
+  - `RejectionReason` (texte motivant le rejet).
+  - `ReviewedByUserId`, `ReviewedAt` (traçabilité du relecteur/réviseur).
+  - `ApprovedByUserId`, `ApprovedAt` (traçabilité de l'approbateur).
+  - `Version` (incrémenté à chaque modification de bornes, texte ou wajh, forçant le retour en `Draft` pour nouveau rendu et approbation).
+  - Migration EF Core : `20260914130526_AddAudioSegmentReviewWorkflowFields` appliquée sur `quran_db` et `quran_db_test`.
+- **Découpage FFmpeg persistant et versionné :**
+  - Clé de travail : `working/segments/{surahNum:D3}/{ayahNum:D3}_{segmentId:N}_rev{rev}{wajhSuffix}.mp3`.
+  - Clé de publication : `published/{surahNum:D3}/{ayahNum:D3}/{segmentId:N}_rev{rev}{wajhSuffix}.mp3`.
+  - Aucune collision ni écrasement entre prises successives d'un même verset ou répétitions.
+  - Vérification de l'empreinte SHA-256 (`ComputeChecksum`) avant toute copie en publication : garantit que le fichier sur disque correspond rigoureusement à l'asset validé.
+- **File de revue et d'approbation (`/Admin/ReviewQueue`) :**
+  - Interface dédiée en arabe avec filtres par sourate et par statut (`Draft`, `Reviewed`, `Approved`, `Rejected`, `Rendered`, `Published`).
+  - Affichage des KPIs d'avancement par statut.
+  - Modale interactive pour le rejet motivé avec contrôle de champ obligatoire.
+  - Actions en un clic : soumission pour revue, approbation, rejet motivé, تصيير FFmpeg, نشر et سحب النشر.
+- **Points d'accès API sécurisés (`AudioEditorController`) :**
+  - `POST /api/admin/audio-editor/segments/{id}/submit-review` (`Reviewer`, `Admin`)
+  - `POST /api/admin/audio-editor/segments/{id}/approve` (`Reviewer`, `Admin`)
+  - `POST /api/admin/audio-editor/segments/{id}/reject` (`Reviewer`, `Admin` avec `RejectSegmentRequest`)
+  - `POST /api/admin/audio-editor/segments/{id}/render` (`Admin`)
+  - `POST /api/admin/audio-editor/segments/{id}/publish` (`Admin`)
+  - `POST /api/admin/audio-editor/segments/{id}/unpublish` (`Admin`)
+  - `GET /api/admin/audio-editor/review-queue` (`Reviewer`, `Admin`)
+
+---
+
+## 11. État des Tests Automatisés
 
 - Commande : `dotnet test`
-- Résultat actuel : **93 tests exécutés, 93 réussis (0 échec, 1 ignoré documenté)**
-  - `Quran.UnitTests` : 73/73 réussis (dont `AudioPeaksServiceTests`, `AnnotationServiceTests` pour l'annulation, et `AwjuhServiceTests`).
-  - `Quran.IntegrationTests` : 20/20 réussis sur `quran_db_test` (dont `AudioEditorEndToEndIntegrationTests` et `AwjuhEndToEndIntegrationTests`).
+- Résultat actuel : **97 tests exécutés, 97 réussis (0 échec, 1 ignoré documenté)**
+  - `Quran.UnitTests` : 74/74 réussis (dont `AudioEditorServiceTests.ReviewWorkflow_SubmitApproveRejectUnpublish_Lifecycle`).
+  - `Quran.IntegrationTests` : 23/23 réussis sur `quran_db_test` (dont `ReviewWorkflowIntegrationTests` et `AudioEditorEndToEndIntegrationTests`).
+
 

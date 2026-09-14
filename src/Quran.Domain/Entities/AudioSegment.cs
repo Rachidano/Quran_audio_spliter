@@ -44,6 +44,14 @@ public class AudioSegment
     public string? ValidatedByUserId { get; set; }
     public DateTimeOffset? ValidatedAt { get; set; }
 
+    public string? ReviewedByUserId { get; set; }
+    public DateTimeOffset? ReviewedAt { get; set; }
+
+    public string? ApprovedByUserId { get; set; }
+    public DateTimeOffset? ApprovedAt { get; set; }
+
+    public string? RejectionReason { get; set; }
+
     public long? PublishedAudioAssetId { get; set; }
     public AudioAsset? PublishedAudioAsset { get; set; }
 

@@ -1,0 +1,494 @@
+@page
+@model Quran.Web.Pages.Admin.ReviewQueueModel
+@using Quran.Domain.Enums
+@{
+    ViewData["Title"] = "طابور المراجعة والنشر الصوتي";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h2 class="fw-bold mb-1">📋 طابور المراجعة والاعتماد والنشر (Review & Publishing Pipeline)</h2>
+        <p class="text-muted mb-0">إدارة دورة حياة المقاطع الصوتية: مسودة ← مراجعة ← اعتماد ← تصيير FFmpeg ← نشر / سحب النشر</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="/Admin/AudioEditor" class="btn btn-outline-primary">
+            🎧 المحرر الصوتي
+        </a>
+        <a asp-page="/Admin/Index" class="btn btn-outline-secondary">
+            📊 لوحة التحكم
+        </a>
+    </div>
+</div>
+
+<!-- Filtres de recherche -->
+<div class="card rounded-3 border-0 shadow-sm p-3 mb-4 bg-white">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">السورة الكريمة</label>
+            <select name="SurahNumber" class="form-select">
+                <option value="">-- جميع السور --</option>
+                @foreach (var s in Model.Surahs)
+                {
+                    if (Model.SurahNumber == s.Number)
+                    {
+                        <option value="@s.Number" selected>@s.Number. @s.NameArabic (@s.NameLatin)</option>
+                    }
+                    else
+                    {
+                        <option value="@s.Number">@s.Number. @s.NameArabic (@s.NameLatin)</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">حالة المقطع</label>
+            <select name="Status" class="form-select">
+                <option value="">-- جميع الحالات --</option>
+                @foreach (AudioSegmentStatus status in Enum.GetValues(typeof(AudioSegmentStatus)))
+                {
+                    if (Model.Status == status)
+                    {
+                        <option value="@status" selected>@GetStatusArabic(status)</option>
+                    }
+                    else
+                    {
+                        <option value="@status">@GetStatusArabic(status)</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1">
+                🔍 تصفية النتائج
+            </button>
+            <a asp-page="/Admin/ReviewQueue" class="btn btn-outline-secondary">
+                إلغاء التصفية
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Compteurs par statut -->
+<div class="row g-2 mb-4">
+    <div class="col">
+        <div class="card p-2 text-center rounded-3 border-0 shadow-sm" style="background:#f8fafc;">
+            <div class="small text-muted">إجمالي المقاطع</div>
+            <div class="fs-4 fw-bold text-dark">@Model.Segments.Count</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card p-2 text-center rounded-3 border-0 shadow-sm" style="background:#eff6ff;">
+            <div class="small text-primary">قيد المراجعة</div>
+            <div class="fs-4 fw-bold text-primary">@Model.Segments.Count(s => s.Status == AudioSegmentStatus.Reviewed)</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card p-2 text-center rounded-3 border-0 shadow-sm" style="background:#fef3c7;">
+            <div class="small text-warning">معتمد (جاهز للتصيير)</div>
+            <div class="fs-4 fw-bold text-warning">@Model.Segments.Count(s => s.Status == AudioSegmentStatus.Approved)</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card p-2 text-center rounded-3 border-0 shadow-sm" style="background:#f0fdf4;">
+            <div class="small text-success">منشور للعموم</div>
+            <div class="fs-4 fw-bold text-success">@Model.Segments.Count(s => s.Status == AudioSegmentStatus.Published)</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card p-2 text-center rounded-3 border-0 shadow-sm" style="background:#fef2f2;">
+            <div class="small text-danger">مرفوض (مع تعليل)</div>
+            <div class="fs-4 fw-bold text-danger">@Model.Segments.Count(s => s.Status == AudioSegmentStatus.Rejected)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tableau des segments -->
+<div class="card rounded-4 border-0 shadow-sm overflow-hidden bg-white mb-5">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 text-nowrap">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">الآية / التسلسل</th>
+                    <th scope="col">التوقيت الزمني</th>
+                    <th scope="col">الوجه القرآني</th>
+                    <th scope="col">النوع والنسخة</th>
+                    <th scope="col">الحالة الراهنة</th>
+                    <th scope="col">مسار التدقيق والاعتماد</th>
+                    <th scope="col">الاستماع</th>
+                    <th scope="col" class="text-center">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Segments.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <div class="fs-1 mb-2">📭</div>
+                            <div>لا توجد مقاطع صوتية مطابقة للتصفية الحالية.</div>
+                        </td>
+                    </tr>
+                }
+                @foreach (var s in Model.Segments)
+                {
+                    <tr id="segment-row-@s.Id">
+                        <td>
+                            <div class="fw-bold">
+                                الآية @(s.AyahNumber.HasValue ? s.AyahNumber.Value.ToString() : "—")
+                            </div>
+                            <div class="text-muted small">
+                                تسلسل: #@s.SequenceNumber
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="badge bg-light text-dark font-monospace code-ltr">
+                                @FormatMs(s.StartMs) - @FormatMs(s.EndMs)
+                            </span>
+                            <div class="text-muted small">
+                                المدة: @(((s.EndMs - s.StartMs) / 1000.0).ToString("F2")) ثانية
+                            </div>
+                        </td>
+
+                        <td>
+                            @if (!string.IsNullOrEmpty(s.WajhCode))
+                            {
+                                <span class="badge bg-info text-dark" title="@s.WajhCode">
+                                    @(s.WajhNameArabic ?? s.WajhCode)
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">غير محدد</span>
+                            }
+                        </td>
+
+                        <td>
+                            <div class="small">
+                                @if (s.SegmentType == AudioSegmentType.FullAyah)
+                                {
+                                    <span class="badge bg-secondary">آية كاملة</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">مقطع / تكرار</span>
+                                }
+                            </div>
+                            <span class="badge bg-light text-secondary border font-monospace mt-1">
+                                rev.@s.RevisionNumber
+                            </span>
+                        </td>
+
+                        <td>
+                            @Html.Raw(GetStatusBadge(s.Status))
+                            @if (s.Status == AudioSegmentStatus.Rejected && !string.IsNullOrEmpty(s.RejectionReason))
+                            {
+                                <div class="text-danger small mt-1 text-wrap" style="max-width: 200px;">
+                                    <strong>السبب:</strong> @s.RejectionReason
+                                </div>
+                            }
+                        </td>
+
+                        <td>
+                            <div class="small">
+                                @if (!string.IsNullOrEmpty(s.ApprovedByUserId))
+                                {
+                                    <div class="text-success">
+                                        ✓ معتمد من: <strong>@s.ApprovedByUserId</strong>
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        @s.ApprovedAt?.ToString("yyyy-MM-dd HH:mm")
+                                    </div>
+                                }
+                                else if (!string.IsNullOrEmpty(s.ReviewedByUserId))
+                                {
+                                    <div class="text-primary">
+                                        فحص بواسطة: <strong>@s.ReviewedByUserId</strong>
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        @s.ReviewedAt?.ToString("yyyy-MM-dd HH:mm")
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">في انتظار الفحص</span>
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            @if (!string.IsNullOrEmpty(s.PublishedUrl))
+                            {
+                                <audio controls preload="none" style="height: 32px; width: 140px;">
+                                    <source src="@s.PublishedUrl" type="audio/mpeg">
+                                </audio>
+                            }
+                            else
+                            {
+                                <span class="text-muted small font-monospace">لم يُصيَّر بعد</span>
+                            }
+                        </td>
+
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
+                                @if (s.Status is AudioSegmentStatus.Draft or AudioSegmentStatus.Rejected)
+                                {
+                                    <button class="btn btn-outline-primary" onclick="submitForReview('@s.Id')" title="إرسال للمراجعة">
+                                        📤 للمراجعة
+                                    </button>
+                                }
+
+                                @if (s.Status == AudioSegmentStatus.Reviewed)
+                                {
+                                    <button class="btn btn-success" onclick="approveSegment('@s.Id')" title="اعتماد المقطع">
+                                        ✓ اعتماد
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="openRejectModal('@s.Id')" title="رفض مع تعليل">
+                                        ✕ رفض
+                                    </button>
+                                }
+
+                                @if (s.Status == AudioSegmentStatus.Approved)
+                                {
+                                    <button class="btn btn-warning text-dark" onclick="renderSegment('@s.Id')" title="تصيير بـ FFmpeg">
+                                        ⚙️ تصيير
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="openRejectModal('@s.Id')" title="إلغاء الاعتماد ورفض">
+                                        ✕ رفض
+                                    </button>
+                                }
+
+                                @if (s.Status == AudioSegmentStatus.Rendered)
+                                {
+                                    <button class="btn btn-primary" onclick="publishSegment('@s.Id')" title="نشر للعموم">
+                                        🌐 نشر
+                                    </button>
+                                    <button class="btn btn-outline-warning" onclick="renderSegment('@s.Id')" title="إعادة التصيير">
+                                        🔄 إعادة التصيير
+                                    </button>
+                                }
+
+                                @if (s.Status == AudioSegmentStatus.Published)
+                                {
+                                    <button class="btn btn-outline-danger" onclick="unpublishSegment('@s.Id')" title="سحب النشر فوراً مع الاحتفاظ بالملف">
+                                        🚫 سحب النشر
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de rejet motivé -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="rejectModalLabel">رفض المقطع الصوتي مع ذكر السبب</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">
+                    وفقاً للائحة التدقيق، يجب تعليل سبب الرفض بوضوح (مثال: بتر في بداية اللفظ، تشويش، عدم مطابقة الوجه المنسوب، خطأ في حدود الآية).
+                </p>
+                <input type="hidden" id="rejectSegmentId" />
+                <div class="mb-3">
+                    <label for="rejectionReasonInput" class="form-label fw-bold">سبب الرفض (إلزامي):</label>
+                    <textarea class="form-control" id="rejectionReasonInput" rows="3" placeholder="اكتب سبب الرفض بالتفصيل هنا..."></textarea>
+                    <div class="invalid-feedback">سبب الرفض إلزامي ولا يمكن تركه فارغاً.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-danger" onclick="confirmReject()">تأكيد الرفض وإعادة المقطع</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let rejectModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const modalEl = document.getElementById('rejectModal');
+        if (modalEl) {
+            rejectModalInstance = new bootstrap.Modal(modalEl);
+        }
+    });
+
+    async function submitForReview(id) {
+        if (!confirm('هل أنت متأكد من إرسال هذا المقطع للمراجعة والتدقيق؟')) return;
+        try {
+            const resp = await fetch(`/api/admin/audio-editor/segments/${id}/submit-review`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                alert('خطأ: ' + (err.message || 'فشل إرسال المقطع'));
+                return;
+            }
+            location.reload();
+        } catch (e) {
+            alert('حدث خطأ أثناء الاتصال بالخادم.');
+        }
+    }
+
+    async function approveSegment(id) {
+        if (!confirm('هل تأكدت من سلامة التوقيت والتلاوة والوجه المنسوب لهذا المقطع؟')) return;
+        try {
+            const resp = await fetch(`/api/admin/audio-editor/segments/${id}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                alert('خطأ: ' + (err.message || 'فشل الاعتماد'));
+                return;
+            }
+            location.reload();
+        } catch (e) {
+            alert('حدث خطأ أثناء الاتصال بالخادم.');
+        }
+    }
+
+    function openRejectModal(id) {
+        document.getElementById('rejectSegmentId').value = id;
+        document.getElementById('rejectionReasonInput').value = '';
+        document.getElementById('rejectionReasonInput').classList.remove('is-invalid');
+        rejectModalInstance.show();
+    }
+
+    async function confirmReject() {
+        const id = document.getElementById('rejectSegmentId').value;
+        const reason = document.getElementById('rejectionReasonInput').value.trim();
+        if (!reason) {
+            document.getElementById('rejectionReasonInput').classList.add('is-invalid');
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/api/admin/audio-editor/segments/${id}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: reason })
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                alert('خطأ: ' + (err.message || 'فشل رفض المقطع'));
+                return;
+            }
+            rejectModalInstance.hide();
+            location.reload();
+        } catch (e) {
+            alert('حدث خطأ أثناء الاتصال بالخادم.');
+        }
+    }
+
+    async function renderSegment(id) {
+        try {
+            const btn = event?.target;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ جارٍ التصيير...';
+            }
+            const resp = await fetch(`/api/admin/audio-editor/segments/${id}/render`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                alert('خطأ أثناء التصيير: ' + (err.message || 'فشل'));
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '⚙️ تصيير';
+                }
+                return;
+            }
+            location.reload();
+        } catch (e) {
+            alert('حدث خطأ أثناء الاتصال بالخادم.');
+        }
+    }
+
+    async function publishSegment(id) {
+        if (!confirm('تأكيد النشر للعموم؟ سيتاح المقطع للاستماع في المصحف.')) return;
+        try {
+            const resp = await fetch(`/api/admin/audio-editor/segments/${id}/publish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                alert('خطأ في النشر: ' + (err.message || 'فشل النشر'));
+                return;
+            }
+            location.reload();
+        } catch (e) {
+            alert('حدث خطأ أثناء الاتصال بالخادم.');
+        }
+    }
+
+    async function unpublishSegment(id) {
+        if (!confirm('تحذير: هل أنت متأكد من سحب هذا المقطع من النشر العام فوراً؟')) return;
+        try {
+            const resp = await fetch(`/api/admin/audio-editor/segments/${id}/unpublish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                alert('خطأ في سحب النشر: ' + (err.message || 'فشل سحب النشر'));
+                return;
+            }
+            location.reload();
+        } catch (e) {
+            alert('حدث خطأ أثناء الاتصال بالخادم.');
+        }
+    }
+</script>
+}
+
+@functions {
+    string FormatMs(long ms)
+    {
+        var ts = TimeSpan.FromMilliseconds(ms);
+        return $"{(int)ts.TotalMinutes:D2}:{ts.Seconds:D2}.{ts.Milliseconds:D3}";
+    }
+
+    string GetStatusArabic(AudioSegmentStatus status)
+    {
+        return status switch
+        {
+            AudioSegmentStatus.Draft => "مسودة (Draft)",
+            AudioSegmentStatus.Reviewed => "مفحوص (Reviewed)",
+            AudioSegmentStatus.Approved => "معتمد (Approved)",
+            AudioSegmentStatus.Rejected => "مرفوض (Rejected)",
+            AudioSegmentStatus.Rendering => "جارٍ التصيير (Rendering)",
+            AudioSegmentStatus.Rendered => "مصيَّر (Rendered)",
+            AudioSegmentStatus.Published => "منشور (Published)",
+            _ => status.ToString()
+        };
+    }
+
+    string GetStatusBadge(AudioSegmentStatus status)
+    {
+        return status switch
+        {
+            AudioSegmentStatus.Draft => "<span class=\"badge bg-secondary\">مسودة</span>",
+            AudioSegmentStatus.Reviewed => "<span class=\"badge bg-info text-dark\">مفحوص</span>",
+            AudioSegmentStatus.Approved => "<span class=\"badge bg-warning text-dark\">معتمد</span>",
+            AudioSegmentStatus.Rejected => "<span class=\"badge bg-danger\">مرفوض</span>",
+            AudioSegmentStatus.Rendering => "<span class=\"badge bg-info\">جارٍ التصيير...</span>",
+            AudioSegmentStatus.Rendered => "<span class=\"badge bg-primary\">مصيَّر</span>",
+            AudioSegmentStatus.Published => "<span class=\"badge bg-success\">منشور للعموم ✓</span>",
+            _ => $"<span class=\"badge bg-secondary\">{status}</span>"
+        };
+    }
+}

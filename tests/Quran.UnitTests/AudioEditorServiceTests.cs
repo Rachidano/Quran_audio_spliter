@@ -55,7 +55,7 @@ public class AudioEditorServiceTests
         {
             var file = Guid.NewGuid().ToString("N") + ".mp3";
             File.WriteAllText(storage.GetPhysicalPath(file), content);
-            var asset = new AudioAsset { StorageKey = file, OriginalFileName = file };
+            var asset = new AudioAsset { StorageKey = file, OriginalFileName = file, Checksum = "abc123sha" };
             var segment = new AudioSegment { SourceAudio = source, Ayah = ayah, StartMs = segments.Count * 10000, EndMs = (segments.Count + 1) * 10000,
                 SegmentType = kind, Status = AudioSegmentStatus.Rendered, PublishedAudioAsset = asset, SequenceNumber = segments.Count + 1 };
             db.Add(segment); segments.Add(segment);
@@ -215,4 +215,84 @@ public class AudioEditorServiceTests
         Assert.Equal("ٱلرَّحِيمِ", words[3].TextWarsh);
         Assert.Equal("الرحيم", words[3].SearchText);
     }
+
+    [Fact]
+    public async Task ReviewWorkflow_SubmitApproveRejectUnpublish_Lifecycle()
+    {
+        using var db = CreateInMemoryDbContext("Test_ReviewWorkflow_Lifecycle");
+        var directory = Path.Combine(Path.GetTempPath(), "QuranAudioEditorTests_Review", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var storage = new StubStorageService(directory);
+        var processor = new StubAudioProcessor();
+        var service = new AudioEditorService(db, storage, processor, NullLogger<AudioEditorService>.Instance);
+
+        var surah = new Surah { Id = 1, Number = 1, NameArabic = "الفاتحة", NameLatin = "Al-Fatihah", AyahCount = 7 };
+        var ayah = new Ayah { Id = 1, SurahId = 1, AyahNumber = 1, NumberInQuran = 1, TextWarsh = "بِسۡمِ ٱللَّهِ", SearchText = "بسم الله" };
+        var source = new SourceAudio { Id = Guid.NewGuid(), SurahId = 1, StorageKey = "source.mp3", OriginalFileName = "source.mp3", DurationMs = 60000 };
+        db.AddRange(surah, ayah, source);
+
+        var file = Guid.NewGuid().ToString("N") + ".mp3";
+        File.WriteAllText(storage.GetPhysicalPath(file), "rendered-audio");
+        var asset = new AudioAsset { StorageKey = file, OriginalFileName = file, Checksum = "abc123sha" };
+
+        var segment = new AudioSegment
+        {
+            Id = Guid.NewGuid(),
+            SourceAudio = source,
+            Ayah = ayah,
+            StartMs = 1000,
+            EndMs = 5000,
+            SegmentType = AudioSegmentType.FullAyah,
+            Status = AudioSegmentStatus.Draft,
+            PublishedAudioAsset = asset
+        };
+        db.Add(segment);
+        await db.SaveChangesAsync();
+
+        // 1. Submit for review
+        var reviewed = await service.SubmitForReviewAsync(segment.Id, "annotator1");
+        Assert.Equal(AudioSegmentStatus.Reviewed, reviewed.Status);
+        Assert.Equal("annotator1", reviewed.ReviewedByUserId);
+
+        // 2. Reject with reason
+        var rejected = await service.RejectSegmentAsync(segment.Id, "تداخل في بداية الآية", "reviewer1");
+        Assert.Equal(AudioSegmentStatus.Rejected, rejected.Status);
+        Assert.Equal("تداخل في بداية الآية", rejected.RejectionReason);
+
+        // Rejection requires non-empty reason
+        await Assert.ThrowsAsync<ArgumentException>(() => service.RejectSegmentAsync(segment.Id, "   ", "reviewer1"));
+
+        // 3. Resubmit after fix
+        var resubmitted = await service.SubmitForReviewAsync(segment.Id, "annotator1");
+        Assert.Equal(AudioSegmentStatus.Reviewed, resubmitted.Status);
+
+        // 4. Approve
+        var approved = await service.ApproveSegmentAsync(segment.Id, "reviewer2");
+        Assert.Equal(AudioSegmentStatus.Approved, approved.Status);
+        Assert.Equal("reviewer2", approved.ApprovedByUserId);
+        Assert.Null(approved.RejectionReason);
+
+        // 5. Cannot delete directly if published, so test publish then unpublish
+        segment.Status = AudioSegmentStatus.Rendered;
+        await db.SaveChangesAsync();
+
+        var published = await service.PublishSegmentAsync(segment.Id, "admin1");
+        Assert.Equal(AudioSegmentStatus.Published, published.Status);
+
+        // Direct deletion forbidden while published
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteSegmentAsync(segment.Id));
+
+        // 6. Unpublish
+        var unpublished = await service.UnpublishSegmentAsync(segment.Id, "admin1");
+        Assert.Equal(AudioSegmentStatus.Rendered, unpublished.Status);
+
+        // 7. GetReviewQueue
+        var queue = await service.GetReviewQueueAsync(surahNumber: 1);
+        Assert.Single(queue);
+        Assert.Equal(segment.Id, queue[0].Id);
+
+        var emptyQueue = await service.GetReviewQueueAsync(status: AudioSegmentStatus.Draft);
+        Assert.Empty(emptyQueue);
+    }
 }
+
