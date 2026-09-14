@@ -37,10 +37,21 @@ public static class IdentitySeeder
         string? fullName = null,
         ILogger? logger = null)
     {
-        var existing = await userManager.FindByEmailAsync(email);
+        var existing = await userManager.FindByEmailAsync(email) ?? await userManager.FindByNameAsync(email);
         if (existing != null)
         {
-            logger?.LogInformation("User {Email} already exists.", email);
+            logger?.LogInformation("User {Email} already exists. Updating password and ensuring role {Role}.", email, role);
+            var token = await userManager.GeneratePasswordResetTokenAsync(existing);
+            var resetRes = await userManager.ResetPasswordAsync(existing, token, password);
+            if (!resetRes.Succeeded)
+            {
+                logger?.LogError("Failed to reset password for {Email}: {Errors}", email, string.Join(", ", resetRes.Errors.Select(e => e.Description)));
+                return resetRes;
+            }
+
+            await userManager.SetLockoutEndDateAsync(existing, null);
+            await userManager.ResetAccessFailedCountAsync(existing);
+
             if (!await userManager.IsInRoleAsync(existing, role))
             {
                 await userManager.AddToRoleAsync(existing, role);
