@@ -1,5 +1,6 @@
 @page "/surah/{number:int?}"
 @model SurahModel
+<div class="alert alert-warning" role="status">العدّ والتنقل من مصحف MARW. النص الرقمي نسخة ورش QPC للمقارنة قيد المراجعة؛ صورة المصحف هي المرجع البصري.</div>
 @{
     ViewData["Title"] = $"سورة {Model.Surah?.NameArabic ?? ""}";
 }

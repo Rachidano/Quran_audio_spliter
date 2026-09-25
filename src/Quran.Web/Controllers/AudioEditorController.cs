@@ -153,11 +153,26 @@ public class AudioEditorController : ControllerBase
     }
 
     [HttpGet("surah/{surahNumber:int}")]
-    public async Task<ActionResult<AudioEditorContextDto>> GetSurahContext(int surahNumber, CancellationToken cancellationToken)
+    public async Task<ActionResult<AudioEditorContextDto>> GetSurahContext(int surahNumber,
+        [FromServices] Quran.Infrastructure.Persistence.QuranDbContext db, CancellationToken cancellationToken)
     {
         try
         {
             var context = await _editorService.GetEditorContextBySurahAsync(surahNumber, cancellationToken);
+            var references = await db.CorpusAyahs.AsNoTracking()
+                .Where(a => a.Corpus!.Code == "marw-newMushaf" && a.SurahNumber == surahNumber)
+                .OrderBy(a => a.AyahNumber).ToListAsync(cancellationToken);
+            var candidate = await db.CorpusAyahs.AsNoTracking()
+                .Where(a => a.Corpus!.Code == "qpc-warsh-v10-candidate" && a.SurahNumber == surahNumber)
+                .ToDictionaryAsync(a => a.AyahNumber, cancellationToken);
+            // Zero is not a historical AyahId: the client must save null for that FK.
+            context = context with {
+                AyahCount = references.Count,
+                Ayahs = references.Select(a => new AyahEditorDto(0, context.SourceAudio.SurahId,
+                    a.AyahNumber, a.NumberInQuran,
+                    candidate.TryGetValue(a.AyahNumber, out var text) ? text.TextArabic : "النص الرقمي قيد التحقق؛ المرجع هو صورة المصحف.",
+                    new List<AyahWordDto>())).ToList()
+            };
             return Ok(context);
         }
         catch (KeyNotFoundException ex)
@@ -234,6 +249,27 @@ public class AudioEditorController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erreur lors de la suppression du segment {Id}", id);
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("reset-surah/{surahNumber:int}")]
+    [Authorize(Roles = "Admin,Reviewer")]
+    public async Task<IActionResult> ResetSurah(int surahNumber, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.Identity?.Name ?? "admin";
+            await _editorService.ResetSurahAsync(surahNumber, userId, cancellationToken);
+            return Ok(new { success = true, message = $"تم مسح جميع مقاطع السورة {surahNumber} بنجاح والبدء من الصفر." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la réinitialisation de la sourate {SurahNumber}", surahNumber);
             return StatusCode(500, new { message = ex.Message });
         }
     }

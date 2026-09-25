@@ -35,7 +35,18 @@
             </div>
         </div>
 
-        @if (Model.MushafPage != null && Model.MushafRegions.Count > 0)
+        @if (Model.MarwImageUrl != null)
+        {
+            <a href="/mushaf/page/@Model.MarwPageNumber?reference=@Model.Surah:@Model.Ayah" class="d-block text-center my-3">
+                <img src="@Model.MarwImageUrl" alt="صفحة المصحف @Model.MarwPageNumber" class="img-fluid" style="max-height:700px" />
+                <span class="d-block">عرض الآية محددة في المصحف</span>
+            </a>
+            <details class="alert alert-warning">
+                <summary>النص الرقمي المقارن — مطابقة نسخة QPC مع MARW قيد المراجعة</summary>
+                <p class="quran-text fs-4">@Model.AyahInfo.TextWarsh</p>
+            </details>
+        }
+        else if (Model.MushafPage != null && Model.MushafRegions.Count > 0)
         {
             <!-- Affichage fidèle du Mushaf Warsh officiel (الرسم العثماني) -->
             <div class="mushaf-crop-container my-4 text-center p-3 p-md-4 rounded-4 bg-white border shadow-sm" style="border-color: #e2e8f0;">

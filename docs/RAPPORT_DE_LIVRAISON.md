@@ -1,3 +1,5 @@
+> **Audit contradictoire du 14 septembre 2026 :** les mentions de livraison complète ci-dessous ne valent pas validation. Voir [les constats, corrections et limites vérifiés](AUDIT_APRES_ANTIGRAVITY.md).
+
 # Rapport de Livraison Finale — Plateforme Quran Warsh
 ## Reprise Intégrale, Industrialisation et Recette (Lots 0 à 10)
 **Date : 14 septembre 2026**  

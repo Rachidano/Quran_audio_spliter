@@ -48,6 +48,9 @@ appsettings.Production.json
 
 ## Node & Playwright
 node_modules/
+__pycache__/
+*.pyc
+scratch/
 test-results/
 playwright-report/
 
@@ -57,4 +60,3 @@ Thumbs.db
 desktop.ini
 *.zip
 docs/UthmanicWarsh1 Ver5*
-

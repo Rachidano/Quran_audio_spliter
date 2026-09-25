@@ -62,7 +62,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("RequireReviewer", policy => policy.RequireRole(IdentitySeeder.RoleReviewer, IdentitySeeder.RoleAdmin));
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute()));
 builder.Services.AddSingleton(_ => new WarshPilotCorpus(pilotDirectory));
 builder.Services.AddSingleton(_ => new MarwPilotCorpus(Path.Combine(AppContext.BaseDirectory, "App_Data", "marw-newMushaf", MarwPilotCorpus.Revision)));
 
@@ -173,18 +173,7 @@ Directory.CreateDirectory(Path.Combine(baseStoragePath, "sources"));
 Directory.CreateDirectory(Path.Combine(baseStoragePath, "working"));
 Directory.CreateDirectory(Path.Combine(baseStoragePath, "published"));
 
-// Seuls les dérivés audio validés et publiés sont accessibles en direct statique
-var publishedPath = Path.Combine(baseStoragePath, "published");
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(publishedPath),
-    RequestPath = "/audio/published",
-    OnPrepareResponse = ctx =>
-    {
-        ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
-    }
-});
-
+// Public audio is served by PublishedAudioController after a database publication check.
 var mushafPath = Path.Combine(Path.GetDirectoryName(baseStoragePath)!, "mushaf");
 Directory.CreateDirectory(Path.Combine(mushafPath, "masters", "warsh"));
 Directory.CreateDirectory(Path.Combine(mushafPath, "web", "warsh"));

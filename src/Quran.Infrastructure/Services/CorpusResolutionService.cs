@@ -67,7 +67,7 @@ public class CorpusResolutionService : ICorpusResolutionService
         {
             return new ReferenceMappingResult
             {
-                IsMapped = true,
+                IsMapped = mapping.ReviewStatus == "Approved",
                 SourceCorpusCode = sourceCorpusCode,
                 SourceReference = sourceRef,
                 TargetCorpusCode = targetCorpusCode,
@@ -167,14 +167,14 @@ public class CorpusResolutionService : ICorpusResolutionService
             marwCorpusEntity = new QuranCorpus
             {
                 Code = MarwCorpusCode,
-                NameArabic = "مصحف ورش - طبعة الأوقاف المغربية (MARW)",
+                NameArabic = "مصحف ورش - مصحف الجزائر الإلكتروني (MARW)",
                 NameLatin = "Warsh MARW newMushaf",
                 RiwayaCode = "warsh",
                 CountingSystem = "madani-marw",
                 TotalAyahs = 6214,
                 TextualRevision = MarwPilotCorpus.Revision,
                 Provenance = $"App_Data/marw-newMushaf/{MarwPilotCorpus.Revision}",
-                QualificationStatus = "ActiveCanonical",
+                QualificationStatus = "ImagesImportedTextPending",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -268,9 +268,9 @@ public class CorpusResolutionService : ICorpusResolutionService
                     SurahNumber = 2,
                     Cardinality = "ManyToOne",
                     DifferenceDescription = "الٓمٓ ليست آية مستقلة في العد المدني المعتمد في مصحف ورش MARW؛ تندرج مع بداية الآية الأولى حتى (هُدًى لِّلْمُتَّقِينَ).",
-                    ReviewStatus = "Approved",
-                    ReviewedByUserId = "SystemAuditor",
-                    ReviewedAt = DateTime.UtcNow,
+                    ReviewStatus = "PendingReview",
+                    ReviewedByUserId = null,
+                    ReviewedAt = null,
                     ProofNotes = "فروق العد المدني الأول/الأخير مقابل العد الكوفي: الٓمٓ لا تعد آية برأسها في البقرة في رواية ورش طبقاً للمصحف المغربي المعتمد."
                 },
                 new()
@@ -282,9 +282,9 @@ public class CorpusResolutionService : ICorpusResolutionService
                     SurahNumber = 2,
                     Cardinality = "ManyToOne",
                     DifferenceDescription = "النص (ذَٰلِكَ ٱلْكِتَٰبُ لَا رَيْبَ فِيهِ هُدًى لِّلْمُتَّقِينَ) يمثل عجز الآية 1 في مصحف MARW.",
-                    ReviewStatus = "Approved",
-                    ReviewedByUserId = "SystemAuditor",
-                    ReviewedAt = DateTime.UtcNow,
+                    ReviewStatus = "PendingReview",
+                    ReviewedByUserId = null,
+                    ReviewedAt = null,
                     ProofNotes = "رأس الآية 1 في MARW ينتهي عند (هُدًى لِّلْمُتَّقِينَ)."
                 },
                 new()
@@ -296,9 +296,9 @@ public class CorpusResolutionService : ICorpusResolutionService
                     SurahNumber = 2,
                     Cardinality = "OneToOne",
                     DifferenceDescription = "إزاحة بمقدار 1: نص (ٱلَّذِينَ يُؤْمِنُونَ بِٱلْغَيْبِ... يُنفِقُونَ) هو الآية 2 في مصحف MARW.",
-                    ReviewStatus = "Approved",
-                    ReviewedByUserId = "SystemAuditor",
-                    ReviewedAt = DateTime.UtcNow,
+                    ReviewStatus = "PendingReview",
+                    ReviewedByUserId = null,
+                    ReviewedAt = null,
                     ProofNotes = "تطابق نصي مباشر مع إزاحة الترقيم بسبب دمج الآيتين 1 و2 السابقتين."
                 },
                 new()
@@ -310,9 +310,9 @@ public class CorpusResolutionService : ICorpusResolutionService
                     SurahNumber = 2,
                     Cardinality = "OneToOne",
                     DifferenceDescription = "إزاحة بمقدار 1: نص (وَٱلَّذِينَ يُؤْمِنُونَ بِمَآ أُنزِلَ إِلَيْكَ... يُوقِنُونَ) هو الآية 3 في مصحف MARW.",
-                    ReviewStatus = "Approved",
-                    ReviewedByUserId = "SystemAuditor",
-                    ReviewedAt = DateTime.UtcNow,
+                    ReviewStatus = "PendingReview",
+                    ReviewedByUserId = null,
+                    ReviewedAt = null,
                     ProofNotes = "تطابق نصي تام مع اختلاف رقم الآية (تاريخي 4 مقابل MARW 3)."
                 },
                 new()
@@ -324,9 +324,9 @@ public class CorpusResolutionService : ICorpusResolutionService
                     SurahNumber = 2,
                     Cardinality = "OneToOne",
                     DifferenceDescription = "إزاحة بمقدار 1: نص (أُوْلَٰٓئِكَ عَلَىٰ هُدًى مِّن رَّبِّهِمْۖ وَأُوْلَٰٓئِكَ هُمُ ٱلْمُفْلِحُونَ) هو الآية 4 في مصحف MARW.",
-                    ReviewStatus = "Approved",
-                    ReviewedByUserId = "SystemAuditor",
-                    ReviewedAt = DateTime.UtcNow,
+                    ReviewStatus = "PendingReview",
+                    ReviewedByUserId = null,
+                    ReviewedAt = null,
                     ProofNotes = "الآية 4 في MARW تنتهي بـ (ٱلْمُفْلِحُونَ)، والتي كانت تقابل تاريخياً الآية 5."
                 }
             };

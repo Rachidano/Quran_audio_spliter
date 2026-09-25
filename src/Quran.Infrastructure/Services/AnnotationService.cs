@@ -32,6 +32,16 @@ public class AnnotationService : IAnnotationService
 
         if (sourceAudio == null)
             throw new ArgumentException("المصدر الصوتي المحدد غير موجود.");
+        if (request.Edition == MarwPilotCorpus.EditionCode)
+        {
+            var reference = (request.Reference ?? "").Split(':');
+            if (reference.Length != 2 || !int.TryParse(reference[0], out var sn) || !int.TryParse(reference[1], out var an)
+                || !await _db.CorpusAyahs.AnyAsync(a => a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode && a.SurahNumber == sn && a.AyahNumber == an, ct))
+                throw new ArgumentException("مرجع MARW غير صالح.");
+            var sourceSurah = await _db.Surahs.Where(s => s.Id == sourceAudio.SurahId).Select(s => s.Number).FirstOrDefaultAsync(ct);
+            if (sourceSurah != sn) throw new ArgumentException("المرجع لا ينتمي إلى سورة المصدر الصوتي.");
+            request = request with { AyahId = null, SourceHash = sourceAudio.ChecksumSha256 };
+        }
 
         if (request.StartMs < 0 || request.EndMs <= request.StartMs)
             throw new ArgumentException("حدود المقطع الزمني غير صالحة.");
@@ -46,6 +56,10 @@ public class AnnotationService : IAnnotationService
 
         if (existing != null)
         {
+            if (existing.SourceAudioId != request.SourceAudioId)
+                throw new ArgumentException("لا يمكن نقل المقطع إلى مصدر صوتي آخر.");
+            if (!request.ClientVersion.HasValue)
+                throw new DbUpdateConcurrencyException("إصدار المقطع مطلوب قبل التعديل.");
             if (request.ClientVersion.HasValue && existing.Version != request.ClientVersion.Value)
             {
                 throw new DbUpdateConcurrencyException("تم تعديل هذا المقطع من قبل مستخدم آخر أو جلسة أخرى. يرجى تحديث البيانات.");
@@ -66,6 +80,14 @@ public class AnnotationService : IAnnotationService
             existing.UpdatedAt = DateTimeOffset.UtcNow;
             existing.Version++;
             existing.RowVersion = Guid.NewGuid().ToByteArray();
+            existing.Status = AudioSegmentStatus.Draft;
+            existing.PublishedAudioAssetId = null;
+            existing.ApprovedAt = null;
+            existing.ApprovedByUserId = null;
+            existing.ReviewedAt = null;
+            existing.ReviewedByUserId = null;
+            existing.ValidatedAt = null;
+            existing.ValidatedByUserId = null;
 
             var nextRev = existing.Revisions.Count + 1;
             var rev = new SegmentRevision
@@ -152,21 +174,44 @@ public class AnnotationService : IAnnotationService
 
     public async Task<CaptureEndAyahResult> CaptureEndAyahAsync(CaptureEndAyahRequest request, string userId, CancellationToken ct = default)
     {
+        await using var transaction = _db.Database.IsRelational()
+            ? await _db.Database.BeginTransactionAsync(ct) : null;
+        if (_db.Database.IsNpgsql())
+            await _db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtext({request.SourceAudioId.ToString()}))", ct);
         var startMs = request.CurrentStartMs;
         var endMs = request.CapturedTimeMs;
+        if (request.SegmentType is not (AudioSegmentType.FullAyah or AudioSegmentType.PartialAyah or AudioSegmentType.Continuation))
+            throw new ArgumentException("نوع المقطع غير صالح لهذه العملية.");
 
         if (endMs <= startMs + 200)
             throw new ArgumentException("الفاصل الزمني للآية قصير جداً (أقل من 200 ميلي ثانية).");
 
+        var partsForValidation = request.CurrentReference.Split(':');
+        CorpusAyah? nextCanonical = null;
+        var isMarw = request.Edition == MarwPilotCorpus.EditionCode;
+        if (isMarw)
+        {
+            if (partsForValidation.Length != 2 || !int.TryParse(partsForValidation[0], out var sn) || !int.TryParse(partsForValidation[1], out var an))
+                throw new ArgumentException("مرجع الآية غير صالح.");
+            if (!await _db.CorpusAyahs.AnyAsync(a => a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode && a.SurahNumber == sn && a.AyahNumber == an, ct))
+                throw new ArgumentException("الآية غير موجودة في مصحف MARW.");
+            nextCanonical = await _db.CorpusAyahs.Where(a => a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode && a.SurahNumber == sn && a.AyahNumber > an)
+                .OrderBy(a => a.AyahNumber).FirstOrDefaultAsync(ct);
+        }
+        Guid? captureId = string.IsNullOrWhiteSpace(request.IdempotencyKey) ? null :
+            new Guid(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"{userId}|{request.SourceAudioId}|{request.IdempotencyKey}"))[..16]);
+        var prior = captureId.HasValue ? await _db.AudioSegments.FindAsync(new object[] { captureId.Value }, ct) : null;
+        if (prior != null && (prior.StartMs != startMs || prior.EndMs != endMs || prior.Reference != request.CurrentReference || prior.SegmentType != request.SegmentType))
+            throw new DbUpdateConcurrencyException("مفتاح الحفظ مستخدم لمقطع مختلف.");
         var saveReq = new SaveOccurrenceRequest(
-            null,
+            captureId,
             request.SourceAudioId,
             startMs,
             endMs,
             request.CurrentReference,
-            request.CurrentAyahId,
+            isMarw ? null : request.CurrentAyahId,
             request.WajhId,
-            AudioSegmentType.FullAyah,
+            request.SegmentType,
             null,
             request.Notes,
             request.Edition,
@@ -175,7 +220,7 @@ public class AnnotationService : IAnnotationService
             null
         );
 
-        var saved = await SaveOccurrenceAsync(saveReq, userId, ct);
+        var saved = prior == null ? await SaveOccurrenceAsync(saveReq, userId, ct) : ToDto(prior);
 
         // Compute next ayah
         var parts = request.CurrentReference.Split(':');
@@ -196,6 +241,16 @@ public class AnnotationService : IAnnotationService
         {
             hasMore = false;
         }
+        if (isMarw)
+        {
+            hasMore = nextCanonical != null;
+            nextAyah = nextCanonical?.AyahNumber ?? ayahNum;
+        }
+        if (request.SegmentType == AudioSegmentType.PartialAyah)
+        {
+            hasMore = true;
+            nextAyah = ayahNum;
+        }
 
         var nextRef = hasMore ? $"{nextSurah}:{nextAyah}" : null;
 
@@ -203,6 +258,11 @@ public class AnnotationService : IAnnotationService
         var session = await _db.AnnotationSessions
             .FirstOrDefaultAsync(ss => ss.UserId == userId && ss.SourceAudioId == request.SourceAudioId, ct);
 
+        if (prior != null)
+        {
+            if (transaction != null) await transaction.CommitAsync(ct);
+            return new CaptureEndAyahResult(saved, endMs, nextRef, nextSurah, hasMore ? nextAyah : ayahNum, hasMore);
+        }
         if (session == null)
         {
             session = new AnnotationSession
@@ -231,6 +291,7 @@ public class AnnotationService : IAnnotationService
         }
 
         await _db.SaveChangesAsync(ct);
+        if (transaction != null) await transaction.CommitAsync(ct);
 
         return new CaptureEndAyahResult(
             saved,
@@ -249,6 +310,8 @@ public class AnnotationService : IAnnotationService
 
         if (target == null)
             throw new ArgumentException("المقطع المستهدف للتكرار غير موجود.");
+        if (target.SourceAudioId != request.SourceAudioId)
+            throw new ArgumentException("يجب أن يكون التكرار من المصدر الصوتي نفسه.");
 
         if (request.StartMs < target.StartMs)
             throw new ArgumentException("بداية التكرار لا يمكن أن تسبق بداية المقطع الأصلي.");
@@ -260,7 +323,7 @@ public class AnnotationService : IAnnotationService
             request.EndMs,
             target.Reference,
             target.AyahId,
-            request.WajhId ?? target.WajhId,
+            request.WajhId,
             AudioSegmentType.Repetition,
             target.Id,
             request.Notes ?? $"تكرار للآية {target.Reference}",
@@ -315,7 +378,7 @@ public class AnnotationService : IAnnotationService
 
         if (!string.IsNullOrEmpty(edition))
         {
-            query = query.Where(s => s.Edition == edition || s.Edition == null);
+            query = query.Where(s => s.Edition == edition);
         }
 
         if (publishedOnly)
@@ -453,7 +516,7 @@ public class AnnotationService : IAnnotationService
                     continue;
                 }
 
-                var status = passage.Status == "Published" ? AudioSegmentStatus.Published : AudioSegmentStatus.Draft;
+                var status = AudioSegmentStatus.Draft; // Import never certifies or publishes an occurrence.
                 var segmentType = (AudioSegmentType)passage.SegmentType;
 
                 var segment = new AudioSegment
@@ -659,7 +722,7 @@ public class AnnotationService : IAnnotationService
             s.Notes,
             s.PublishedAudioAsset?.StorageKey != null ? $"/audio/{s.PublishedAudioAsset.StorageKey}" : null,
             s.RowVersion != null ? Convert.ToBase64String(s.RowVersion) : "",
-            s.CreatedAt
+            s.CreatedAt, s.RejectionReason, s.ReviewedByUserId, s.ReviewedAt, s.ApprovedByUserId, s.ApprovedAt, s.Version, s.Reference, s.Edition
         );
     }
 }

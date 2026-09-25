@@ -44,12 +44,21 @@ public class AdminValidationServiceTests
             IsPublished = false
         };
 
+        var segment = new AudioSegment
+        {
+            Id = Guid.NewGuid(),
+            PublishedAudioAssetId = 1,
+            Status = AudioSegmentStatus.Published,
+            Edition = MarwPilotCorpus.EditionCode
+        };
+
         dbContext.Surahs.Add(surah);
         dbContext.Ayahs.Add(ayah);
         dbContext.Reciters.Add(reciter);
         dbContext.Riwayas.Add(riwaya);
         dbContext.Awjuh.AddRange(wajh1, wajh2);
         dbContext.AudioAssets.Add(asset);
+        dbContext.AudioSegments.Add(segment);
         dbContext.Recitations.Add(recitation);
         await dbContext.SaveChangesAsync();
 

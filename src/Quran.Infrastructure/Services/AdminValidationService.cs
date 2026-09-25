@@ -127,6 +127,10 @@ public class AdminValidationService : IAdminValidationService
             ?? throw new KeyNotFoundException($"Récitation #{recitationId} non trouvée.");
         if (recitation.WajhId.HasValue && !await _dbContext.Awjuh.AnyAsync(w => w.Id == recitation.WajhId && w.ReviewStatus == "Approved", cancellationToken))
             throw new InvalidOperationException("Le wajh doit être approuvé dans le référentiel avant publication.");
+        // Historical Recitations are a projection, never an independent publishing workflow.
+        if (!await _dbContext.AudioSegments.AnyAsync(s => s.PublishedAudioAssetId == recitation.AudioAssetId
+            && s.Status == AudioSegmentStatus.Published && s.Edition == MarwPilotCorpus.EditionCode, cancellationToken))
+            throw new InvalidOperationException("Publier d'abord l'occurrence qualifiée depuis la file de revue. La publication historique directe est désactivée.");
 
         recitation.Status = RecitationStatus.Published;
         recitation.IsPublished = true;

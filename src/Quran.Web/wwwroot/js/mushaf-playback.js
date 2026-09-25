@@ -32,7 +32,8 @@
             const durationSec = p.durationMs ? (p.durationMs / 1000).toFixed(1) : ((p.endMs - p.startMs) / 1000).toFixed(1);
             const wajhLabel = p.wajhName || 'وجه غير محدد';
             const typeLabel = p.segmentType === 3 ? 'إعادة' : 'مقطع';
-            button.textContent = `▶ ${wajhLabel} · ${typeLabel} · ${durationSec} ث`;
+            const draftTag = p.status && p.status !== 'Published' ? ' ⚠️ مسودة' : '';
+            button.textContent = `▶ ${wajhLabel} · ${typeLabel}${draftTag} · ${durationSec} ث`;
 
             button.onclick = async () => {
                 active = p;
@@ -41,7 +42,7 @@
                 audio.currentTime = isCut ? 0 : (p.startMs / 1000);
                 try {
                     await audio.play();
-                    message.textContent = p.status === 'Published' ? `تشغيل: ${wajhLabel}` : `معاينة: ${wajhLabel}`;
+                    message.textContent = p.status === 'Published' ? `تشغيل: ${wajhLabel}` : `معاينة مسودة: ${wajhLabel} (${durationSec} ث)`;
                 } catch {
                     message.textContent = 'تعذر تشغيل الصوت تلقائياً.';
                 }
@@ -72,17 +73,37 @@
         if (!reference) return;
 
         try {
-            const endpoint = root.dataset.previewPassage ? '/api/annotations/preview' : '/api/annotations/playback';
-            const res = await fetch(`${endpoint}?reference=${encodeURIComponent(reference)}`);
-            if (!res.ok) throw new Error();
-            const data = await res.json();
+            let endpoint = root.dataset.previewPassage ? '/api/annotations/preview' : '/api/annotations/playback';
+            let res = await fetch(`${endpoint}?reference=${encodeURIComponent(reference)}`);
+            let data = res.ok ? await res.json() : [];
+
+            // If no published passages, try preview endpoint (e.g. for drafts annotated by admin/reviewer)
+            if ((!data || data.length === 0) && endpoint === '/api/annotations/playback') {
+                try {
+                    const prevRes = await fetch(`/api/annotations/preview?reference=${encodeURIComponent(reference)}`);
+                    if (prevRes.ok) {
+                        const prevData = await prevRes.json();
+                        if (prevData && prevData.length > 0) {
+                            data = prevData;
+                        }
+                    }
+                } catch (e) {
+                    // ignore if unauthorized
+                }
+            }
+
             if (version !== generation) return;
 
-            passages = data;
+            passages = data || [];
             const faces = new Map(passages.map(p => [p.wajhCatalogCode || 'unqualified', p.wajhName || 'وجه غير محدد']));
             faces.forEach((name, code) => filter.add(new Option(name, code)));
             render();
-            message.textContent = passages.length ? 'اختر الوجه أو المقطع للاستماع.' : 'لا توجد مقاطع منشورة لهذه الآية بعد.';
+            if (passages.length) {
+                const hasDrafts = passages.some(p => p.status !== 'Published');
+                message.textContent = hasDrafts ? 'اختر المقطع للاستماع (يتضمن مقاطع مسودة للمعاينة).' : 'اختر الوجه أو المقطع للاستماع.';
+            } else {
+                message.textContent = 'لا توجد مقاطع صوتية مسجلة لهذه الآية بعد.';
+            }
         } catch {
             message.textContent = 'تعذر تحميل المقاطع الصوتية.';
         }

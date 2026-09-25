@@ -106,6 +106,16 @@
 
 <!-- Tableau des segments -->
 <div class="card rounded-4 border-0 shadow-sm overflow-hidden bg-white mb-5">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold">قائمة المقاطع الصوتية (@Model.Segments.Count)</h5>
+        @if (Model.Segments.Any(s => s.Status == AudioSegmentStatus.Draft))
+        {
+            <button class="btn btn-success btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" onclick="publishAllVisibleDrafts()" title="اعتماد وتصيير ونشر جميع المقاطع المسودة المعروضة بضغطة واحدة">
+                <span>⚡</span>
+                <span>نشر جميع المسودات المعروضة للعموم (@Model.Segments.Count(s => s.Status == AudioSegmentStatus.Draft))</span>
+            </button>
+        }
+    </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0 text-nowrap">
             <thead class="table-light">
@@ -135,7 +145,7 @@
                     <tr id="segment-row-@s.Id">
                         <td>
                             <div class="fw-bold">
-                                الآية @(s.AyahNumber.HasValue ? s.AyahNumber.Value.ToString() : "—")
+                                @(s.Reference ?? (s.AyahNumber.HasValue ? s.AyahNumber.Value.ToString() : "مرجع غير مؤهل"))
                             </div>
                             <div class="text-muted small">
                                 تسلسل: #@s.SequenceNumber
@@ -218,6 +228,7 @@
                         </td>
 
                         <td>
+                            <a href="/mushaf/page/1?previewPassage=@s.Id" class="btn btn-outline-primary btn-sm d-block mb-2" target="_blank" rel="noopener">استمع وراجع على المصحف</a>
                             @if (!string.IsNullOrEmpty(s.PublishedUrl))
                             {
                                 <audio controls preload="none" style="height: 32px; width: 140px;">
@@ -236,6 +247,9 @@
                                 {
                                     <button class="btn btn-outline-primary" onclick="submitForReview('@s.Id')" title="إرسال للمراجعة">
                                         📤 للمراجعة
+                                    </button>
+                                    <button class="btn btn-success" data-quick-publish="@s.Id" onclick="quickPublishSegment('@s.Id')" title="اعتماد وتصيير ونشر مباشر بضغطة واحدة">
+                                        ⚡ نشر مباشر
                                     </button>
                                 }
 
@@ -451,6 +465,79 @@
         } catch (e) {
             alert('حدث خطأ أثناء الاتصال بالخادم.');
         }
+    }
+
+    async function quickPublishSegment(id) {
+        const btn = document.querySelector(`[data-quick-publish="${id}"]`);
+        const origText = btn ? btn.innerHTML : null;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '⏳ جارٍ النشر...';
+        }
+        try {
+            // 1. Submit for review if needed
+            await fetch(`/api/admin/audio-editor/segments/${id}/submit-review`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            // 2. Approve
+            const approveResp = await fetch(`/api/admin/audio-editor/segments/${id}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!approveResp.ok) {
+                const err = await approveResp.json();
+                alert('خطأ في الاعتماد: ' + (err.message || 'فشل الاعتماد'));
+                if (btn) { btn.disabled = false; btn.innerHTML = origText; }
+                return;
+            }
+            // 3. Publish (renders with FFmpeg and publishes to public)
+            const publishResp = await fetch(`/api/admin/audio-editor/segments/${id}/publish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!publishResp.ok) {
+                const err = await publishResp.json();
+                alert('خطأ في النشر: ' + (err.message || 'فشل النشر'));
+                if (btn) { btn.disabled = false; btn.innerHTML = origText; }
+                return;
+            }
+            location.reload();
+        } catch (e) {
+            alert('حدث خطأ أثناء الاتصال بالخادم.');
+            if (btn) { btn.disabled = false; btn.innerHTML = origText; }
+        }
+    }
+
+    async function publishAllVisibleDrafts() {
+        const buttons = Array.from(document.querySelectorAll('button[data-quick-publish]'));
+        if (!buttons.length) {
+            alert('لا توجد مسودات معروضة للنشر.');
+            return;
+        }
+        if (!confirm(`هل أنت متأكد من اعتماد وتصيير ونشر جميع المسودات المعروضة (${buttons.length} مقطع) للعموم مباشرة؟`)) {
+            return;
+        }
+
+        const mainBtn = event?.target?.closest('button');
+        if (mainBtn) {
+            mainBtn.disabled = true;
+            mainBtn.innerHTML = '⏳ جارٍ نشر الجميع...';
+        }
+
+        for (let i = 0; i < buttons.length; i++) {
+            const id = buttons[i].getAttribute('data-quick-publish');
+            buttons[i].disabled = true;
+            buttons[i].innerHTML = `⏳ (${i+1}/${buttons.length})...`;
+            try {
+                await fetch(`/api/admin/audio-editor/segments/${id}/submit-review`, { method: 'POST' });
+                await fetch(`/api/admin/audio-editor/segments/${id}/approve`, { method: 'POST' });
+                await fetch(`/api/admin/audio-editor/segments/${id}/publish`, { method: 'POST' });
+            } catch (err) {
+                console.error('Erreur publication segment ' + id, err);
+            }
+        }
+        location.reload();
     }
 </script>
 }

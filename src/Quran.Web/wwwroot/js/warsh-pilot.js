@@ -6,11 +6,14 @@
     const buttons = [...root.querySelectorAll('button[data-reference]')];
     const permalinkBox = document.getElementById('ayah-permalink-box');
     const permalinkBtn = document.getElementById('ayah-permalink-btn');
+    const selection = document.getElementById('pilot-selection');
     function select(reference, updateUrl = true) {
         const valid = polygons.some(p => p.dataset.reference === reference);
         polygons.forEach(p => p.classList.toggle('selected', valid && p.dataset.reference === reference));
         buttons.forEach(b => b.setAttribute('aria-pressed', String(valid && b.dataset.reference === reference)));
-        selection.textContent = valid ? `سورة ${reference.split(':')[0]} — آية ${reference.split(':')[1]}` : 'لم تُحدَّد آية بعد';
+        if (selection) {
+            selection.textContent = valid ? `سورة ${reference.split(':')[0]} — آية ${reference.split(':')[1]}` : 'لم تُحدَّد آية بعد';
+        }
         if (permalinkBox && permalinkBtn) {
             if (valid) {
                 permalinkBtn.href = `/quran/${reference.replace(':', '/')}`;

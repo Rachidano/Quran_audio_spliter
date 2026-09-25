@@ -22,7 +22,7 @@ public partial class QuranReaderService : IQuranReaderService
 
     public async Task<IReadOnlyList<SurahDto>> GetAllSurahsAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Surahs
+        var result = await _dbContext.Surahs
             .AsNoTracking()
             .OrderBy(s => s.Number)
             .Select(s => new SurahDto(
@@ -36,6 +36,9 @@ public partial class QuranReaderService : IQuranReaderService
                 s.IsActive
             ))
             .ToListAsync(cancellationToken);
+        var counts = await _dbContext.CorpusAyahs.Where(a => a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode)
+            .GroupBy(a => a.SurahNumber).Select(g => new { Number = g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Number, cancellationToken);
+        return result.Select(s => counts.TryGetValue(s.Number, out var count) ? s with { AyahCount = count.Count } : s).ToList();
     }
 
     public async Task<SurahDto?> GetSurahByNumberAsync(int number, CancellationToken cancellationToken = default)
@@ -45,13 +48,14 @@ public partial class QuranReaderService : IQuranReaderService
             .FirstOrDefaultAsync(s => s.Number == number, cancellationToken);
 
         if (surah == null) return null;
+        var canonicalCount = await _dbContext.CorpusAyahs.CountAsync(a => a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode && a.SurahNumber == number, cancellationToken);
 
         return new SurahDto(
             surah.Number,
             surah.NameArabic,
             surah.NameLatin,
             surah.NameTranslation,
-            surah.AyahCount,
+            canonicalCount > 0 ? canonicalCount : surah.AyahCount,
             surah.RevelationOrder,
             surah.RevelationType.ToString(),
             surah.IsActive
@@ -60,6 +64,8 @@ public partial class QuranReaderService : IQuranReaderService
 
     public async Task<IReadOnlyList<AyahDto>> GetAyahsBySurahAsync(int surahNumber, CancellationToken cancellationToken = default)
     {
+        if (await _dbContext.QuranCorpora.AnyAsync(c => c.Code == CorpusResolutionService.MarwCorpusCode, cancellationToken))
+            return await GetCanonicalAyahsAsync(surahNumber, cancellationToken);
         var surah = await _dbContext.Surahs
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Number == surahNumber, cancellationToken);
@@ -85,6 +91,8 @@ public partial class QuranReaderService : IQuranReaderService
 
     public async Task<AyahDto?> GetAyahAsync(int surahNumber, int ayahNumber, CancellationToken cancellationToken = default)
     {
+        if (await _dbContext.QuranCorpora.AnyAsync(c => c.Code == CorpusResolutionService.MarwCorpusCode, cancellationToken))
+            return (await GetCanonicalAyahsAsync(surahNumber, cancellationToken)).FirstOrDefault(a => a.AyahNumber == ayahNumber);
         var surah = await _dbContext.Surahs
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Number == surahNumber, cancellationToken);
@@ -135,6 +143,15 @@ public partial class QuranReaderService : IQuranReaderService
 
         // 2. Recherche textuelle arabe normalisée
         var normalizedQuery = ArabicTextNormalizer.Normalize(query);
+        if (await _dbContext.QuranCorpora.AnyAsync(c => c.Code == CorpusResolutionService.MarwCorpusCode, cancellationToken))
+        {
+            var matches = await _dbContext.CorpusAyahs.AsNoTracking()
+                .Where(a => a.Corpus!.Code == "qpc-warsh-v10-candidate" && a.SearchText.Contains(normalizedQuery))
+                .OrderBy(a => a.NumberInQuran).Take(Math.Clamp(maxResults, 1, 100)).ToListAsync(cancellationToken);
+            var names = await _dbContext.Surahs.AsNoTracking().ToDictionaryAsync(s => s.Number, cancellationToken);
+            return matches.Select(a => new SearchResultDto(a.SurahNumber, names[a.SurahNumber].NameArabic,
+                names[a.SurahNumber].NameLatin, a.AyahNumber, a.TextArabic, a.TextArabic)).ToList();
+        }
 
         var queryable = _dbContext.Ayahs
             .AsNoTracking()
@@ -153,6 +170,34 @@ public partial class QuranReaderService : IQuranReaderService
             a.TextWarsh,
             a.TextWarsh
         )).ToList();
+    }
+
+    private async Task<IReadOnlyList<AyahDto>> GetCanonicalAyahsAsync(int surahNumber, CancellationToken ct)
+    {
+        var references = await _dbContext.CorpusAyahs.AsNoTracking()
+            .Where(a => a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode && a.SurahNumber == surahNumber)
+            .OrderBy(a => a.AyahNumber).ToListAsync(ct);
+        var texts = await _dbContext.CorpusAyahs.AsNoTracking()
+            .Where(a => a.Corpus!.Code == "qpc-warsh-v10-candidate" && a.SurahNumber == surahNumber)
+            .ToDictionaryAsync(a => a.AyahNumber, ct);
+        var name = await _dbContext.Surahs.Where(s => s.Number == surahNumber).Select(s => s.NameArabic).FirstOrDefaultAsync(ct) ?? "";
+        var prefix = surahNumber + ":";
+        var segments = await _dbContext.AudioSegments.AsNoTracking()
+            .Include(s => s.SourceAudio).ThenInclude(s => s.Reciter)
+            .Include(s => s.SourceAudio).ThenInclude(s => s.Riwaya)
+            .Include(s => s.Wajh).Include(s => s.PublishedAudioAsset)
+            .Where(s => s.Edition == MarwPilotCorpus.EditionCode && s.Reference != null && s.Reference.StartsWith(prefix)
+                && s.Status == AudioSegmentStatus.Published && s.PublishedAudioAssetId != null
+                && (s.Wajh == null || s.Wajh.ReviewStatus == "Approved"))
+            .ToListAsync(ct);
+        return references.Select(a => new AyahDto(a.Id, surahNumber, name, a.AyahNumber, a.NumberInQuran,
+            texts.TryGetValue(a.AyahNumber, out var text) ? text.TextArabic : "النص الرقمي قيد التحقق؛ راجع صورة المصحف.",
+            a.PageNumberHint, null, null,
+            segments.Where(s => s.Reference == $"{surahNumber}:{a.AyahNumber}").OrderBy(s => s.StartMs).Select(s => new RecitationDto(
+                s.PublishedAudioAssetId!.Value, s.SourceAudio.Reciter.NameArabic, s.SourceAudio.Reciter.NameLatin,
+                s.SourceAudio.Riwaya.NameArabic, s.Wajh?.Code, s.Wajh?.NameArabic,
+                "/audio/" + s.PublishedAudioAsset!.StorageKey, s.PublishedAudioAsset.DurationMs,
+                s.PublishedAudioAsset.SizeBytes, s.Status.ToString(), true)).ToList())).ToList();
     }
 
     private static AyahDto MapToAyahDto(int surahNumber, string surahNameArabic, Domain.Entities.Ayah ayah)

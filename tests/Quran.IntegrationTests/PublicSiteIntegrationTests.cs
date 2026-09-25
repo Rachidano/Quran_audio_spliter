@@ -49,8 +49,8 @@ public class PublicSiteIntegrationTests : IClassFixture<QuranTestWebApplicationF
 
         var html = await response.Content.ReadAsStringAsync();
         Assert.Contains("سورة الفاتحة", html);
-        Assert.Contains("مصحف الجزائر الإلكتروني", html);
-        Assert.Contains("mushaf-crop-container", html);
+        Assert.Contains("/api/mushaf/marw-pilot/20260913-full/pages/1/image.png", html);
+        Assert.DoesNotContain("/mushaf/web/warsh/", html);
         Assert.Contains("share-canonical-btn", html);
     }
 

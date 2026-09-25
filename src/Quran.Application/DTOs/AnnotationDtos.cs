@@ -29,7 +29,8 @@ public record CaptureEndAyahRequest(
     string? Notes,
     string? Edition,
     string? SourceHash,
-    string? IdempotencyKey
+    string? IdempotencyKey,
+    AudioSegmentType SegmentType = AudioSegmentType.FullAyah
 );
 
 public record CaptureEndAyahResult(
@@ -91,4 +92,3 @@ public record UndoCaptureResult(
     string? RestoredReference,
     string Message
 );
-

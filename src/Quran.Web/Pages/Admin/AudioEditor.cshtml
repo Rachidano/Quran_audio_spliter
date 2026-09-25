@@ -41,7 +41,7 @@
             <span><strong>الحالة:</strong> <span id="infoStatus" class="badge bg-secondary">—</span></span>
         </div>
         <div class="mt-1 mt-md-0">
-            <span class="text-muted">مفاتيح الاختصار: <kbd>Space</kbd> تشغيل/إيقاف | <kbd>F8</kbd> أو <kbd>Enter</kbd> إنهاء الآية | <kbd>F9</kbd> إنهاء التكرار | <kbd>Ctrl+Z</kbd> تراجع</span>
+            <span class="text-muted">مفاتيح الاختصار: <kbd>Space</kbd> تشغيل/إيقاف | <kbd>F7</kbd> تحديد البداية | <kbd>F8</kbd> أو <kbd>Enter</kbd> إنهاء الآية | <kbd>F9</kbd> إنهاء التكرار | <kbd>Ctrl+Z</kbd> تراجع</span>
         </div>
     </div>
 
@@ -72,10 +72,23 @@
                     <!-- العدادات الزمنية الدقيقة (LTR) -->
                     <div class="row g-2 mb-3 text-center">
                         <div class="col-4">
-                            <div class="p-2 bg-light rounded border">
-                                <div class="text-muted small mb-1">بداية الآية الحالية</div>
-                                <div id="displayStartMs" class="font-monospace fw-bold text-primary fs-5" dir="ltr">00:00.000</div>
-                                <div class="small text-muted font-monospace" id="displayStartRaw" dir="ltr">0 ms</div>
+                            <div class="p-2 bg-light rounded border h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="text-muted small mb-1">بداية الآية الحالية</div>
+                                    <div id="displayStartMs" class="font-monospace fw-bold text-primary fs-5" dir="ltr">00:00.000</div>
+                                    <div class="small text-muted font-monospace mb-2" id="displayStartRaw" dir="ltr">0 ms</div>
+                                </div>
+                                <div>
+                                    <button id="btnMarkStart" class="btn btn-outline-primary btn-sm w-100 fw-bold mb-1" onclick="setStartToCurrentPlayhead()" title="تحديد الموضع الحالي للمؤشر كبداية للآية (F7)">
+                                        🎯 اجعل المؤشر بداية <span class="badge bg-primary text-white ms-1 font-monospace">F7</span>
+                                    </button>
+                                    <div class="input-group input-group-sm mb-1">
+                                        <button class="btn btn-outline-secondary px-1" type="button" onclick="adjustCurrentStart(-50)" title="تقديم 50ms">-50ms</button>
+                                        <input type="number" id="quickStartMs" class="form-control form-control-sm text-center font-monospace" value="0" step="10" onchange="onManualStartChanged(this.value)" oninput="onManualStartChanged(this.value)" title="تعديل البداية بالملي ثانية">
+                                        <button class="btn btn-outline-secondary px-1" type="button" onclick="adjustCurrentStart(50)" title="تأخير 50ms">+50ms</button>
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">تعديل حر بدون تغيير السابق</div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-4">
@@ -338,6 +351,9 @@
             </h2>
             <div class="d-flex gap-2">
                 <input type="text" id="tableFilter" class="form-control form-control-sm" placeholder="تصفية بالآية أو الوجه..." oninput="filterSegmentsTable(this.value)">
+                <button class="btn btn-outline-danger btn-sm text-nowrap" onclick="resetCurrentSurah()" title="مسح جميع المقاطع المسجلة لهذه السورة والبدء من 0">
+                    🗑️ مسح الكل والبدء من 0
+                </button>
             </div>
         </div>
 
@@ -418,6 +434,9 @@
                 if (e.code === 'Space') {
                     e.preventDefault();
                     togglePlayPause();
+                } else if (e.code === 'F7' || e.key === 'F7') {
+                    e.preventDefault();
+                    setStartToCurrentPlayhead();
                 } else if (e.code === 'F8' || (e.code === 'Enter' && (e.ctrlKey || !e.shiftKey))) {
                     e.preventDefault();
                     onFinishAyahClicked();
@@ -545,6 +564,7 @@
                 if (currentStartMs > 0 && wavesurfer.getDuration() > 0) {
                     wavesurfer.seekTo(currentStartMs / 1000 / wavesurfer.getDuration());
                 }
+                updateStartDisplay();
                 updateTimeDisplays();
             });
 
@@ -594,9 +614,36 @@
         function updateStartDisplay() {
             document.getElementById('displayStartMs').textContent = formatTime(currentStartMs);
             document.getElementById('displayStartRaw').textContent = `${currentStartMs} ms`;
-            document.getElementById('manualStartMs').value = currentStartMs;
-            document.getElementById('manualStartFormatted').textContent = formatTime(currentStartMs);
+            const quickStart = document.getElementById('quickStartMs');
+            if (quickStart && document.activeElement !== quickStart) {
+                quickStart.value = currentStartMs;
+            }
+            const manualStartMs = document.getElementById('manualStartMs');
+            if (manualStartMs) manualStartMs.value = currentStartMs;
+            const manualStartFormatted = document.getElementById('manualStartFormatted');
+            if (manualStartFormatted) manualStartFormatted.textContent = formatTime(currentStartMs);
             updateTimeDisplays();
+        }
+
+        function setStartToCurrentPlayhead() {
+            if (!wavesurfer) return;
+            const curSec = wavesurfer.getCurrentTime();
+            currentStartMs = Math.max(0, Math.round(curSec * 1000));
+            updateStartDisplay();
+            showToast(`تم تحديد بداية الآية عند ${formatTime(currentStartMs)}`, "info");
+        }
+
+        function adjustCurrentStart(delta) {
+            currentStartMs = Math.max(0, currentStartMs + delta);
+            updateStartDisplay();
+        }
+
+        function onManualStartChanged(val) {
+            const parsed = parseInt(val, 10);
+            if (!isNaN(parsed) && parsed >= 0) {
+                currentStartMs = parsed;
+                updateStartDisplay();
+            }
         }
 
         // 4. ACTION 1 : إنهاء الآية والانتقال إلى التالية (Atomique)
@@ -1102,6 +1149,24 @@
                 loadExistingRegions();
                 renderSegmentsTable();
                 showToast("تم حذف المقطع.", "info");
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function resetCurrentSurah() {
+            if (!confirm(`تحذير: هل أنت متأكد تماماً من مسح جميع مقاطع سورة ${editorContext.surahNameArabic} والبدء من الصفر؟ لا يمكن التراجع عن هذا الإجراء.`)) {
+                return;
+            }
+            try {
+                const res = await fetch(`/api/admin/audio-editor/reset-surah/${currentSurahNumber}`, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || "فشل مسح المقاطع");
+                }
+                const data = await res.json();
+                showToast(data.message, "warning");
+                setTimeout(() => window.location.reload(), 600);
             } catch (err) {
                 alert(err.message);
             }

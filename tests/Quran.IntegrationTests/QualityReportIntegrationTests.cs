@@ -47,6 +47,10 @@ public class QualityReportIntegrationTests : IClassFixture<QuranTestWebApplicati
         var postLogin = await client.PostAsync("/Account/Login", new FormUrlEncodedContent(formData));
         Assert.Equal(HttpStatusCode.OK, postLogin.StatusCode);
 
+        var adminHtml = await client.GetStringAsync("/Admin");
+        var csrf = Regex.Match(adminHtml, "name=\"csrf-token\" content=\"([^\"]+)\"");
+        Assert.True(csrf.Success);
+        client.DefaultRequestHeaders.Add("RequestVerificationToken", System.Net.WebUtility.HtmlDecode(csrf.Groups[1].Value));
         return client;
     }
 

@@ -177,7 +177,9 @@ public partial class AudioEditorService : IAudioEditorService
                 s.ReviewedAt,
                 s.ApprovedByUserId,
                 s.ApprovedAt,
-                s.Version
+                s.Version,
+                s.Reference,
+                s.Edition
             ))
             .ToListAsync(cancellationToken);
 
@@ -354,15 +356,95 @@ public partial class AudioEditorService : IAudioEditorService
 
     public async Task DeleteSegmentAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var segment = await _db.AudioSegments.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        var segment = await _db.AudioSegments
+            .Include(s => s.SegmentImageRegions)
+            .Include(s => s.Revisions)
+            .Include(s => s.TextSpans)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
         if (segment == null)
             return;
 
         if (segment.Status == AudioSegmentStatus.Published)
             throw new InvalidOperationException("Impossible de supprimer directement un segment publié. Veuillez d'abord retirer sa publication.");
 
+        // Clean up any session pointing to this segment
+        var sessions = await _db.AnnotationSessions
+            .Where(s => s.LastSegmentId == id || s.RepeatTargetSegmentId == id)
+            .ToListAsync(cancellationToken);
+        foreach (var sess in sessions)
+        {
+            if (sess.LastSegmentId == id) sess.LastSegmentId = null;
+            if (sess.RepeatTargetSegmentId == id) sess.RepeatTargetSegmentId = null;
+        }
+
+        // Clean up any other segments pointing to this as RepeatOf
+        var repeats = await _db.AudioSegments
+            .Where(s => s.RepeatOfId == id)
+            .ToListAsync(cancellationToken);
+        foreach (var r in repeats)
+        {
+            r.RepeatOfId = null;
+        }
+
+        _db.AudioSegmentImageRegions.RemoveRange(segment.SegmentImageRegions);
+        _db.SegmentRevisions.RemoveRange(segment.Revisions);
+        _db.SegmentTextSpans.RemoveRange(segment.TextSpans);
         _db.AudioSegments.Remove(segment);
         await _db.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Segment {Id} supprimé avec succès.", id);
+    }
+
+    public async Task ResetSurahAsync(int surahNumber, string userId, CancellationToken cancellationToken = default)
+    {
+        var sourceAudio = await _db.SourceAudios
+            .Include(sa => sa.Surah)
+            .FirstOrDefaultAsync(sa => sa.Surah.Number == surahNumber, cancellationToken);
+        if (sourceAudio == null)
+            throw new KeyNotFoundException($"Source audio pour la sourate {surahNumber} introuvable.");
+
+        var segments = await _db.AudioSegments
+            .Include(s => s.SegmentImageRegions)
+            .Include(s => s.Revisions)
+            .Include(s => s.TextSpans)
+            .Where(s => s.SourceAudioId == sourceAudio.Id)
+            .ToListAsync(cancellationToken);
+
+        var segmentIds = segments.Select(s => s.Id).ToHashSet();
+
+        // Reset any sessions for this source
+        var sessions = await _db.AnnotationSessions
+            .Where(s => s.SourceAudioId == sourceAudio.Id || (s.LastSegmentId != null && segmentIds.Contains(s.LastSegmentId.Value)))
+            .ToListAsync(cancellationToken);
+
+        foreach (var sess in sessions)
+        {
+            sess.CurrentTimeMs = 0;
+            sess.CurrentSurahNumber = surahNumber;
+            sess.CurrentAyahNumber = 1;
+            sess.LastSegmentId = null;
+            sess.IsRepeatMode = false;
+            sess.RepeatTargetSegmentId = null;
+            sess.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        foreach (var s in segments)
+        {
+            s.RepeatOfId = null;
+        }
+
+        foreach (var s in segments)
+        {
+            _db.AudioSegmentImageRegions.RemoveRange(s.SegmentImageRegions);
+            _db.SegmentRevisions.RemoveRange(s.Revisions);
+            _db.SegmentTextSpans.RemoveRange(s.TextSpans);
+        }
+
+        _db.AudioSegments.RemoveRange(segments);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Sourate {SurahNumber} réinitialisée à 0 par {User} ({Count} segments supprimés)",
+            surahNumber, userId, segments.Count);
     }
 
     public async Task<AudioSegmentDto> SubmitForReviewAsync(Guid id, string userId, CancellationToken cancellationToken = default)
@@ -461,6 +543,15 @@ public partial class AudioEditorService : IAudioEditorService
 
         var surahNum = segment.Ayah?.Surah?.Number ?? 0;
         var ayahNum = segment.Ayah?.AyahNumber ?? 0;
+        if (surahNum == 0 && !string.IsNullOrEmpty(segment.Reference) && segment.Reference.Contains(':'))
+        {
+            var parts = segment.Reference.Split(':');
+            if (parts.Length == 2 && int.TryParse(parts[0], out var s) && int.TryParse(parts[1], out var a))
+            {
+                surahNum = s;
+                ayahNum = a;
+            }
+        }
         var wajhSuffix = segment.Wajh != null ? $"_{segment.Wajh.Code}" : "";
         var rev = segment.Version > 0 ? segment.Version : 1;
         var relativeWorkingKey = $"working/segments/{surahNum:D3}/{ayahNum:D3}_{segment.Id:N}_rev{rev}{wajhSuffix}.mp3";
@@ -544,6 +635,15 @@ public partial class AudioEditorService : IAudioEditorService
 
         var surahNum = segment.Ayah?.Surah?.Number ?? 0;
         var ayahNum = segment.Ayah?.AyahNumber ?? 0;
+        if (surahNum == 0 && !string.IsNullOrEmpty(segment.Reference) && segment.Reference.Contains(':'))
+        {
+            var parts = segment.Reference.Split(':');
+            if (parts.Length == 2 && int.TryParse(parts[0], out var s) && int.TryParse(parts[1], out var a))
+            {
+                surahNum = s;
+                ayahNum = a;
+            }
+        }
         var wajhSuffix = segment.Wajh != null ? $"_{segment.Wajh.Code}" : "";
         var rev = segment.Version > 0 ? segment.Version : 1;
         var publishedKey = $"published/{surahNum:D3}/{ayahNum:D3}/{segment.Id:N}_rev{rev}{wajhSuffix}.mp3";
@@ -692,7 +792,9 @@ public partial class AudioEditorService : IAudioEditorService
                 s.ReviewedAt,
                 s.ApprovedByUserId,
                 s.ApprovedAt,
-                s.Version
+                s.Version,
+                s.Reference,
+                s.Edition
             ))
             .ToListAsync(cancellationToken);
 
@@ -788,7 +890,9 @@ public partial class AudioEditorService : IAudioEditorService
             s.ReviewedAt,
             s.ApprovedByUserId,
             s.ApprovedAt,
-            s.Version
+            s.Version,
+            s.Reference,
+            s.Edition
         );
     }
 }

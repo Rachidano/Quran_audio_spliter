@@ -17,4 +17,5 @@ public interface IAudioEditorService
     Task<AudioSegmentDto> UnpublishSegmentAsync(Guid id, string userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AudioSegmentDto>> GetReviewQueueAsync(int? surahNumber = null, AudioSegmentStatus? status = null, CancellationToken cancellationToken = default);
     Task<int> TokenizeAyahsAsync(int surahNumber, CancellationToken cancellationToken = default);
+    Task ResetSurahAsync(int surahNumber, string userId, CancellationToken cancellationToken = default);
 }

@@ -31,7 +31,8 @@ public class PageModelCustom(MarwPilotCorpus corpus, IStorageService storage, Qu
     {
         if (PreviewPassage.HasValue)
         {
-            var passage = await db.MushafPassages.FindAsync([PreviewPassage.Value], cancellationToken);
+            if (!User.IsInRole("Admin") && !User.IsInRole("Reviewer")) return Challenge();
+            var passage = await db.AudioSegments.FindAsync([PreviewPassage.Value], cancellationToken);
             if (passage?.Reference == null || passage.Edition != MarwPilotCorpus.EditionCode) return NotFound();
             var target = corpus.PageNumbers.First(n => corpus.GetPage(n)!.Regions.Any(r => r.Reference == passage.Reference));
             if (SurahNumber.HasValue || PageNumber != target) return RedirectToPage("/Mushaf/Page", new { pageNumber = target, PreviewPassage, Reference = passage.Reference });

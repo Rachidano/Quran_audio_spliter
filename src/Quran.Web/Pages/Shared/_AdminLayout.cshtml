@@ -1,8 +1,24 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+    <script>
+        // Existing admin screens share one same-origin CSRF transport.
+        const nativeFetch = window.fetch.bind(window);
+        window.fetch = (input, options = {}) => {
+            const url = new URL(input instanceof Request ? input.url : input, location.href);
+            const method = (options.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
+            if (url.origin === location.origin && !['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                const headers = new Headers(options.headers || (input instanceof Request ? input.headers : undefined));
+                headers.set('RequestVerificationToken', document.querySelector('meta[name="csrf-token"]').content);
+                options = { ...options, headers };
+            }
+            return nativeFetch(input, options);
+        };
+    </script>
     <title>@ViewData["Title"] — لوحة الإدارة — مصحف ورش</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -98,32 +114,19 @@
 
                 <div class="collapse navbar-collapse" id="adminNavbarContent">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link admin-nav-link" asp-page="/Admin/Index">📊 الإحصائيات العامة</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link admin-nav-link" asp-page="/Admin/AudioEditor">🎧 محرر الصوت المتقدم</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link admin-nav-link" asp-page="/Admin/MushafRegionEditor" asp-route-pageNumber="1">📐 محرر مناطق المصحف</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link admin-nav-link" asp-page="/Admin/ReviewQueue">📋 طابور المراجعة والنشر</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link admin-nav-link" asp-page="/Admin/QualityReport">🛡️ تقرير الجودة والتدقيق</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link admin-nav-link" asp-page="/Admin/Validation">✅ مراجعة واعتماد التسجيلات</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link admin-nav-link" asp-page="/Admin/CorpusMapping">📖 مراجع وفروق العد</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link admin-nav-link" asp-page="/Admin/Awjuh">📚 مرجع الأوجه والتغطية</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link admin-nav-link" asp-page="/Admin/Inventory">📁 مستودع الأرشيف</a>
+                        <li class="nav-item"><a class="nav-link admin-nav-link" asp-page="/Admin/AudioEditor">🎧 استوديو الصوت</a></li>
+                        <li class="nav-item"><a class="nav-link admin-nav-link" asp-page="/Mushaf/Page" asp-route-pageNumber="1">📖 المصحف</a></li>
+                        <li class="nav-item"><a class="nav-link admin-nav-link" asp-page="/Admin/Awjuh">📚 الأوجه</a></li>
+                        <li class="nav-item dropdown">
+                            <button class="nav-link admin-nav-link dropdown-toggle btn" data-bs-toggle="dropdown" aria-expanded="false">الإدارة والمراجعة</button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-page="/Admin/Index">لوحة المتابعة</a></li>
+                                <li><a class="dropdown-item" asp-page="/Admin/ReviewQueue">المراجعة والنشر</a></li>
+                                <li><a class="dropdown-item" asp-page="/Admin/QualityReport">الجودة والتغطية</a></li>
+                                <li><a class="dropdown-item" asp-page="/Admin/CorpusMapping">مطابقة المراجع والنصوص</a></li>
+                                <li><a class="dropdown-item" asp-page="/Admin/MushafRegionEditor" asp-route-pageNumber="1">تصحيح مناطق المصحف</a></li>
+                                <li><a class="dropdown-item" asp-page="/Admin/Inventory">المصادر الصوتية</a></li>
+                            </ul>
                         </li>
                     </ul>
 

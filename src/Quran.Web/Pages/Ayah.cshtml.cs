@@ -30,6 +30,8 @@ public class AyahModel : PageModel
     public RecitationDto? SelectedRecitation { get; set; }
     public IReadOnlyList<AyahImageRegionDto> MushafRegions { get; set; } = new List<AyahImageRegionDto>();
     public MushafPageDto? MushafPage { get; set; }
+    public string? MarwImageUrl { get; set; }
+    public int? MarwPageNumber { get; set; }
 
     public int? PrevAyahNumber => Ayah > 1 ? Ayah - 1 : null;
     public int? NextAyahNumber => (SurahInfo != null && Ayah < SurahInfo.AyahCount) ? Ayah + 1 : null;
@@ -51,14 +53,11 @@ public class AyahModel : PageModel
         {
             SelectedRecitation = AyahInfo.Recitations.FirstOrDefault(r => string.Equals(r.WajhCode, Wajh, StringComparison.OrdinalIgnoreCase));
         }
-        SelectedRecitation ??= AyahInfo.Recitations.FirstOrDefault();
-
-        MushafRegions = await _mushafService.GetAyahRegionsAsync(AyahInfo.Id, cancellationToken);
-        if (MushafRegions.Count > 0)
-        {
-            var pageNum = MushafRegions[0].PageNumber;
-            MushafPage = await _mushafService.GetPageAsync(pageNum, null, cancellationToken);
-        }
+        if (string.IsNullOrEmpty(Wajh)) SelectedRecitation = AyahInfo.Recitations.FirstOrDefault();
+        // CorpusAyah.Id must never be passed as a legacy Ayah.Id to the image service.
+        MarwPageNumber = AyahInfo.PageNumber;
+        if (MarwPageNumber > 0)
+            MarwImageUrl = $"/api/mushaf/marw-pilot/{Quran.Infrastructure.Services.MarwPilotCorpus.Revision}/pages/{MarwPageNumber}/image.png";
 
         return Page();
     }

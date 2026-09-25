@@ -66,7 +66,9 @@ public record AudioSegmentDto(
     DateTimeOffset? ReviewedAt = null,
     string? ApprovedByUserId = null,
     DateTimeOffset? ApprovedAt = null,
-    int RevisionNumber = 1
+    int RevisionNumber = 1,
+    string? Reference = null,
+    string? Edition = null
 );
 
 public record AudioEditorContextDto(
@@ -105,4 +107,3 @@ public record UpdateAudioSegmentRequest(
 );
 
 public record RejectSegmentRequest(string Reason);
-

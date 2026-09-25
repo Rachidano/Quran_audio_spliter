@@ -1,3 +1,5 @@
+> **Audit contradictoire du 14 septembre 2026 :** les mentions de livraison complète ci-dessous ne valent pas validation. Voir [les constats, corrections et limites vérifiés](AUDIT_APRES_ANTIGRAVITY.md).
+
 # Dossier de Recette Technique et Non-Régression — Quran Warsh
 ## Référence : PLAN_REPRISE_ANTIGRAVITY.md (Scénarios T01 à T28)
 **Date : 14 septembre 2026**  

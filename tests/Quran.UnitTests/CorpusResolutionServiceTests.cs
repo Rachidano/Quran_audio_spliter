@@ -48,7 +48,8 @@ public class CorpusResolutionServiceTests
             CorpusResolutionService.MarwCorpusCode,
             2, 1);
 
-        Assert.True(result1.IsMapped);
+        Assert.False(result1.IsMapped);
+        Assert.Equal("PendingReview", result1.ReviewStatus);
         Assert.Equal("2:1", result1.TargetReference);
         Assert.Equal("ManyToOne", result1.Cardinality);
         Assert.Contains("الٓمٓ ليست آية مستقلة", result1.DifferenceDescription);
@@ -59,7 +60,8 @@ public class CorpusResolutionServiceTests
             CorpusResolutionService.MarwCorpusCode,
             2, 2);
 
-        Assert.True(result2.IsMapped);
+        Assert.False(result2.IsMapped);
+        Assert.Equal("PendingReview", result2.ReviewStatus);
         Assert.Equal("2:1", result2.TargetReference);
         Assert.Equal("ManyToOne", result2.Cardinality);
     }
@@ -77,7 +79,8 @@ public class CorpusResolutionServiceTests
             CorpusResolutionService.MarwCorpusCode,
             2, 4);
 
-        Assert.True(result4.IsMapped);
+        Assert.False(result4.IsMapped);
+        Assert.Equal("PendingReview", result4.ReviewStatus);
         Assert.Equal("2:3", result4.TargetReference);
         Assert.Equal("OneToOne", result4.Cardinality);
 
@@ -87,7 +90,8 @@ public class CorpusResolutionServiceTests
             CorpusResolutionService.MarwCorpusCode,
             2, 5);
 
-        Assert.True(result5.IsMapped);
+        Assert.False(result5.IsMapped);
+        Assert.Equal("PendingReview", result5.ReviewStatus);
         Assert.Equal("2:4", result5.TargetReference);
         Assert.Contains("ٱلْمُفْلِحُونَ", result5.ProofNotes);
     }

@@ -50,6 +50,10 @@ public class ReviewWorkflowIntegrationTests : IClassFixture<QuranTestWebApplicat
         var postLogin = await client.PostAsync("/Account/Login", new FormUrlEncodedContent(formData));
         Assert.Equal(HttpStatusCode.OK, postLogin.StatusCode);
 
+        var adminHtml = await client.GetStringAsync("/Admin");
+        var csrf = Regex.Match(adminHtml, "name=\"csrf-token\" content=\"([^\"]+)\"");
+        Assert.True(csrf.Success);
+        client.DefaultRequestHeaders.Add("RequestVerificationToken", System.Net.WebUtility.HtmlDecode(csrf.Groups[1].Value));
         return client;
     }
 
@@ -88,20 +92,12 @@ public class ReviewWorkflowIntegrationTests : IClassFixture<QuranTestWebApplicat
         var ayah = ctx.Ayahs.First();
 
         // 2. Create Draft segment
-        var createReq = new CreateAudioSegmentRequest(
-            ctx.SourceAudio.Id,
-            ayah.Id,
-            null,
-            2000,
-            6000,
-            null,
-            null,
-            AudioSegmentType.FullAyah,
-            "Test review pipeline"
-        );
-        var createRes = await authClient.PostAsJsonAsync("/api/admin/audio-editor/segments", createReq);
+        var createReq = new CaptureEndAyahRequest(ctx.SourceAudio.Id, 6000, 2000, "1:1", null, null,
+            "Test review pipeline", "MARW_newMushaf_20260913-full", null, Guid.NewGuid().ToString());
+        var createRes = await authClient.PostAsJsonAsync("/api/admin/audio-editor/capture/end-ayah", createReq);
         Assert.Equal(HttpStatusCode.OK, createRes.StatusCode);
-        var segment = await createRes.Content.ReadFromJsonAsync<AudioSegmentDto>();
+        var capture = await createRes.Content.ReadFromJsonAsync<CaptureEndAyahResult>();
+        var segment = capture!.SavedOccurrence;
         Assert.NotNull(segment);
         Assert.Equal(AudioSegmentStatus.Draft, segment.Status);
 
