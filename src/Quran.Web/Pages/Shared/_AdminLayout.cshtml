@@ -114,20 +114,7 @@
 
                 <div class="collapse navbar-collapse" id="adminNavbarContent">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item"><a class="nav-link admin-nav-link" asp-page="/Admin/AudioEditor">🎧 استوديو الصوت</a></li>
-                        <li class="nav-item"><a class="nav-link admin-nav-link" asp-page="/Mushaf/Page" asp-route-pageNumber="1">📖 المصحف</a></li>
-                        <li class="nav-item"><a class="nav-link admin-nav-link" asp-page="/Admin/Awjuh">📚 الأوجه</a></li>
-                        <li class="nav-item dropdown">
-                            <button class="nav-link admin-nav-link dropdown-toggle btn" data-bs-toggle="dropdown" aria-expanded="false">الإدارة والمراجعة</button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-page="/Admin/Index">لوحة المتابعة</a></li>
-                                <li><a class="dropdown-item" asp-page="/Admin/ReviewQueue">المراجعة والنشر</a></li>
-                                <li><a class="dropdown-item" asp-page="/Admin/QualityReport">الجودة والتغطية</a></li>
-                                <li><a class="dropdown-item" asp-page="/Admin/CorpusMapping">مطابقة المراجع والنصوص</a></li>
-                                <li><a class="dropdown-item" asp-page="/Admin/MushafRegionEditor" asp-route-pageNumber="1">تصحيح مناطق المصحف</a></li>
-                                <li><a class="dropdown-item" asp-page="/Admin/Inventory">المصادر الصوتية</a></li>
-                            </ul>
-                        </li>
+                        <partial name="_AdminNavigation" />
                     </ul>
 
                     <div class="d-flex align-items-center gap-3">

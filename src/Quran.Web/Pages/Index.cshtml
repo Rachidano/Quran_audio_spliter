@@ -12,7 +12,7 @@
         @if (Model.SearchResults.Count == 0)
         {
             <div class="alert alert-warning">
-                لم يتم العثور على أي آية مطابقة. جرّب البحث برقم السورة والآية مثل <code>1:2</code> أو بكلمة أخرى.
+                لم يتم العثور على أي آية مطابقة. جرّب البحث برقم السورة والآية مثل <code>1:2</code> بالترقيم المعتمد في المصحف. البحث بالكلمات غير متاح حالياً.
             </div>
         }
         else
@@ -25,7 +25,7 @@
                             <span class="badge bg-success">سورة @item.SurahNameArabic (@item.SurahNameLatin) — آية @item.AyahNumber</span>
                             <span class="text-muted small">عرض وتلاوة الآية ←</span>
                         </div>
-                        <p class="quran-text mb-0 fs-5">@item.TextWarsh</p>
+                        <p class="mb-0">عرض الموضع في صورة المصحف</p>
                     </a>
                 }
             </div>
@@ -36,11 +36,11 @@
 
 <!-- Section d'introduction -->
 <div class="text-center py-4 px-3 mb-4 rounded-4" style="background: linear-gradient(180deg, #f0fdf4, #ffffff); border: 1px solid #d1fae5;">
-    <h1 class="display-6 fw-bold text-success mb-2">مصحف رواية ورش عن نافع بجميع الأوجه الشاطبية</h1>
+    <h1 class="display-6 fw-bold text-success mb-2">مصحف رواية ورش عن نافع</h1>
     <p class="lead text-secondary mb-3">بصوت فضيلة الشيخ القارئ <strong>صابر عبد الحكم</strong></p>
     <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
         <a href="/surah/1" class="btn btn-quran-primary">سورة الفاتحة مباشرة</a>
-        <a href="/mushaf/page/1" class="btn btn-outline-success">📖 تصفح المصحف الشريف (MARW)</a>
+        <a href="/mushaf/warsh/page/1" class="btn btn-outline-success">📖 تصفح المصحف الشريف (MARW)</a>
         <a href="#surahs-grid" class="btn btn-quran-outline">فهرس السور (114)</a>
     </div>
 </div>

@@ -67,11 +67,15 @@ public class QuranQualityAuditServiceTests
             RevelationType = RevelationType.Meccan
         };
         db.Surahs.Add(surah);
+        var source = new SourceAudio { Id = Guid.NewGuid(), Surah = surah, StorageKey = "test.mp3", OriginalFileName = "test.mp3" };
+        db.SourceAudios.Add(source);
 
         // Segment 1: 0ms to 5000ms
         db.AudioSegments.Add(new AudioSegment
         {
             Id = Guid.NewGuid(),
+            SourceAudio = source,
+            Edition = MarwPilotCorpus.EditionCode,
             Reference = "1:1",
             StartMs = 0,
             EndMs = 5000,
@@ -82,6 +86,8 @@ public class QuranQualityAuditServiceTests
         db.AudioSegments.Add(new AudioSegment
         {
             Id = Guid.NewGuid(),
+            SourceAudio = source,
+            Edition = MarwPilotCorpus.EditionCode,
             Reference = "1:2",
             StartMs = 7500,
             EndMs = 12000,
@@ -120,11 +126,15 @@ public class QuranQualityAuditServiceTests
             RevelationType = RevelationType.Medinan
         };
         db.Surahs.Add(surah);
+        var source = new SourceAudio { Id = Guid.NewGuid(), Surah = surah, StorageKey = "test.mp3", OriginalFileName = "test.mp3" };
+        db.SourceAudios.Add(source);
 
         // Segment 1: 1000ms to 6000ms
         db.AudioSegments.Add(new AudioSegment
         {
             Id = Guid.NewGuid(),
+            SourceAudio = source,
+            Edition = MarwPilotCorpus.EditionCode,
             Reference = "2:1",
             StartMs = 1000,
             EndMs = 6000,
@@ -135,6 +145,8 @@ public class QuranQualityAuditServiceTests
         db.AudioSegments.Add(new AudioSegment
         {
             Id = Guid.NewGuid(),
+            SourceAudio = source,
+            Edition = MarwPilotCorpus.EditionCode,
             Reference = "2:2",
             StartMs = 5500,
             EndMs = 10000,
@@ -174,6 +186,8 @@ public class QuranQualityAuditServiceTests
             RevelationType = RevelationType.Meccan
         };
         db.Surahs.Add(surah);
+        var source = new SourceAudio { Id = Guid.NewGuid(), Surah = surah, StorageKey = "test.mp3", OriginalFileName = "test.mp3" };
+        db.SourceAudios.Add(source);
 
         var asset1 = new AudioAsset { Id = 10, StorageKey = "published/001/001/test.mp3", OriginalFileName = "test.mp3", MimeType = "audio/mpeg" };
         db.AudioAssets.Add(asset1);
@@ -181,6 +195,8 @@ public class QuranQualityAuditServiceTests
         db.AudioSegments.Add(new AudioSegment
         {
             Id = Guid.NewGuid(),
+            SourceAudio = source,
+            Edition = MarwPilotCorpus.EditionCode,
             Reference = "1:1",
             StartMs = 0,
             EndMs = 5000,
@@ -221,6 +237,12 @@ public class QuranQualityAuditServiceTests
             RevelationType = RevelationType.Meccan
         };
         db.Surahs.Add(surah1);
+        var source = new SourceAudio { Id = Guid.NewGuid(), Surah = surah1, StorageKey = "test.mp3", OriginalFileName = "test.mp3" };
+        db.SourceAudios.Add(source);
+
+        var corpus = new QuranCorpus { Code = "marw-newMushaf", NameArabic = "test", CountingSystem = "test", Provenance = "fixture" };
+        db.QuranCorpora.Add(corpus);
+        for (var i = 1; i <= 7; i++) db.CorpusAyahs.Add(new CorpusAyah { Corpus = corpus, SurahNumber = 1, AyahNumber = i, TextArabic = "test", SearchText = "test" });
 
         var ayah1 = new Ayah { Id = 101, SurahId = 1, AyahNumber = 1, NumberInQuran = 1, TextWarsh = "بِسْمِ اللَّهِ" };
         db.Ayahs.Add(ayah1);
@@ -243,6 +265,8 @@ public class QuranQualityAuditServiceTests
         db.AudioSegments.Add(new AudioSegment
         {
             Id = Guid.NewGuid(),
+            SourceAudio = source,
+            Edition = MarwPilotCorpus.EditionCode,
             Reference = "1:1",
             StartMs = 0,
             EndMs = 4000,
@@ -266,4 +290,58 @@ public class QuranQualityAuditServiceTests
         Assert.Equal(1, report.SurahsWithSourceAudio);
         Assert.True(report.GlobalAyahCoveragePercentage > 14.0); // 1/7 = 14.29%
     }
+    [Fact]
+    public async Task CanonicalCoverage_IgnoresHistoricalCountsPartialDuplicateAndUnqualifiedAudio()
+    {
+        using var db = CreateInMemoryDbContext(Guid.NewGuid().ToString());
+        db.Surahs.Add(new Surah { Id = 2, Number = 2, NameArabic = "test", NameLatin = "test", AyahCount = 286 });
+        var corpus = new QuranCorpus { Code = "marw-newMushaf", NameArabic = "test", CountingSystem = "test", Provenance = "fixture" };
+        db.QuranCorpora.Add(corpus);
+        for (var n = 1; n <= 285; n++) db.CorpusAyahs.Add(new CorpusAyah { Corpus = corpus, SurahNumber = 2, AyahNumber = n, TextArabic = "test", SearchText = "test" });
+        var asset = new AudioAsset { StorageKey = "published/test.mp3" };
+        var unapproved = new Wajh { Code = "test", NameArabic = "test", ReviewStatus = "Draft" };
+        AudioSegment Segment(string reference, AudioSegmentType type = AudioSegmentType.FullAyah) => new()
+        {
+            Id = Guid.NewGuid(), Reference = reference, Edition = MarwPilotCorpus.EditionCode,
+            SegmentType = type, Status = AudioSegmentStatus.Published, PublishedAudioAsset = asset, EndMs = 1000
+        };
+        db.AudioSegments.AddRange(Segment("2:1"), Segment("2:1"), Segment("2:2", AudioSegmentType.PartialAyah), Segment("2:286"));
+        var historical = Segment("2:3"); historical.Edition = "old"; db.Add(historical);
+        var pending = Segment("2:4"); pending.Wajh = unapproved; db.Add(pending);
+        var noAsset = Segment("2:5"); noAsset.PublishedAudioAsset = null; db.Add(noAsset);
+        await db.SaveChangesAsync();
+        var dashboard = await new AdminValidationService(db, NullLogger<AdminValidationService>.Instance).GetDashboardStatsAsync();
+        var quality = await new QuranQualityAuditService(db, new FakeStorageService(), NullLogger<QuranQualityAuditService>.Instance).GenerateGlobalQualityReportAsync();
+        Assert.Equal(285, dashboard.TotalAyahs);
+        Assert.Equal(1, dashboard.AyahsWithAudio);
+        Assert.Equal(284, dashboard.AyahsWithoutAudio);
+        Assert.Equal(285, quality.TotalAyahs);
+        Assert.Equal(1, quality.TotalPublishedAyahs);
+    }
+
+    [Fact]
+    public async Task AuditCurrentSegments_FindsMissingAssetAndReference_WithoutFalseGapForNestedPortion()
+    {
+        using var db = CreateInMemoryDbContext(Guid.NewGuid().ToString());
+        var surah = new Surah { Number = 2, NameArabic = "test", NameLatin = "test", AyahCount = 286 };
+        var source = new SourceAudio { Id = Guid.NewGuid(), Surah = surah, StorageKey = "sources/002/original.mp3", OriginalFileName = "test" };
+        var corpus = new QuranCorpus { Code = "marw-newMushaf", NameArabic = "test", CountingSystem = "test", Provenance = "fixture" };
+        db.CorpusAyahs.Add(new CorpusAyah { Corpus = corpus, SurahNumber = 2, AyahNumber = 1, TextArabic = "test", SearchText = "test" });
+        AudioSegment Segment(string? reference, long start, long end) => new()
+        {
+            Id = Guid.NewGuid(), SourceAudio = source, Reference = reference,
+            Edition = MarwPilotCorpus.EditionCode, StartMs = start, EndMs = end
+        };
+        var whole = Segment("2:1", 0, 10000);
+        var partial = Segment("2:1", 1000, 2000); partial.SegmentType = AudioSegmentType.PartialAyah;
+        var absent = Segment(null, 10000, 12000); absent.Status = AudioSegmentStatus.Published;
+        db.AudioSegments.AddRange(whole, partial, absent);
+        await db.SaveChangesAsync();
+        var anomalies = await new QuranQualityAuditService(db, new FakeStorageService(), NullLogger<QuranQualityAuditService>.Instance).AuditSurahConsistencyAsync(2);
+        Assert.DoesNotContain(anomalies, a => a.Type == QualityAnomalyType.Gap);
+        Assert.Contains(anomalies, a => a.Type == QualityAnomalyType.MissingMediaFile);
+        Assert.Contains(anomalies, a => a.Type == QualityAnomalyType.UnmappedReference);
+        Assert.All(anomalies, a => Assert.DoesNotContain("CorpusMapping", a.SuggestedActionUrl));
+    }
+
 }

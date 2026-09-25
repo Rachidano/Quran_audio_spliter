@@ -18,7 +18,7 @@ public class QuranReaderServiceTests
     }
 
     [Fact]
-    public async Task SeedAndReadAlFatiha_ReturnsSevenAyahsAndHandlesSearch()
+    public async Task HistoricalText_IsPreservedButNeverUsedAsReadingFallback()
     {
         // Arrange
         using var dbContext = CreateInMemoryDbContext("Quran_Test_Fatiha");
@@ -50,20 +50,32 @@ public class QuranReaderServiceTests
         Assert.Equal(114, surahs.Count);
         Assert.NotNull(fatiha);
         Assert.Equal("الفاتحة", fatiha.NameArabic);
-        Assert.Equal(8, ayahs.Count);
-        Assert.NotNull(ayah0);
-        Assert.Equal("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ", ayah0.TextWarsh);
-        Assert.NotNull(ayah1);
-        Assert.Equal("ٱلۡحَمۡدُ لِلَّهِ رَبِّ ٱلۡعَٰلَمِينَ", ayah1.TextWarsh);
+        Assert.Empty(ayahs);
+        Assert.Null(ayah0);
+        Assert.Null(ayah1);
+        Assert.Empty(await reader.SearchAsync("1:2"));
+        Assert.Empty(await reader.SearchAsync("الحمد لله"));
+        Assert.Equal(8, await dbContext.Ayahs.CountAsync()); // Preserved, never exposed as fallback.
+    }
 
-        // Act 3: Search by reference "1:2"
-        var refSearchResults = await reader.SearchAsync("1:2");
-        Assert.Single(refSearchResults);
-        Assert.Equal(2, refSearchResults.First().AyahNumber);
-
-        // Act 4: Search by normalized text "الحمد لله"
-        var textSearchResults = await reader.SearchAsync("الحمد لله");
-        Assert.NotEmpty(textSearchResults);
-        Assert.Contains(textSearchResults, r => r.AyahNumber == 1);
+    [Fact]
+    public async Task CanonicalReferences_AreAvailableWithoutUnqualifiedText()
+    {
+        using var db = CreateInMemoryDbContext(Guid.NewGuid().ToString());
+        db.Surahs.Add(new Quran.Domain.Entities.Surah { Number = 2, NameArabic = "test", NameLatin = "test", AyahCount = 286 });
+        var canonical = new Quran.Domain.Entities.QuranCorpus { Code = "marw-newMushaf", NameArabic = "test", CountingSystem = "test", Provenance = "fixture" };
+        var candidate = new Quran.Domain.Entities.QuranCorpus { Code = "qpc-warsh-v10-candidate", NameArabic = "test", CountingSystem = "test", Provenance = "fixture" };
+        for (var n = 1; n <= 285; n++) db.CorpusAyahs.Add(new Quran.Domain.Entities.CorpusAyah { Corpus = canonical, SurahNumber = 2, AyahNumber = n, TextArabic = "placeholder", SearchText = "placeholder" });
+        db.CorpusAyahs.Add(new Quran.Domain.Entities.CorpusAyah { Corpus = candidate, SurahNumber = 2, AyahNumber = 1, TextArabic = "UNQUALIFIED", SearchText = "UNQUALIFIED" });
+        await db.SaveChangesAsync();
+        var reader = new QuranReaderService(db);
+        var ayahs = await reader.GetAyahsBySurahAsync(2);
+        Assert.Equal(285, ayahs.Count);
+        Assert.All(ayahs, a => Assert.Empty(a.TextWarsh));
+        Assert.Single(await reader.SearchAsync("2:4"));
+        Assert.Empty(await reader.SearchAsync("UNQUALIFIED"));
+        Assert.Empty(await reader.SearchAsync("2:286"));
+        Assert.Empty((await reader.SearchAsync("2:4")).Single().TextWarsh);
+        Assert.Equal(286, await db.CorpusAyahs.CountAsync());
     }
 }

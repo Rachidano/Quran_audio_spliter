@@ -27,42 +27,25 @@ public class PublicSiteIntegrationTests : IClassFixture<QuranTestWebApplicationF
         var html = await response.Content.ReadAsStringAsync();
         Assert.Contains("مصحف رواية ورش عن نافع", html);
         Assert.Contains("/surah/1", html);
-        Assert.Contains("/mushaf/page/1", html);
+        Assert.Contains("/mushaf/warsh/page/1", html);
     }
 
-    [Fact]
-    public async Task SurahPage_CanonicalRoute_LoadsSuccessfully()
+    [Theory]
+    [InlineData("/surah/2", "/mushaf/warsh/page/2?Reference=2:1")]
+    [InlineData("/quran/2/4", "/mushaf/warsh/page/2?Reference=2:4")]
+    [InlineData("/quran/1/1?wajh=taqlil", "/mushaf/warsh/page/1?Reference=1:1&wajh=taqlil")]
+    public async Task TextPages_RedirectToImageMushaf(string path, string target)
     {
-        var response = await _anonClient.GetAsync("/surah/1");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var html = await response.Content.ReadAsStringAsync();
-        Assert.Contains("سورة الفاتحة", html);
-        Assert.Contains("/quran/1/1", html);
+        var response = await _anonClient.GetAsync(path);
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(target, response.Headers.Location?.OriginalString);
     }
 
-    [Fact]
-    public async Task AyahPage_CanonicalRoute_LoadsSuccessfully_WithPermaAndWajhSelector()
-    {
-        var response = await _anonClient.GetAsync("/quran/1/1");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var html = await response.Content.ReadAsStringAsync();
-        Assert.Contains("سورة الفاتحة", html);
-        Assert.Contains("/api/mushaf/marw-pilot/20260913-full/pages/1/image.png", html);
-        Assert.DoesNotContain("/mushaf/web/warsh/", html);
-        Assert.Contains("share-canonical-btn", html);
-    }
-
-    [Fact]
-    public async Task AyahPage_WithWajhQueryParameter_BindsWajhCorrectly()
-    {
-        var response = await _anonClient.GetAsync("/quran/1/1?wajh=taqlil");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var html = await response.Content.ReadAsStringAsync();
-        Assert.Contains("سورة الفاتحة", html);
-    }
+    [Theory]
+    [InlineData("/surah/115")]
+    [InlineData("/quran/2/286")]
+    public async Task InvalidCanonicalReference_ReturnsNotFound(string path) =>
+        Assert.Equal(HttpStatusCode.NotFound, (await _anonClient.GetAsync(path)).StatusCode);
 
     [Fact]
     public async Task MushafPage_CanonicalRoute_LoadsSuccessfully_WithRegionsAndViewer()

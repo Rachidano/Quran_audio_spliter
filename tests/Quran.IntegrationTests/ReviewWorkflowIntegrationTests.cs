@@ -103,6 +103,9 @@ public class ReviewWorkflowIntegrationTests : IClassFixture<QuranTestWebApplicat
 
         try
         {
+            var prematureApproval = await authClient.PostAsync($"/api/admin/audio-editor/segments/{segment.Id}/approve", null);
+            Assert.Equal(HttpStatusCode.BadRequest, prematureApproval.StatusCode);
+
             // 3. Submit for review
             var submitRes = await authClient.PostAsync($"/api/admin/audio-editor/segments/{segment.Id}/submit-review", null);
             Assert.Equal(HttpStatusCode.OK, submitRes.StatusCode);
@@ -133,6 +136,9 @@ public class ReviewWorkflowIntegrationTests : IClassFixture<QuranTestWebApplicat
             Assert.NotNull(approved);
             Assert.Equal(AudioSegmentStatus.Approved, approved.Status);
             Assert.Null(approved.RejectionReason);
+            var prematurePublish = await authClient.PostAsync($"/api/admin/audio-editor/segments/{segment.Id}/publish", null);
+            Assert.Equal(HttpStatusCode.BadRequest, prematurePublish.StatusCode);
+
 
             // 8. Query Review Queue via API
             var queueRes = await authClient.GetAsync($"/api/admin/audio-editor/review-queue?surahNumber=1&status=Approved");

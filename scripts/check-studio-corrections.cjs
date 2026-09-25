@@ -25,7 +25,7 @@ let browser;
     await page.waitForFunction(() => typeof editorContext !== 'undefined' && editorContext?.ayahs?.length === 285, { timeout: 60000 });
     assert.match(await page.locator('#surahSelect option:checked').textContent(), /285/);
     const text = await page.evaluate(() => editorContext.ayahs[1].textWarsh);
-    assert.ok(text.includes('يُومِنُونَ'), 'Warsh comparison text expected');
+    assert.equal(text, '', 'Unqualified text must not be exposed');
     assert.equal(await page.evaluate(() => editorContext.ayahs[0].id), 0, 'No legacy AyahId binding');
     await page.waitForFunction(() => wavesurfer?.getDuration() > 10000, { timeout: 60000 });
     await page.evaluate(() => { wavesurfer.pause(); wavesurfer.setTime(14.321); });

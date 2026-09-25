@@ -4,7 +4,7 @@
     ViewData["Title"] = $"مصحف ورش — صفحة {Model.PageNumber}";
 }
 <link rel="stylesheet" href="~/css/warsh-pilot.css" asp-append-version="true" />
-<section id="warsh-pilot" data-initial-reference="@Model.Reference" data-preview-passage="@Model.PreviewPassage">
+<section id="warsh-pilot" data-page-number="@Model.PageNumber" data-initial-reference="@Model.Reference" data-preview-passage="@Model.PreviewPassage">
     <header class="pilot-heading">
         <div><h1>مصحف الجزائر الإلكتروني — ورش</h1><p>نسخة MARW الجديدة — 604 صفحات</p></div>
         <nav aria-label="صفحات المصحف" class="pilot-pages">
@@ -53,9 +53,24 @@
         <aside class="pilot-controls">
             <h2>الاستماع إلى الآية حسب الوجه</h2>
             @if(Model.PreviewPassage.HasValue){<p class="alert alert-warning">معاينة مسودة — الربط غير معتمد للنشر.</p>}
+            <label for="playback-mode" class="small mb-1">نمط القراءة</label>
+            <select id="playback-mode" class="form-select mb-2">
+                <option value="single">آية بآية — توقف بعد الآية</option>
+                <option value="continuous">قراءة متواصلة — انتقال تلقائي بين الصفحات</option>
+            </select>
             <select id="playback-wajh" class="form-select" aria-label="اختيار الوجه"><option value="">جميع الأوجه المتاحة</option></select>
-            <div id="playback-passages" class="my-2"></div>
-            <audio id="passage-player" controls preload="none"></audio>
+            <div id="playback-passages" class="my-2" hidden>
+                <label for="playback-segment">المقطع</label>
+                <select id="playback-segment" class="form-select"></select>
+            </div>
+            <div class="passage-controls my-3">
+                <p id="playback-description" class="small text-muted mb-2"></p>
+                <button id="passage-toggle" type="button" class="btn btn-success w-100" disabled aria-pressed="false">▶ تشغيل</button>
+                <label class="visually-hidden" for="passage-seek">موضع التشغيل داخل المقطع</label>
+                <input id="passage-seek" type="range" min="0" max="0" step="0.1" value="0" dir="ltr" disabled />
+                <div id="passage-time" class="small text-muted text-center" dir="ltr">00:00 / 00:00</div>
+            </div>
+            <audio id="passage-player" preload="metadata" hidden></audio>
             <p id="playback-message" role="status">اختر آية لعرض المقاطع المتاحة.</p>
             <h2>آيات الصفحة</h2>
             <div class="pilot-ayahs" role="group" aria-label="اختيار الآية">
@@ -68,30 +83,6 @@
             <p id="pilot-selection" role="status" aria-live="polite">لم تُحدَّد آية بعد</p>
             <label for="pilot-zoom">تكبير الصفحة</label>
             <input id="pilot-zoom" type="range" min="100" max="200" step="25" value="100" />
-            <button type="button" id="pilot-clear" class="btn btn-outline-secondary">إلغاء التحديد</button>
-            <div id="ayah-permalink-box" class="my-2" hidden>
-                <a id="ayah-permalink-btn" href="#" class="btn btn-sm btn-outline-primary w-100">
-                    🔗 فتح صفحة الآية المستقلة وتحميل التلاوة
-                </a>
-            </div>
-            @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Reviewer") || User.IsInRole("Annotator")))
-            {
-                <hr />
-                <h2>تسجيل السورة الأصلي (خاص بالتدقيق)</h2>
-                @if (Model.SourceAudios.Count > 0)
-                {
-                    @foreach (var source in Model.SourceAudios)
-                    {
-                        <p>سورة @Model.GetSurahName(source.Surah)</p>
-                        <audio controls preload="none" src="@source.Url" aria-label="تسجيل السورة @source.Surah"></audio>
-                    }
-                    <p class="small text-muted">تسجيل السورة كاملاً، غير متزامن مع الآية المحددة.</p>
-                }
-                else
-                {
-                    <p>تسجيل السورة غير متاح محلياً.</p>
-                }
-            }
             <div class="mt-3 p-2 bg-light rounded small text-muted">
                 <strong>اختصارات لوحة المفاتيح :</strong>
                 <div>← أو → : التنقل بين الصفحات والآيات</div>

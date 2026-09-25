@@ -26,3 +26,6 @@
     .pilot-controls { order: -1; }
     .pilot-heading { margin-bottom: 1rem; }
 }
+
+.passage-controls input[type=range] { accent-color: #0d5c46; }
+.passage-controls button { min-height: 44px; }

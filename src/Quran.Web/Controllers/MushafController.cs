@@ -52,64 +52,6 @@ public class MushafController : ControllerBase
         return Ok(regions);
     }
 
-    [HttpPost("/api/admin/mushaf/ayahs/{ayahId:long}/regions")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<AyahImageRegionDto>> CreateAyahRegion(long ayahId, [FromBody] CreateAyahRegionRequest request, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var req = request with { AyahId = ayahId };
-            var created = await _mushafService.CreateAyahRegionAsync(req, cancellationToken);
-            return Ok(created);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erreur lors de la création d'une région d'ayah");
-            return StatusCode(500, new { message = ex.Message });
-        }
-    }
-
-    [HttpPut("/api/admin/mushaf/ayah-regions/{id:long}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<AyahImageRegionDto>> UpdateAyahRegion(long id, [FromBody] UpdateAyahRegionRequest request, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var updated = await _mushafService.UpdateAyahRegionAsync(id, request, cancellationToken);
-            return Ok(updated);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erreur lors de la mise à jour d'une région {Id}", id);
-            return StatusCode(500, new { message = ex.Message });
-        }
-    }
-
-    [HttpDelete("/api/admin/mushaf/ayah-regions/{id:long}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteAyahRegion(long id, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _mushafService.DeleteAyahRegionAsync(id, cancellationToken);
-            return Ok(new { message = "Région supprimée avec succès." });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erreur lors de la suppression de la région {Id}", id);
-            return StatusCode(500, new { message = ex.Message });
-        }
-    }
-
-    [HttpPost("/api/admin/audio-segments/{segmentId:guid}/image-regions")]
     [HttpPost("/api/admin/mushaf/audio-segments/{segmentId:guid}/image-regions")]
     [Authorize(Roles = "Reviewer,Admin")]
     public async Task<ActionResult<AudioSegmentImageRegionDto>> CreateSegmentImageRegion(Guid segmentId, [FromBody] CreateSegmentImageRegionRequest request, CancellationToken cancellationToken)

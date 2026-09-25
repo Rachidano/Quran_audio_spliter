@@ -1,64 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Quran.Application.DTOs;
-using Quran.Application.Interfaces;
-
+using Quran.Infrastructure.Services;
 namespace Quran.Web.Pages;
-
-public class AyahModel : PageModel
+public class AyahModel(MarwPilotCorpus corpus) : PageModel
 {
-    private readonly IQuranReaderService _quranReaderService;
-    private readonly IMushafImageService _mushafService;
-
-    public AyahModel(IQuranReaderService quranReaderService, IMushafImageService mushafService)
+    public IActionResult OnGet(int surah, int ayah, string? wajh)
     {
-        _quranReaderService = quranReaderService;
-        _mushafService = mushafService;
-    }
-
-    [BindProperty(SupportsGet = true)]
-    public int Surah { get; set; } = 1;
-
-    [BindProperty(SupportsGet = true)]
-    public int Ayah { get; set; } = 1;
-
-    [BindProperty(SupportsGet = true)]
-    public string? Wajh { get; set; }
-
-    public SurahDto? SurahInfo { get; set; }
-    public AyahDto? AyahInfo { get; set; }
-    public RecitationDto? SelectedRecitation { get; set; }
-    public IReadOnlyList<AyahImageRegionDto> MushafRegions { get; set; } = new List<AyahImageRegionDto>();
-    public MushafPageDto? MushafPage { get; set; }
-    public string? MarwImageUrl { get; set; }
-    public int? MarwPageNumber { get; set; }
-
-    public int? PrevAyahNumber => Ayah > 1 ? Ayah - 1 : null;
-    public int? NextAyahNumber => (SurahInfo != null && Ayah < SurahInfo.AyahCount) ? Ayah + 1 : null;
-
-    public async Task<IActionResult> OnGetAsync(int? surah, int? ayah, CancellationToken cancellationToken)
-    {
-        if (surah.HasValue) Surah = surah.Value;
-        if (ayah.HasValue) Ayah = ayah.Value;
-
-        SurahInfo = await _quranReaderService.GetSurahByNumberAsync(Surah, cancellationToken);
-        if (SurahInfo == null)
-            return NotFound();
-
-        AyahInfo = await _quranReaderService.GetAyahAsync(Surah, Ayah, cancellationToken);
-        if (AyahInfo == null)
-            return NotFound();
-
-        if (!string.IsNullOrEmpty(Wajh))
-        {
-            SelectedRecitation = AyahInfo.Recitations.FirstOrDefault(r => string.Equals(r.WajhCode, Wajh, StringComparison.OrdinalIgnoreCase));
-        }
-        if (string.IsNullOrEmpty(Wajh)) SelectedRecitation = AyahInfo.Recitations.FirstOrDefault();
-        // CorpusAyah.Id must never be passed as a legacy Ayah.Id to the image service.
-        MarwPageNumber = AyahInfo.PageNumber;
-        if (MarwPageNumber > 0)
-            MarwImageUrl = $"/api/mushaf/marw-pilot/{Quran.Infrastructure.Services.MarwPilotCorpus.Revision}/pages/{MarwPageNumber}/image.png";
-
-        return Page();
+        var reference = $"{surah}:{ayah}";
+        var page = corpus.PageNumbers.FirstOrDefault(n => corpus.GetPage(n)!.Regions.Any(r => r.Reference == reference));
+        if (page == 0) return NotFound();
+        var url = $"/mushaf/warsh/page/{page}?Reference={reference}";
+        if (!string.IsNullOrEmpty(wajh)) url += "&wajh=" + Uri.EscapeDataString(wajh);
+        return Redirect(url);
     }
 }

@@ -21,26 +21,16 @@ public class AdminValidationService : IAdminValidationService
 
     public async Task<AdminDashboardDto> GetDashboardStatsAsync(CancellationToken cancellationToken = default)
     {
-        var totalSurahs = await _dbContext.Surahs.CountAsync(cancellationToken);
-        var totalAyahs = await _dbContext.Ayahs.CountAsync(cancellationToken);
-
-        var ayahsWithAudio = await _dbContext.Ayahs
-            .Where(a => a.Recitations.Any(r => r.IsPublished && r.Status == RecitationStatus.Published))
-            .CountAsync(cancellationToken);
-
+        var references = CanonicalAudioQueries.References(_dbContext);
+        var segments = CanonicalAudioQueries.Segments(_dbContext);
+        var publishedReferences = CanonicalAudioQueries.FullAyahReferences(_dbContext);
+        var totalSurahs = await references.Select(a => a.SurahNumber).Distinct().CountAsync(cancellationToken);
+        var totalAyahs = await references.CountAsync(cancellationToken);
+        var ayahsWithAudio = await references.CountAsync(a => publishedReferences.Contains(a.SurahNumber + ":" + a.AyahNumber), cancellationToken);
         var ayahsWithoutAudio = totalAyahs - ayahsWithAudio;
-
-        var pendingValidation = await _dbContext.Recitations
-            .Where(r => r.Status == RecitationStatus.Imported || r.Status == RecitationStatus.Segmented || r.Status == RecitationStatus.Reviewed)
-            .CountAsync(cancellationToken);
-
-        var published = await _dbContext.Recitations
-            .Where(r => r.IsPublished && r.Status == RecitationStatus.Published)
-            .CountAsync(cancellationToken);
-
-        var rejected = await _dbContext.Recitations
-            .Where(r => r.Status == RecitationStatus.Rejected)
-            .CountAsync(cancellationToken);
+        var pendingValidation = await segments.CountAsync(s => s.Status == AudioSegmentStatus.Draft || s.Status == AudioSegmentStatus.Reviewed, cancellationToken);
+        var published = await CanonicalAudioQueries.Published(_dbContext).CountAsync(cancellationToken);
+        var rejected = await segments.CountAsync(s => s.Status == AudioSegmentStatus.Rejected, cancellationToken);
 
         return new AdminDashboardDto(
             TotalSurahs: totalSurahs,

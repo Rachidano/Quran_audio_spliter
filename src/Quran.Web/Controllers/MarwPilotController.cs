@@ -7,6 +7,22 @@ namespace Quran.Web.Controllers;
 [Route("api/mushaf/marw-pilot")]
 public sealed class MarwPilotController(MarwPilotCorpus corpus) : ControllerBase
 {
+    [HttpGet("next")]
+    public IActionResult Next([FromQuery] string reference)
+    {
+        // Image corpus order is authoritative; continued ayat on two pages appear only once.
+        var seen = new HashSet<string>();
+        var found = false;
+        foreach (var pageNumber in corpus.PageNumbers)
+        foreach (var region in corpus.GetPage(pageNumber)!.Regions)
+        {
+            if (!seen.Add(region.Reference)) continue;
+            if (found) return Ok(new { reference = region.Reference, pageNumber });
+            if (region.Reference == reference) found = true;
+        }
+        return found ? NoContent() : NotFound();
+    }
+
     [HttpGet("pages/{pageNumber:int}")]
     public IActionResult Page(int pageNumber)
     {

@@ -36,12 +36,13 @@ public class SecurityAccessIntegrationTests : IClassFixture<QuranTestWebApplicat
         Assert.Contains("/Account/Login", response.Headers.Location?.ToString());
     }
 
-    [Fact]
-    public async Task AnonymousUser_AccessingAdminMushafRegionEditor_IsRedirectedToLogin()
+    [Theory]
+    [InlineData("/Admin/MushafRegionEditor/1")]
+    [InlineData("/Admin/CorpusMapping")]
+    [InlineData("/Admin/Validation")]
+    public async Task RetiredAdminPage_ReturnsNotFound(string path)
     {
-        var response = await _client.GetAsync("/Admin/MushafRegionEditor?pageNumber=1");
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Contains("/Account/Login", response.Headers.Location?.ToString());
+        Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync(path)).StatusCode);
     }
 
     [Fact]
@@ -156,19 +157,13 @@ public class SecurityAccessIntegrationTests : IClassFixture<QuranTestWebApplicat
         var adminRes = await authClient.GetAsync("/Admin");
         Assert.Equal(HttpStatusCode.OK, adminRes.StatusCode);
         var adminHtml = await adminRes.Content.ReadAsStringAsync();
-        Assert.Contains("لوحة التحكم", adminHtml);
+        Assert.Contains("لوحة المتابعة", adminHtml);
 
-        var mappingRes = await authClient.GetAsync("/Admin/CorpusMapping");
-        Assert.Equal(HttpStatusCode.OK, mappingRes.StatusCode);
-        var mappingHtml = await mappingRes.Content.ReadAsStringAsync();
-        Assert.Contains("مطابقة مراجع المصاحف", mappingHtml);
+        Assert.DoesNotContain("CorpusMapping", adminHtml);
+        Assert.DoesNotContain("MushafRegionEditor", adminHtml);
+        Assert.Equal(HttpStatusCode.NotFound, (await authClient.GetAsync("/Admin/CorpusMapping")).StatusCode);
+        Assert.Equal(HttpStatusCode.Gone, (await authClient.GetAsync("/api/admin/Recitations")).StatusCode);
+
     }
 
-    [Fact]
-    public async Task AnonymousUser_AccessingAdminCorpusMapping_IsRedirectedToLogin()
-    {
-        var response = await _client.GetAsync("/Admin/CorpusMapping");
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Contains("/Account/Login", response.Headers.Location?.ToString());
-    }
 }

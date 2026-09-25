@@ -46,16 +46,14 @@ public class QuranQualityAuditService : IQuranQualityAuditService
             var surahAnomalies = await AuditSurahConsistencyAsync(surah.Number, cancellationToken);
             allAnomalies.AddRange(surahAnomalies);
 
-            var ayahs = await _db.Ayahs
-                .Where(a => a.SurahId == surah.Id)
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
-
+            var references = await CanonicalAudioQueries.References(_db)
+                .Where(a => a.SurahNumber == surah.Number)
+                .Select(a => a.SurahNumber + ":" + a.AyahNumber).ToListAsync(cancellationToken);
+            var referenceSet = references.ToHashSet();
             var surahPrefix = $"{surah.Number}:";
-            var segments = await _db.AudioSegments
-                .Where(s => s.Reference != null && (s.Reference == surahPrefix || s.Reference.StartsWith(surahPrefix)))
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
+            var segments = await CanonicalAudioQueries.Segments(_db)
+                .Where(s => s.Reference != null && s.Reference.StartsWith(surahPrefix))
+                .AsNoTracking().ToListAsync(cancellationToken);
 
             var sourceKey = $"sources/{surah.Number:D3}/original.mp3";
             var sourceExists = await _storage.FileExistsAsync(sourceKey, cancellationToken);
@@ -73,36 +71,31 @@ public class QuranQualityAuditService : IQuranQualityAuditService
                 }
             }
 
-            var distinctAyahRefsWithAudio = segments
-                .Select(s => s.Reference)
-                .Where(r => !string.IsNullOrEmpty(r))
-                .Distinct()
-                .Count();
-
-            var publishedAyahsCount = await _db.Recitations
-                .Where(r => r.Ayah.SurahId == surah.Id && r.IsPublished && r.Status == RecitationStatus.Published)
-                .Select(r => r.AyahId)
-                .Distinct()
-                .CountAsync(cancellationToken);
+            var distinctAyahRefsWithAudio = segments.Where(s => s.SegmentType == AudioSegmentType.FullAyah
+                && s.Reference != null && referenceSet.Contains(s.Reference))
+                .Select(s => s.Reference).Distinct().Count();
+            var publishedReferences = await CanonicalAudioQueries.FullAyahReferences(_db)
+                .Where(r => r != null && r.StartsWith(surahPrefix)).ToListAsync(cancellationToken);
+            var publishedAyahsCount = publishedReferences.Count(r => r != null && referenceSet.Contains(r));
 
             var draftCount = segments.Count(s => s.Status == AudioSegmentStatus.Draft);
             var reviewedCount = segments.Count(s => s.Status == AudioSegmentStatus.Reviewed);
             var approvedCount = segments.Count(s => s.Status == AudioSegmentStatus.Approved);
             var publishedSegCount = segments.Count(s => s.Status == AudioSegmentStatus.Published);
 
-            totalAyahs += surah.AyahCount;
+            totalAyahs += references.Count;
             totalCoveredAyahs += distinctAyahRefsWithAudio;
             totalPublishedAyahs += publishedAyahsCount;
             totalSegments += segments.Count;
             totalPublishedSegments += publishedSegCount;
 
-            var coveragePct = surah.AyahCount > 0 ? (double)publishedAyahsCount / surah.AyahCount * 100.0 : 0.0;
+            var coveragePct = references.Count > 0 ? (double)publishedAyahsCount / references.Count * 100.0 : 0.0;
 
             surahCoverages.Add(new SurahQualityCoverageDto(
                 SurahNumber: surah.Number,
                 SurahNameArabic: surah.NameArabic,
                 SurahNameLatin: surah.NameLatin,
-                TotalAyahs: surah.AyahCount,
+                TotalAyahs: references.Count,
                 CoveredAyahs: distinctAyahRefsWithAudio,
                 PublishedAyahs: publishedAyahsCount,
                 DraftSegments: draftCount,
@@ -142,7 +135,6 @@ public class QuranQualityAuditService : IQuranQualityAuditService
         var anomalies = new List<QualityAnomalyDto>();
 
         var surah = await _db.Surahs
-            .Include(s => s.Ayahs)
             .FirstOrDefaultAsync(s => s.Number == surahNumber, cancellationToken);
 
         if (surah == null)
@@ -179,16 +171,26 @@ public class QuranQualityAuditService : IQuranQualityAuditService
 
         // 2. Contrôle des segments audio
         var surahPrefix = $"{surahNumber}:";
-        var segments = await _db.AudioSegments
+        var segments = await CanonicalAudioQueries.Segments(_db)
+            .Include(s => s.SourceAudio).ThenInclude(source => source.Surah)
             .Include(s => s.PublishedAudioAsset)
-            .Where(s => s.Reference != null && (s.Reference == surahPrefix || s.Reference.StartsWith(surahPrefix)))
-            .OrderBy(s => s.StartMs)
+            .Where(s => s.SourceAudio != null ? s.SourceAudio.Surah.Number == surahNumber : s.Reference != null && s.Reference.StartsWith(surahPrefix))
+            .OrderBy(s => s.SourceAudioId).ThenBy(s => s.StartMs)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
+
+        var references = (await CanonicalAudioQueries.References(_db)
+            .Where(a => a.SurahNumber == surahNumber)
+            .Select(a => a.SurahNumber + ":" + a.AyahNumber).ToListAsync(cancellationToken)).ToHashSet();
 
         AudioSegment? previousSegment = null;
         foreach (var seg in segments)
         {
+            if (seg.Reference == null || !references.Contains(seg.Reference))
+                anomalies.Add(new QualityAnomalyDto(QualityAnomalySeverity.Error, QualityAnomalyType.UnmappedReference,
+                    surahNumber, seg.Reference, "مرجع المقطع غير موجود في مصحف MARW لهذه السورة",
+                    $"المقطع: {seg.Id}", $"/Admin/AudioEditor/{surahNumber}?segmentId={seg.Id}", "مراجعة المقطع"));
+
             // Vérification de la validité intrinsèque des bornes
             if (seg.StartMs < 0 || seg.EndMs <= seg.StartMs)
             {
@@ -199,13 +201,13 @@ public class QuranQualityAuditService : IQuranQualityAuditService
                     AyahReference: seg.Reference,
                     Description: $"توقيتات المقطع غير صالحة: Start={seg.StartMs}ms, End={seg.EndMs}ms",
                     Details: $"المقطع المعرف بالرمز {seg.Id}",
-                    SuggestedActionUrl: $"/Admin/AudioEditor?surah={surahNumber}&segmentId={seg.Id}",
+                    SuggestedActionUrl: $"/Admin/AudioEditor/{surahNumber}?segmentId={seg.Id}",
                     ActionLabel: "تصحيح في المحرر"
                 ));
             }
 
             // Contrôle des trous et chevauchements temporels
-            if (previousSegment != null)
+            if (previousSegment != null && previousSegment.SourceAudioId == seg.SourceAudioId)
             {
                 var diff = seg.StartMs - previousSegment.EndMs;
                 if (diff > 500)
@@ -219,7 +221,7 @@ public class QuranQualityAuditService : IQuranQualityAuditService
                         AyahReference: seg.Reference,
                         Description: $"فاصل زمني غير مسجل بين الآيات: {secStr} ثانية",
                         Details: $"بين المقطع السابق (نهاية {previousSegment.EndMs}ms) والمقطع الحالي (بداية {seg.StartMs}ms)",
-                        SuggestedActionUrl: $"/Admin/AudioEditor?surah={surahNumber}&timeMs={previousSegment.EndMs}",
+                        SuggestedActionUrl: $"/Admin/AudioEditor/{surahNumber}?timeMs={previousSegment.EndMs}",
                         ActionLabel: "فحص في المحرر"
                     ));
                 }
@@ -233,7 +235,7 @@ public class QuranQualityAuditService : IQuranQualityAuditService
                         AyahReference: seg.Reference,
                         Description: $"تداخل زمني بين مقطعين متتاليين: {(-diff)} ms",
                         Details: $"المقطع السابق ينتهي عند {previousSegment.EndMs}ms والمقطع الحالي يبدأ عند {seg.StartMs}ms",
-                        SuggestedActionUrl: $"/Admin/AudioEditor?surah={surahNumber}&segmentId={seg.Id}",
+                        SuggestedActionUrl: $"/Admin/AudioEditor/{surahNumber}?segmentId={seg.Id}",
                         ActionLabel: "تدقيق التداخل"
                     ));
                 }
@@ -243,9 +245,8 @@ public class QuranQualityAuditService : IQuranQualityAuditService
             if (seg.Status == AudioSegmentStatus.Published || seg.Status == AudioSegmentStatus.Rendered)
             {
                 var storageKey = seg.PublishedAudioAsset?.StorageKey;
-                if (!string.IsNullOrEmpty(storageKey))
                 {
-                    var assetExists = await _storage.FileExistsAsync(storageKey, cancellationToken);
+                    var assetExists = !string.IsNullOrEmpty(storageKey) && await _storage.FileExistsAsync(storageKey, cancellationToken);
                     if (!assetExists)
                     {
                         anomalies.Add(new QualityAnomalyDto(
@@ -255,60 +256,17 @@ public class QuranQualityAuditService : IQuranQualityAuditService
                             AyahReference: seg.Reference,
                             Description: $"الملف الصوتي المقتطع مفقود على القرص رغم تسجيل حالته كـ {seg.Status}",
                             Details: $"المسار المسجل: {storageKey}",
-                            SuggestedActionUrl: $"/Admin/ReviewQueue?surah={surahNumber}",
+                            SuggestedActionUrl: $"/Admin/ReviewQueue?SurahNumber={surahNumber}",
                             ActionLabel: "إعادة التصيير"
                         ));
                     }
                 }
             }
 
-            previousSegment = seg;
-        }
-
-        // 3. Contrôle des correspondances de décompte (Corpus Reference Mappings)
-        var unconfirmedMappings = await _db.ReferenceMappings
-            .Include(m => m.SourceCorpus)
-            .Include(m => m.TargetCorpus)
-            .Where(m => m.SourceCorpus!.Code == "warsh-pilot-historical" && m.TargetCorpus!.Code == "marw-newMushaf" && m.SourceReference.StartsWith(surahPrefix) && m.ReviewStatus != "Approved")
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        foreach (var mapping in unconfirmedMappings)
-        {
-            anomalies.Add(new QualityAnomalyDto(
-                Severity: QualityAnomalySeverity.Warning,
-                Type: QualityAnomalyType.UnmappedReference,
-                SurahNumber: surahNumber,
-                AyahReference: mapping.SourceReference,
-                Description: $"المرجعية {mapping.SourceReference} غير مؤكدة التطابق في المصحف الجديد",
-                Details: $"حالة المراجعة: {mapping.ReviewStatus}, الوصف: {mapping.DifferenceDescription}",
-                SuggestedActionUrl: $"/Admin/CorpusMapping?surah={surahNumber}",
-                ActionLabel: "مراجعة المطابقة"
-            ));
-        }
-
-        // 4. Contrôle de la géométrie MARW (AyahImageRegions)
-        var ayahIds = surah.Ayahs.Select(a => a.Id).ToList();
-        var regions = await _db.AyahImageRegions
-            .Where(r => ayahIds.Contains(r.AyahId))
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        var coveredAyahIds = regions.Select(r => r.AyahId).Distinct().ToHashSet();
-        var ayahsMissingRegions = surah.Ayahs.Where(a => !coveredAyahIds.Contains(a.Id)).ToList();
-
-        if (ayahsMissingRegions.Count > 0)
-        {
-            anomalies.Add(new QualityAnomalyDto(
-                Severity: QualityAnomalySeverity.Info,
-                Type: QualityAnomalyType.MissingGeometryRegion,
-                SurahNumber: surahNumber,
-                AyahReference: $"{surahNumber}:{ayahsMissingRegions[0].AyahNumber}",
-                Description: $"{ayahsMissingRegions.Count} آية بدون مناطق تحديد رسومي في المصحف",
-                Details: $"الآيات: {string.Join(", ", ayahsMissingRegions.Take(5).Select(a => a.AyahNumber))}{(ayahsMissingRegions.Count > 5 ? "..." : "")}",
-                SuggestedActionUrl: $"/Admin/CorpusMapping?surah={surahNumber}",
-                ActionLabel: "فحص التقسيم"
-            ));
+            // Keep the furthest covered boundary: nested portions must not invent a gap.
+            if (seg.StartMs >= 0 && seg.EndMs > seg.StartMs &&
+                (previousSegment == null || previousSegment.SourceAudioId != seg.SourceAudioId || seg.EndMs > previousSegment.EndMs))
+                previousSegment = seg;
         }
 
         return anomalies;

@@ -476,6 +476,9 @@ public partial class AudioEditorService : IAudioEditorService
         if (segment == null)
             throw new KeyNotFoundException($"Segment {id} introuvable.");
 
+        if (segment.Status != AudioSegmentStatus.Reviewed)
+            throw new InvalidOperationException("Le segment doit être soumis à la revue avant approbation.");
+
         if (segment.StartMs < 0 || segment.EndMs <= segment.StartMs)
             throw new InvalidOperationException("Les limites temporelles du segment sont invalides.");
 
@@ -607,20 +610,8 @@ public partial class AudioEditorService : IAudioEditorService
         if (segment.WajhId.HasValue && segment.Wajh?.ReviewStatus != "Approved")
             throw new InvalidOperationException("Le wajh doit être approuvé dans le référentiel avant publication.");
 
-        if (segment.Status is not (AudioSegmentStatus.Approved or AudioSegmentStatus.Rendered))
-            throw new InvalidOperationException("Valider et rendre le segment avant publication.");
-
-        if (segment.PublishedAudioAsset == null || segment.Status != AudioSegmentStatus.Rendered)
-        {
-            // Rendre le segment au préalable
-            await RenderSegmentAsync(id, userId, cancellationToken);
-            segment = await _db.AudioSegments
-                .Include(s => s.SourceAudio)
-                .Include(s => s.Ayah).ThenInclude(a => a.Surah)
-                .Include(s => s.Wajh)
-                .Include(s => s.PublishedAudioAsset)
-                .FirstAsync(s => s.Id == id, cancellationToken);
-        }
+        if (segment.Status != AudioSegmentStatus.Rendered || segment.PublishedAudioAsset == null)
+            throw new InvalidOperationException("Le segment doit être approuvé puis rendu avant publication.");
 
         var workingPhysical = _storage.GetPhysicalPath(segment.PublishedAudioAsset!.StorageKey);
         if (!File.Exists(workingPhysical))
@@ -758,7 +749,7 @@ public partial class AudioEditorService : IAudioEditorService
 
         if (surahNumber.HasValue)
         {
-            query = query.Where(s => s.Ayah != null && s.Ayah.Surah != null && s.Ayah.Surah.Number == surahNumber.Value);
+            query = query.Where(s => s.SourceAudio != null && s.SourceAudio.Surah != null && s.SourceAudio.Surah.Number == surahNumber.Value);
         }
 
         if (status.HasValue)

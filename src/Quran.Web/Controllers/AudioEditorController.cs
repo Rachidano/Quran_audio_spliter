@@ -162,15 +162,12 @@ public class AudioEditorController : ControllerBase
             var references = await db.CorpusAyahs.AsNoTracking()
                 .Where(a => a.Corpus!.Code == "marw-newMushaf" && a.SurahNumber == surahNumber)
                 .OrderBy(a => a.AyahNumber).ToListAsync(cancellationToken);
-            var candidate = await db.CorpusAyahs.AsNoTracking()
-                .Where(a => a.Corpus!.Code == "qpc-warsh-v10-candidate" && a.SurahNumber == surahNumber)
-                .ToDictionaryAsync(a => a.AyahNumber, cancellationToken);
             // Zero is not a historical AyahId: the client must save null for that FK.
             context = context with {
                 AyahCount = references.Count,
                 Ayahs = references.Select(a => new AyahEditorDto(0, context.SourceAudio.SurahId,
                     a.AyahNumber, a.NumberInQuran,
-                    candidate.TryGetValue(a.AyahNumber, out var text) ? text.TextArabic : "النص الرقمي قيد التحقق؛ المرجع هو صورة المصحف.",
+                    string.Empty,
                     new List<AyahWordDto>())).ToList()
             };
             return Ok(context);
