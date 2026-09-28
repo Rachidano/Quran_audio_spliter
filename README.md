@@ -1,7 +1,7 @@
 # القرآن الكريم — رواية ورش عن نافع (منصة التلاوة والمصحف المصور)
 ## Quran Warsh Web Platform (.NET 9)
 
-Plateforme web de référence pour la récitation du Saint Coran selon la رواية ورش عن نافع (récitation du Cheikh Saber Abdelhakam), intégrant la synchronisation audio-visuelle fidèle sur le مصحف الوزارة المغربية (MARW, révision `20260913-full`, 604 pages, 6 214 ayat), la gestion documentaire des أوجه (Al-Azraq et Al-Asbahani), un studio de découpage audio assisté, et un circuit éditorial complet (Draft → Reviewed → Approved → Rendered → Published).
+Plateforme web de référence pour la récitation du Saint Coran selon la رواية ورش عن نافع (récitation du Cheikh Saber Abdelhakam), intégrant la synchronisation audio-visuelle fidèle sur le مصحف الوزارة الجزائرية (MARW, révision `20260913-full`, 604 pages, 6 214 ayat), la gestion documentaire des أوجه (Al-Azraq et Al-Asbahani), un studio de découpage audio assisté, et un circuit éditorial complet (Draft → Reviewed → Approved → Rendered → Published).
 
 ---
 
