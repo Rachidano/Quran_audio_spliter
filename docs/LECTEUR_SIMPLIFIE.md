@@ -19,3 +19,15 @@ L’enchaînement conserve le وجه du passage courant, y compris « non défin
 Le changement de page remplace l’image, les régions, les boutons d’ayat et les liens de navigation, en conservant le même élément audio. L’URL et la sélection sont mises à jour. Un choix manuel ou le passage au mode individuel annule une transition en cours. Les restrictions d’autoplay du navigateur peuvent demander un clic supplémentaire ; un message l’indique.
 
 Vérification reproductible : `node scripts/check-continuous-playback.cjs` (site local lancé et audio publié pour 2:1). Contrôle du vrai audio pour l’arrêt individuel ; réponses audio de test interceptées uniquement dans le navigateur pour le passage 2:4 → 2:5/page 3, reprise automatique et arrêt au وجه absent. Le fichier MP3 et les pages MARW sont réels ; aucune écriture de données. Vérification serveur de 2:285 → 3:1, fin 114:6, référence invalide.
+
+## Téléchargements — 26 septembre 2026
+
+Petit bouton ⬇ à côté de lecture/pause :
+
+- Mode individuel : fichier dérivé de l’ayah complète sélectionnée, publiée et appartenant au corpus MARW. Une portion, une répétition, un brouillon, un وجه non approuvé ou un fichier absent ne peuvent pas être téléchargés comme une ayah complète.
+- Mode continu : enregistrement original complet de la sourate sélectionnée, avec ses éventuels أوجه et répétitions. Ce fichier n’est pas un assemblage filtré selon le وجه choisi dans le lecteur ; la légende l’indique.
+- Le téléchargement complet est explicitement public sur `/audio/downloads/surah/{number}`, avec numéro 1–114, source enregistrée en base et chemin fixé `sources/NNN/original.mp3`. Les autres accès aux fichiers sources restent privés.
+- Pièces jointes MP3 avec noms déterministes, traitement HTTP Range et diffusion par fichier, sans chargement complet en mémoire. Les droits de publication de l’ayah sont revérifiés à chaque requête.
+- Disponibilité et destination recalculées à chaque choix d’ayah/passage/mode ; aucune ancienne URL d’ayah conservée si le nouveau passage est indisponible.
+
+Vérifications : 6 tests du contrôleur réussis. `node scripts/check-audio-downloads.cjs` vérifie l’attachement de l’ayah (clic réel), les réponses 206 et les premiers octets du fichier complet, le changement de mode et le maintien de la protection de l’ancien accès source. `node scripts/check-continuous-playback.cjs` réussit encore. Aucune annotation ou publication modifiée par ces contrôles.

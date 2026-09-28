@@ -188,7 +188,7 @@ public class QuranQualityAuditService : IQuranQualityAuditService
         {
             if (seg.Reference == null || !references.Contains(seg.Reference))
                 anomalies.Add(new QualityAnomalyDto(QualityAnomalySeverity.Error, QualityAnomalyType.UnmappedReference,
-                    surahNumber, seg.Reference, "مرجع المقطع غير موجود في مصحف MARW لهذه السورة",
+                    surahNumber, seg.Reference, "مرجع المقطع غير موجود في مصحف مصدرنا الرسمي لهذه السورة",
                     $"المقطع: {seg.Id}", $"/Admin/AudioEditor/{surahNumber}?segmentId={seg.Id}", "مراجعة المقطع"));
 
             // Vérification de la validité intrinsèque des bornes

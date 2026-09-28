@@ -37,7 +37,7 @@ public class AnnotationService : IAnnotationService
             var reference = (request.Reference ?? "").Split(':');
             if (reference.Length != 2 || !int.TryParse(reference[0], out var sn) || !int.TryParse(reference[1], out var an)
                 || !await _db.CorpusAyahs.AnyAsync(a => a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode && a.SurahNumber == sn && a.AyahNumber == an, ct))
-                throw new ArgumentException("مرجع MARW غير صالح.");
+                throw new ArgumentException("مرجع مصدرنا الرسمي غير صالح.");
             var sourceSurah = await _db.Surahs.Where(s => s.Id == sourceAudio.SurahId).Select(s => s.Number).FirstOrDefaultAsync(ct);
             if (sourceSurah != sn) throw new ArgumentException("المرجع لا ينتمي إلى سورة المصدر الصوتي.");
             request = request with { AyahId = null, SourceHash = sourceAudio.ChecksumSha256 };
@@ -194,7 +194,7 @@ public class AnnotationService : IAnnotationService
             if (partsForValidation.Length != 2 || !int.TryParse(partsForValidation[0], out var sn) || !int.TryParse(partsForValidation[1], out var an))
                 throw new ArgumentException("مرجع الآية غير صالح.");
             if (!await _db.CorpusAyahs.AnyAsync(a => a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode && a.SurahNumber == sn && a.AyahNumber == an, ct))
-                throw new ArgumentException("الآية غير موجودة في مصحف MARW.");
+                throw new ArgumentException("الآية غير موجودة في مصحف مصدرنا الرسمي.");
             nextCanonical = await _db.CorpusAyahs.Where(a => a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode && a.SurahNumber == sn && a.AyahNumber > an)
                 .OrderBy(a => a.AyahNumber).FirstOrDefaultAsync(ct);
         }
@@ -305,31 +305,40 @@ public class AnnotationService : IAnnotationService
 
     public async Task<AudioSegmentDto> CaptureRepeatAsync(CaptureRepeatRequest request, string userId, CancellationToken ct = default)
     {
-        var target = await _db.AudioSegments
-            .FirstOrDefaultAsync(s => s.Id == request.TargetSegmentId, ct);
+        var target = request.TargetSegmentId.HasValue ? await _db.AudioSegments
+            .FirstOrDefaultAsync(s => s.Id == request.TargetSegmentId, ct) : null;
 
-        if (target == null)
+        if (request.TargetSegmentId.HasValue && target == null)
             throw new ArgumentException("المقطع المستهدف للتكرار غير موجود.");
-        if (target.SourceAudioId != request.SourceAudioId)
+        if (target != null && target.SourceAudioId != request.SourceAudioId)
             throw new ArgumentException("يجب أن يكون التكرار من المصدر الصوتي نفسه.");
 
-        if (request.StartMs < target.StartMs)
+        if (target != null && request.StartMs < target.StartMs)
             throw new ArgumentException("بداية التكرار لا يمكن أن تسبق بداية المقطع الأصلي.");
+        if (request.Extent is not ("Unspecified" or "FullAyah" or "PartialAyah")
+            || request.Observation is not ("Unqualified" or "SameObserved" or "DifferentObserved"))
+            throw new ArgumentException("وصف التكرار غير صالح.");
+        var reference = request.TargetReference ?? target?.Reference;
+        if (string.IsNullOrWhiteSpace(reference) || (target != null && reference != target.Reference))
+            throw new ArgumentException("اختر الآية المستهدفة بالتكرار بما يطابق المقطع الأصلي.");
+        var edition = request.Edition ?? target?.Edition;
+        if (target == null && edition != MarwPilotCorpus.EditionCode)
+            throw new ArgumentException("اختر مرجعاً من مصدرنا الرسمي.");
 
         var saveReq = new SaveOccurrenceRequest(
             null,
             request.SourceAudioId,
             request.StartMs,
             request.EndMs,
-            target.Reference,
-            target.AyahId,
+            reference,
+            target?.AyahId,
             request.WajhId,
-            AudioSegmentType.Repetition,
-            target.Id,
-            request.Notes ?? $"تكرار للآية {target.Reference}",
-            request.Edition ?? target.Edition,
-            request.SourceHash ?? target.SourceHash,
-            null,
+            request.Extent == "FullAyah" ? AudioSegmentType.FullAyah : request.Extent == "PartialAyah" ? AudioSegmentType.PartialAyah : AudioSegmentType.Repetition,
+            target?.Id,
+            request.Notes ?? $"تكرار للآية {reference}",
+            edition,
+            request.SourceHash ?? target?.SourceHash,
+            System.Text.Json.JsonSerializer.Serialize(new { kind = "repetition", extent = request.Extent, observation = request.Observation }),
             null
         );
 

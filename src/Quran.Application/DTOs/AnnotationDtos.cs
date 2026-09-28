@@ -44,13 +44,16 @@ public record CaptureEndAyahResult(
 
 public record CaptureRepeatRequest(
     Guid SourceAudioId,
-    Guid TargetSegmentId,
+    Guid? TargetSegmentId,
     long StartMs,
     long EndMs,
     int? WajhId,
     string? Notes,
     string? Edition,
-    string? SourceHash
+    string? SourceHash,
+    string? TargetReference = null,
+    string Extent = "Unspecified",
+    string Observation = "Unqualified"
 );
 
 public record AnnotationSessionDto(

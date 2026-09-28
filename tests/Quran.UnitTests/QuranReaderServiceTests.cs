@@ -73,9 +73,67 @@ public class QuranReaderServiceTests
         Assert.Equal(285, ayahs.Count);
         Assert.All(ayahs, a => Assert.Empty(a.TextWarsh));
         Assert.Single(await reader.SearchAsync("2:4"));
-        Assert.Empty(await reader.SearchAsync("UNQUALIFIED"));
+        var textResult = Assert.Single(await reader.SearchAsync("UNQUALIFIED"));
+        Assert.True(textResult.IsProvisional);
+        Assert.Equal("UNQUALIFIED", textResult.TextWarsh);
+        Assert.Empty(textResult.MatchedText);
         Assert.Empty(await reader.SearchAsync("2:286"));
         Assert.Empty((await reader.SearchAsync("2:4")).Single().TextWarsh);
         Assert.Equal(286, await db.CorpusAyahs.CountAsync());
+    }
+    [Fact]
+    public async Task TextSearch_NormalizesArabicAndReturnsOnlyCanonicalReferences()
+    {
+        using var db = CreateInMemoryDbContext(Guid.NewGuid().ToString());
+        db.Surahs.Add(new Quran.Domain.Entities.Surah { Number = 1, NameArabic = "test", NameLatin = "test" });
+        var canonical = new Quran.Domain.Entities.QuranCorpus { Code = "marw-newMushaf", NameArabic = "test", CountingSystem = "test", Provenance = "fixture" };
+        var candidate = new Quran.Domain.Entities.QuranCorpus { Code = "qpc-warsh-v10-candidate", NameArabic = "test", CountingSystem = "test", Provenance = "fixture" };
+        for (var n = 1; n <= 2; n++) db.CorpusAyahs.Add(new Quran.Domain.Entities.CorpusAyah { Corpus = canonical, SurahNumber = 1, AyahNumber = n, PageNumberHint = 1, TextArabic = "placeholder", SearchText = "" });
+        db.CorpusAyahs.AddRange(
+            new Quran.Domain.Entities.CorpusAyah { Corpus = candidate, SurahNumber = 1, AyahNumber = 1, TextArabic = "اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ", SearchText = "", PageNumberHint = 999 },
+            new Quran.Domain.Entities.CorpusAyah { Corpus = candidate, SurahNumber = 1, AyahNumber = 2, TextArabic = "ذَٰلِكَ اَ۬لْكِتَٰبُ يُومِنُونَ", SearchText = "" },
+            new Quran.Domain.Entities.CorpusAyah { Corpus = candidate, SurahNumber = 1, AyahNumber = 99, TextArabic = "الحمد لله", SearchText = "" });
+        await db.SaveChangesAsync();
+        var reader = new QuranReaderService(db);
+        foreach (var query in new[] { "الحمد لله", "  الْحَمْدُ   لِلَّهِ ", "الحــمد", "العالمين" })
+        {
+            var result = Assert.Single(await reader.SearchAsync(query));
+            Assert.Equal(1, result.AyahNumber);
+            Assert.Equal(1, result.PageNumber); // Always MARW page, never candidate page.
+            Assert.True(result.IsProvisional);
+            Assert.Equal("اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ", result.TextWarsh);
+        }
+        Assert.Equal(2, Assert.Single(await reader.SearchAsync("يؤمنون")).AyahNumber);
+        Assert.Equal(2, Assert.Single(await reader.SearchAsync("ذلك الكتاب")).AyahNumber);
+        Assert.Empty(await reader.SearchAsync("الكتاب ذلك"));
+        Assert.False(Assert.Single(await reader.SearchAsync("١:٢")).IsProvisional);
+        Assert.Empty(await reader.SearchAsync("َُِ"));
+        Assert.Empty(await reader.SearchAsync("%_"));
+        Assert.Empty(await reader.SearchAsync(new string('ا', 201)));
+        Assert.Empty(await reader.SearchAsync("الحمد", 0));
+    }
+
+    [Theory]
+    [InlineData("اللَّهُ لَا", true)]
+    [InlineData("قبل الله لا بعد", true)]
+    [InlineData("الله الذين", false)]
+    [InlineData("الله لهم", false)]
+    [InlineData("الله ثم لا", false)]
+    [InlineData("لا الله", false)]
+    [InlineData("بالله لا", false)]
+    public async Task MultiwordSearch_RequiresWholeConsecutiveWords(string text, bool expected)
+    {
+        // Synthetic search fixtures, not source Quran text.
+        using var db = CreateInMemoryDbContext(Guid.NewGuid().ToString());
+        db.Surahs.Add(new Quran.Domain.Entities.Surah { Number = 2, NameArabic = "test", NameLatin = "test" });
+        foreach (var code in new[] { "marw-newMushaf", "qpc-warsh-v10-candidate" })
+            db.CorpusAyahs.Add(new Quran.Domain.Entities.CorpusAyah {
+                Corpus = new Quran.Domain.Entities.QuranCorpus { Code = code, NameArabic = "test", CountingSystem = "test", Provenance = "fixture" },
+                SurahNumber = 2, AyahNumber = 1, TextArabic = text, SearchText = ""
+            });
+        await db.SaveChangesAsync();
+        var results = await new QuranReaderService(db).SearchAsync("  الله   لا  ");
+        Assert.Equal(expected ? 1 : 0, results.Count);
+        if (expected) Assert.Equal(text, results[0].TextWarsh);
     }
 }

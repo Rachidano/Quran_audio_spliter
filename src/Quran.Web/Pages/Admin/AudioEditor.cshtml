@@ -42,7 +42,7 @@
             <span><strong>الحالة:</strong> <span id="infoStatus" class="badge bg-secondary">—</span></span>
         </div>
         <div class="mt-1 mt-md-0">
-            <span class="text-muted">مفاتيح الاختصار: <kbd>Space</kbd> تشغيل/إيقاف | <kbd>F7</kbd> تحديد البداية | <kbd>F8</kbd> أو <kbd>Enter</kbd> إنهاء الآية | <kbd>F9</kbd> إنهاء التكرار | <kbd>Ctrl+Z</kbd> تراجع</span>
+            <span class="text-muted">مفاتيح الاختصار: <kbd>Space</kbd> تشغيل/إيقاف | <kbd>F7</kbd> تحديد البداية | <kbd>F8</kbd> أو <kbd>Enter</kbd> إنهاء الآية | <kbd>F9</kbd> حفظ المقطع المُعاد | <kbd>Ctrl+Z</kbd> تراجع</span>
         </div>
     </div>
 
@@ -63,10 +63,14 @@
                     <div class="bg-light p-3 rounded-3 border mb-3 text-center position-relative">
                         <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                             <span class="badge bg-success fs-6" id="currentAyahBadge">سورة @Model.SurahNumber — الآية 1</span>
-                            <span class="text-muted small" id="ayahCorpusStatus">مرجع MARW المعتمد</span>
+                            <span class="text-muted small" id="ayahCorpusStatus">مرجع مصدرنا الرسمي</span>
                         </div>
-                        <p class="small text-muted mb-0">راجع الآية في صورة المصحف المقابلة؛ لا يُعرض نص قرآني معاد كتابته.</p>
+                        <label for="currentAyahSelect" class="form-label fw-bold">اختر الآية الموافقة للمقطع</label>
+                        <select id="currentAyahSelect" class="form-select mb-2" onchange="selectCurrentAyah(this.value)" aria-describedby="currentAyahHelp" disabled></select>
+                        <p id="currentAyahHelp" class="small text-muted mb-0">اختر رقم الآية ثم حدّد بداية المقطع ونهايته. تغيير الآية يحافظ على الموضع الصوتي والبداية المحددة؛ ويُحفظ الاختيار مع المقطع عند إنهائه. راجع التظليل في صورة المصحف.</p>
                     </div>
+
+
 
                     <!-- العدادات الزمنية الدقيقة (LTR) -->
                     <div class="row g-2 mb-3 text-center">
@@ -116,12 +120,12 @@
                         </button>
 
                         <div class="row g-2">
-                            <!-- 2. إنهاء التكرار -->
+                            <!-- 2. حفظ المقطع المُعاد -->
                             <div class="col-md-7">
-                                <button id="btnFinishRepeat" class="btn btn-warning w-100 py-2 fw-bold text-dark d-flex align-items-center justify-content-center gap-2" onclick="onFinishRepeatClicked()" disabled>
+                                <button id="btnFinishRepeat" class="btn btn-warning w-100 py-2 fw-bold text-dark d-flex align-items-center justify-content-center gap-2" onclick="onFinishRepeatClicked()" title="حفظ المقطع من البداية المحددة إلى موضع المؤشر الحالي، وربطه بالآية المستهدفة دون الانتقال إلى آية أخرى (F9)" disabled>
                                     <span>🔁</span>
-                                    <span>إنهاء التكرار</span>
-                                    <span class="small badge bg-dark text-warning" id="repeatTargetLabel">الهدف: لا يوجد</span>
+                                    <span>حفظ المقطع المُعاد</span>
+                                    <span class="small badge bg-dark text-warning" id="repeatTargetLabel">الآية المستهدفة: لا يوجد</span>
                                     <span class="badge bg-dark-subtle text-dark ms-1 font-monospace">F9</span>
                                 </button>
                             </div>
@@ -171,12 +175,12 @@
             </div>
         </div>
 
-        <!-- المعاينة الحية لمصحف MARW مع التظليل الجغرافي للآية -->
+        <!-- المعاينة الحية لمصحف مصدرنا الرسمي مع التظليل الجغرافي للآية -->
         <div class="col-lg-5">
             <div class="card shadow-sm border h-100">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
                     <h2 class="h6 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
-                        <span>📖</span> مصحف ورش المعتمد (MARW) — صفحة <span id="marwPageNumDisplay">2</span>
+                        <span>📖</span> مصحف ورش — مصدرنا الرسمي — صفحة <span id="marwPageNumDisplay">2</span>
                     </h2>
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-secondary" onclick="changeMarwPage(-1)">السابقة</button>
@@ -201,7 +205,7 @@
                     </div>
                 </div>
                 <div class="card-footer bg-light py-1 px-3 d-flex justify-content-between align-items-center small text-muted">
-                    <span id="marwCoordsInfo">الموضع: مطابق لبيانات MARW المعتمدة</span>
+                    <span id="marwCoordsInfo">الموضع: مطابق لبيانات مصدرنا الرسمي</span>
                     <a id="marwFullPageLink" href="/mushaf/page/2" target="_blank" class="text-success text-decoration-none">عرض الصفحة كاملة ↗</a>
                 </div>
             </div>
@@ -213,11 +217,22 @@
         <div class="accordion-item border-0">
             <h2 class="accordion-header" id="headingAdvanced">
                 <button class="accordion-button collapsed bg-light fw-bold text-dark py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced" aria-expanded="false" aria-controls="collapseAdvanced">
-                    <span>🎛️</span> <span class="ms-2">الخيارات المتقدمة، استوديو WaveSurfer والتحكم في الأوجه والمقاطع الجزئية</span>
+                    <span>🎛️</span> <span class="ms-2">الخيارات المتقدمة، التكرارات والأوجه والمقاطع الجزئية والموجة الصوتية</span>
                 </button>
             </h2>
             <div id="collapseAdvanced" class="accordion-collapse collapse" aria-labelledby="headingAdvanced" data-bs-parent="#advancedAccordion">
                 <div class="accordion-body p-3 bg-white">
+                    <fieldset class="border border-warning rounded p-3 mb-3" id="repeatPanel">
+                        <legend class="float-none w-auto px-2 fs-6 fw-bold">تكرار / وجه آخر</legend>
+                        <div class="row g-2">
+                            <div class="col-sm-6"><label for="repeatAyahSelect" class="form-label">الآية المستهدفة بالتكرار</label><select id="repeatAyahSelect" class="form-select" onchange="updateRepeatTargetLabel()"></select></div>
+                            <div class="col-sm-6"><label for="repeatExtent" class="form-label">ما الذي أعاده القارئ؟</label><select id="repeatExtent" class="form-select"><option value="">— اختر —</option><option value="FullAyah">الآية كاملة</option><option value="PartialAyah">جزء من الآية</option></select></div>
+                            <div class="col-sm-6"><label for="repeatWajhSelect" class="form-label">وجه التكرار</label><select id="repeatWajhSelect" class="form-select"><option value="">لم يُحدَّد الوجه</option></select></div>
+                            <div class="col-sm-6"><label for="repeatObservation" class="form-label">ملاحظة الأداء</label><select id="repeatObservation" class="form-select"><option value="Unqualified">لم يُحدَّد</option><option value="DifferentObserved">يبدو وجهًا آخر — للمراجعة</option><option value="SameObserved">يبدو نفس الوجه — للمراجعة</option></select></div>
+                            <div class="col-12"><label for="repeatNotes" class="form-label">بيان الجزء المعاد وملاحظات المراجعة</label><input id="repeatNotes" class="form-control" placeholder="مثلاً: أعاد آخر الآية" /></div>
+                        </div>
+                        <p class="small text-muted mt-2 mb-0">اضبط البداية في لوحة التحديد السريع أو باستخدام F7، ثم أوقف الصوت عند نهاية التكرار واضغط «حفظ المقطع المُعاد» أو F9. يُحفظ التكرار للآية المختارة هنا، ولا يتغير رقم الآية التالية. وجه التكرار مستقل عن وجه القراءة الأساسية. الجزء المعاد لا يُستخدم كآية كاملة في القراءة المتواصلة.</p>
+                    </fieldset>
                     <!-- استوديو WaveSurfer بالإشارات المسبقة (Peaks) -->
                     <div class="card shadow-sm border mb-3">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
@@ -268,7 +283,7 @@
                                 <div class="row g-2">
                                     <div class="col-6">
                                         <label class="form-label small mb-1">الوجه المقترح من المرجع:</label>
-                                        <select id="advWajhSelect" class="form-select form-select-sm" onchange="onWajhSelectionChanged(this.value)">
+                                        <select id="advWajhSelect" class="form-select form-select-sm" >
                                             <option value="">— افتراضي / أصل القراءة —</option>
                                             <!-- Rempli dynamiquement depuis le catalogue Awjuh -->
                                         </select>
@@ -398,6 +413,7 @@
         let activeRegion = null;
         let isLooping = false;
         let currentMarwData = null;
+        let captureBusy = false;
 
         const SEGMENT_TYPES = {
             1: "آية كاملة",
@@ -463,6 +479,12 @@
                     throw new Error(`Erreur ${response.status}: ${await response.text()}`);
                 }
                 editorContext = await response.json();
+                const ayahSelect = document.getElementById('currentAyahSelect');
+                ayahSelect.replaceChildren(...editorContext.ayahs.map(a => new Option(`آية ${a.ayahNumber}`, a.ayahNumber)));
+                ayahSelect.disabled = editorContext.ayahs.length === 0;
+                document.getElementById('repeatAyahSelect').replaceChildren(...editorContext.ayahs.map(a => new Option(`آية ${a.ayahNumber}`, a.ayahNumber)));
+                updateRepeatTargetLabel();
+                document.getElementById('btnFinishRepeat').disabled = editorContext.ayahs.length === 0;
 
                 // Charger la session persistante
                 if (editorContext.sourceAudio && editorContext.sourceAudio.id) {
@@ -477,6 +499,8 @@
                         console.warn("Session restore fallback:", sessionErr);
                     }
                 }
+
+                syncRepeatTargetToCurrentAyah();
 
                 // Charger les peaks précalculés pour WaveSurfer
                 let peaksData = null;
@@ -646,8 +670,8 @@
         }
 
         // 4. ACTION 1 : إنهاء الآية والانتقال إلى التالية (Atomique)
-        async function onFinishAyahClicked() {
-            if (!wavesurfer || !editorContext) return;
+        async function onFinishAyahClicked(segmentType = 1) {
+            if (!wavesurfer || !editorContext || captureBusy) return;
             const capturedMs = Math.round(wavesurfer.getCurrentTime() * 1000);
 
             if (capturedMs <= currentStartMs + 200) {
@@ -669,11 +693,14 @@
                 notes: notes,
                 edition: "MARW_newMushaf_20260913-full",
                 sourceHash: editorContext.sourceAudio.checksumSha256,
-                idempotencyKey: crypto.randomUUID()
+                idempotencyKey: crypto.randomUUID(),
+                segmentType: segmentType
             };
 
             setSyncStatus("🔵 جاري الحفظ...", "primary");
+            captureBusy = true;
             document.getElementById('btnFinishAyah').disabled = true;
+            document.getElementById('currentAyahSelect').disabled = true;
 
             try {
                 const res = await fetch('/api/admin/audio-editor/capture/end-ayah', {
@@ -701,10 +728,11 @@
 
                 // Activer le bouton de répétition
                 document.getElementById('btnFinishRepeat').disabled = false;
-                document.getElementById('repeatTargetLabel').textContent = `الهدف: الآية ${currentSurahNumber}:${currentAyahNumber}`;
+                document.getElementById('repeatAyahSelect').value = String(currentAyahNumber);
+                updateRepeatTargetLabel();
                 document.getElementById('btnUndoLast').disabled = false;
 
-                showToast(`✓ تم تسجيل الآية ${currentSurahNumber}:${currentAyahNumber} بنجاح!`, "success");
+                showToast(`✓ تم تسجيل ${SEGMENT_TYPES[segmentType]} — ${currentSurahNumber}:${currentAyahNumber}`, "success");
 
                 if (result.hasMoreAyahs) {
                     currentAyahNumber = result.nextAyahNumber;
@@ -725,13 +753,33 @@
                 setSyncStatus("🔴 فشل الحفظ", "danger");
                 showToast(`خطأ في الحفظ: ${err.message}`, "danger");
             } finally {
+                captureBusy = false;
                 document.getElementById('btnFinishAyah').disabled = false;
+                document.getElementById('currentAyahSelect').disabled = false;
             }
         }
 
-        // 5. ACTION 2 : إنهاء التكرار (Repeat capture without advancing ayah)
+        // 5. ACTION 2 : حفظ المقطع المُعاد (Repeat capture without advancing ayah)
         async function onFinishRepeatClicked() {
-            if (!wavesurfer || !editorContext || !lastCapturedSegment) return;
+            if (!wavesurfer || !editorContext || captureBusy) return;
+            const targetAyah = Number(document.getElementById('repeatAyahSelect').value);
+            const extent = document.getElementById('repeatExtent').value;
+            if (!editorContext.ayahs.some(a => a.ayahNumber === targetAyah) || !extent) {
+                const advanced = document.getElementById('collapseAdvanced');
+                const focusExtent = () => {
+                    document.getElementById('repeatPanel').scrollIntoView({ block: 'center' });
+                    document.getElementById('repeatExtent').focus({ preventScroll: true });
+                };
+                if (advanced.classList.contains('show')) focusExtent();
+                else {
+                    advanced.addEventListener('shown.bs.collapse', focusExtent, { once: true });
+                    bootstrap.Collapse.getOrCreateInstance(advanced, { toggle: false }).show();
+                }
+                showToast("اختر الآية وحدد هل التكرار للآية كاملة أم لجزء منها.", "warning");
+                return;
+            }
+            const targetReference = `${currentSurahNumber}:${targetAyah}`;
+            const target = [...editorContext.segments].reverse().find(s => s.reference === targetReference && s.endMs <= currentStartMs);
             const capturedMs = Math.round(wavesurfer.getCurrentTime() * 1000);
 
             if (capturedMs <= currentStartMs + 200) {
@@ -739,12 +787,16 @@
                 return;
             }
 
-            const wajhId = document.getElementById('advWajhSelect')?.value ? parseInt(document.getElementById('advWajhSelect').value) : null;
-            const notes = document.getElementById('advNotesInput')?.value || "تكرار للآية السابقة";
+            const wajhId = document.getElementById('repeatWajhSelect')?.value ? parseInt(document.getElementById('repeatWajhSelect').value) : null;
+            const observation = document.getElementById('repeatObservation');
+            const notes = `${extent === 'FullAyah' ? 'تكرار الآية كاملة' : 'تكرار جزء من الآية'} ${targetReference} — ${observation.selectedOptions[0].textContent} — ${document.getElementById('repeatNotes').value}`;
 
             const payload = {
                 sourceAudioId: editorContext.sourceAudio.id,
-                targetSegmentId: lastCapturedSegment.id,
+                targetSegmentId: target?.id || null,
+                targetReference,
+                extent,
+                observation: document.getElementById('repeatObservation').value,
                 startMs: currentStartMs,
                 endMs: capturedMs,
                 wajhId: wajhId,
@@ -753,6 +805,7 @@
                 sourceHash: editorContext.sourceAudio.checksumSha256
             };
 
+            captureBusy = true;
             setSyncStatus("🔵 جاري تسجيل التكرار...", "primary");
             document.getElementById('btnFinishRepeat').disabled = true;
 
@@ -770,26 +823,30 @@
 
                 const newSegment = await res.json();
                 editorContext.segments.push(newSegment);
+                document.getElementById('btnUndoLast').disabled = false;
                 addRegionToWaveSurfer(newSegment);
                 renderSegmentsTable();
 
                 currentStartMs = capturedMs;
                 updateStartDisplay();
 
-                showToast(`🔁 تم تسجيل التكرار للآية السابقة بنجاح!`, "warning");
+                showToast(`🔁 تم تسجيل التكرار للآية ${targetReference}`, "success");
+                document.getElementById('repeatExtent').value = "";
+                document.getElementById('repeatNotes').value = "";
                 setSyncStatus("🟢 محفوظ", "success");
             } catch (err) {
                 console.error(err);
                 setSyncStatus("🔴 فشل التكرار", "danger");
                 showToast(`خطأ في تسجيل التكرار: ${err.message}`, "danger");
             } finally {
+                captureBusy = false;
                 document.getElementById('btnFinishRepeat').disabled = false;
             }
         }
 
         // 6. ACTION 3 : تراجع عن آخر إجراء (Undo Last Capture)
         async function onUndoLastClicked() {
-            if (!editorContext) return;
+            if (!editorContext || captureBusy) return;
             if (!confirm("هل أنت متأكد من التراجع عن آخر تسجيل؟")) return;
 
             setSyncStatus("🔵 جاري التراجع...", "primary");
@@ -827,6 +884,7 @@
                 // Restaurer les valeurs
                 currentStartMs = result.restoredTimeMs;
                 currentAyahNumber = result.restoredAyahNumber;
+                syncRepeatTargetToCurrentAyah();
                 updateStartDisplay();
                 await updateActiveAyahDisplay();
 
@@ -843,7 +901,7 @@
                     : null;
 
                 if (!lastCapturedSegment) {
-                    document.getElementById('btnFinishRepeat').disabled = true;
+                    document.getElementById('btnFinishRepeat').disabled = editorContext.ayahs.length === 0;
                     document.getElementById('btnUndoLast').disabled = true;
                 }
             } catch (err) {
@@ -855,9 +913,28 @@
             }
         }
 
+        async function selectCurrentAyah(value) {
+            const number = Number(value);
+            if (!editorContext || !Number.isInteger(number) || !editorContext.ayahs.some(a => a.ayahNumber === number)) return;
+            const select = document.getElementById('currentAyahSelect');
+            if (captureBusy) {
+                select.value = String(currentAyahNumber);
+                return;
+            }
+            currentAyahNumber = number;
+            syncRepeatTargetToCurrentAyah();
+            select.disabled = true;
+            try {
+                await updateActiveAyahDisplay();
+            } finally {
+                select.disabled = document.getElementById('btnFinishAyah').disabled;
+            }
+        }
+
         // 7. Mise à jour de l'affichage de l'Ayah active et du Mushaf MARW
         async function updateActiveAyahDisplay() {
             document.getElementById('currentAyahBadge').textContent = `سورة ${editorContext.surahNameArabic} — الآية ${currentAyahNumber}`;
+            document.getElementById('currentAyahSelect').value = String(currentAyahNumber);
 
             // Charger l'image et le polygone MARW
             await loadMarwAyahHighlight(currentSurahNumber, currentAyahNumber);
@@ -868,11 +945,13 @@
             try {
                 const res = await fetch(`/api/admin/audio-editor/marw-ayah/${surah}/${ayah}`);
                 if (!res.ok) {
-                    document.getElementById('marwCoordsInfo').textContent = "موضع الآية في MARW غير محدد حالياً";
+                    document.getElementById('marwCoordsInfo').textContent = "موضع الآية في مصدرنا الرسمي غير محدد حالياً";
                     return;
                 }
 
-                currentMarwData = await res.json();
+                const data = await res.json();
+                if (surah !== currentSurahNumber || ayah !== currentAyahNumber) return;
+                currentMarwData = data;
                 document.getElementById('marwPageNumDisplay').textContent = currentMarwData.pageNumber;
                 document.getElementById('marwFullPageLink').href = `/mushaf/page/${currentMarwData.pageNumber}`;
 
@@ -885,7 +964,7 @@
                 const pathEl = document.getElementById('activeAyahHighlightPath');
                 pathEl.setAttribute('d', currentMarwData.pathData);
 
-                document.getElementById('marwCoordsInfo').textContent = `المرجع: ${currentMarwData.reference} (مصحف MARW)`;
+                document.getElementById('marwCoordsInfo').textContent = `المرجع: ${currentMarwData.reference} (مصدرنا الرسمي)`;
             } catch (err) {
                 console.warn("MARW highlight error:", err);
             } finally {
@@ -913,7 +992,6 @@
             if (editorContext.segments.length > 0) {
                 lastCapturedSegment = editorContext.segments[editorContext.segments.length - 1];
                 document.getElementById('btnFinishRepeat').disabled = false;
-                document.getElementById('repeatTargetLabel').textContent = `الهدف: ${lastCapturedSegment.reference || 'الآية السابقة'}`;
                 document.getElementById('btnUndoLast').disabled = false;
             }
         }
@@ -952,46 +1030,11 @@
 
         // 9. Actions avancées : مقطع جزئي واستكمال
         async function onPartialAyahClicked() {
-            if (!wavesurfer || !editorContext) return;
-            const capturedMs = Math.round(wavesurfer.getCurrentTime() * 1000);
-            if (capturedMs <= currentStartMs + 200) return;
-
-            const currentAyah = editorContext.ayahs.find(a => a.ayahNumber === currentAyahNumber);
-            const wajhId = document.getElementById('advWajhSelect')?.value ? parseInt(document.getElementById('advWajhSelect').value) : null;
-
-            const payload = {
-                sourceAudioId: editorContext.sourceAudio.id,
-                ayahId: currentAyah ? currentAyah.id : null,
-                wajhId: wajhId,
-                startMs: currentStartMs,
-                endMs: capturedMs,
-                segmentType: 2, // PartialAyah
-                notes: "مقطع من الآية (وقف مؤقت)"
-            };
-
-            try {
-                const res = await fetch('/api/admin/audio-editor/segments', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!res.ok) throw new Error("فشل تسجيل المقطع الجزئي");
-                const seg = await res.json();
-                editorContext.segments.push(seg);
-                addRegionToWaveSurfer(seg);
-                renderSegmentsTable();
-
-                currentStartMs = capturedMs;
-                updateStartDisplay();
-                showToast("⏸️ تم تسجيل مقطع من الآية (الآية الحالية باقية للاستكمال)", "info");
-            } catch (err) {
-                alert(err.message);
-            }
+            await onFinishAyahClicked(2);
         }
 
         async function onContinuationClicked() {
-            // Continuation : enregistre le reste et passe à l'ayah suivante
-            await onFinishAyahClicked();
+            await onFinishAyahClicked(4);
         }
 
         // 10. Fonctions utilitaires
@@ -1075,15 +1118,30 @@
             document.getElementById('infoStatus').textContent = sa.status === 2 ? 'جاهز' : 'قيد المعالجة';
         }
 
+        function syncRepeatTargetToCurrentAyah() {
+            document.getElementById('repeatAyahSelect').value = String(currentAyahNumber);
+            updateRepeatTargetLabel();
+        }
+
+        function updateRepeatTargetLabel() {
+            const ayah = document.getElementById('repeatAyahSelect').value;
+            document.getElementById('repeatTargetLabel').textContent = ayah
+                ? `سورة ${editorContext.surahNameArabic} — الآية ${ayah}`
+                : 'اختر الآية المستهدفة';
+        }
+
         function renderWajhDropdown() {
             const select = document.getElementById('advWajhSelect');
             if (!select || !editorContext || !editorContext.awjuh) return;
-            select.innerHTML = '<option value="">— افتراضي / أصل القراءة —</option>';
+            select.innerHTML = '<option value="">لم يُحدَّد الوجه</option>';
+            const repeatSelect = document.getElementById('repeatWajhSelect');
+            repeatSelect.replaceChildren(new Option('لم يُحدَّد الوجه', ''));
             editorContext.awjuh.forEach(w => {
                 const opt = document.createElement('option');
                 opt.value = w.id;
                 opt.textContent = `${w.nameArabic} (${w.code})`;
                 select.appendChild(opt);
+                repeatSelect.appendChild(opt.cloneNode(true));
             });
         }
 

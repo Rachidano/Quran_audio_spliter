@@ -1054,7 +1054,7 @@ public class AwjuhService : IAwjuhService
                     AnalysisStatus = "AResoudre",
                     EntriesCount = 10,
                     ConstraintsCount = 1,
-                    Notes = "الفروع العشرة مستخرجة بدقة؛ يلزم إتمام مطابقة عد الآيات مع مصحف MARW."
+                    Notes = "الفروع العشرة مستخرجة بدقة؛ يلزم إتمام مطابقة عد الآيات مع مصحف مصدرنا الرسمي."
                 },
                 new DocumentaryCoverageEntry
                 {

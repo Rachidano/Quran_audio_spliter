@@ -4,15 +4,28 @@
     ViewData["Title"] = "فهرس السور والبحث";
 }
 
+<form method="get" class="mb-4" role="search">
+    <label for="quran-search" class="form-label fw-bold">البحث في القرآن</label>
+    <div class="input-group">
+        <input id="quran-search" name="q" value="@Model.Q" class="form-control" maxlength="200" placeholder="أكتب كلمة أو آية أو رقم" />
+        <button class="btn btn-success" type="submit">بحث</button>
+    </div>
+    <p class="small text-muted mt-2">البحث مع التشكيل أو بدونه. عند إدخال عدة كلمات من الآية، تُبحث كاملة ومتتابعة بالترتيب نفسه. اضغط على النتيجة لفتح الآية في صورة المصحف.</p>
+</form>
+@if (Model.Q?.Any(char.IsLetter) == true)
+{
+    <div class="alert alert-warning" role="status">البحث النصي تجريبي: يعتمد على نص ورش قيد التحقق، وقد تفوت بعض النتائج أو تحتاج مطابقتها إلى مراجعة. صور مصدرنا الرسمي هي مرجع العرض.</div>
+}
+
 @if (!string.IsNullOrWhiteSpace(Model.Q))
 {
     <div class="mb-4">
-        <h4 class="mb-3">🔍 نتائج البحث عن : <span class="text-success">"@Model.Q"</span> (@Model.SearchResults.Count نتيجة)</h4>
+        <h4 class="mb-3">🔍 نتائج البحث عن : <span class="text-success">"@Model.Q"</span> (@Model.SearchResults.Count نتيجة — حتى 20 نتيجة لكل بحث)</h4>
         
         @if (Model.SearchResults.Count == 0)
         {
             <div class="alert alert-warning">
-                لم يتم العثور على أي آية مطابقة. جرّب البحث برقم السورة والآية مثل <code>1:2</code> بالترقيم المعتمد في المصحف. البحث بالكلمات غير متاح حالياً.
+                لم يُعثر على نتيجة. جرّب كلمة من الآية (حرفان على الأقل)، أو رقم السورة والآية مثل <code>2:4</code>.
             </div>
         }
         else
@@ -23,9 +36,18 @@
                     <a href="/quran/@item.SurahNumber/@item.AyahNumber" class="list-group-item list-group-item-action p-3 mb-2 rounded border">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="badge bg-success">سورة @item.SurahNameArabic (@item.SurahNameLatin) — آية @item.AyahNumber</span>
-                            <span class="text-muted small">عرض وتلاوة الآية ←</span>
+                            <span class="btn btn-outline-success btn-sm">عرض الآية في المصحف ←</span>
                         </div>
-                        <p class="mb-0">عرض الموضع في صورة المصحف</p>
+                        @if (!string.IsNullOrWhiteSpace(item.TextWarsh))
+                        {
+                            // Keep one shaping font for the whole verse when Amiri Quran lacks a character.
+                            var needsFullAmiri = item.TextWarsh.Contains('\u06D2') || item.TextWarsh.Contains('\u065E');
+                            // Replace only the source's trailing verse number in this preview, never in storage.
+                            var versePreview = System.Text.RegularExpressions.Regex.Replace(item.TextWarsh, @"\s+[٠-٩۰-۹0-9]+\s*$", "");
+                            <p class="quran-text my-3" dir="rtl" lang="ar" style="@(needsFullAmiri ? "--font-quran: 'Amiri Warsh Fallback', serif;" : null)">@versePreview <bdi class="search-ayah-number" dir="ltr">(@item.AyahNumber.ToString(System.Globalization.CultureInfo.InvariantCulture))</bdi></p>
+                            <p class="small text-muted mb-2">نص مساعد للبحث — قيد المراجعة</p>
+                        }
+                        <p class="mb-0">صفحة @item.PageNumber — عرض الموضع في صورة المصحف</p>
                     </a>
                 }
             </div>
@@ -40,7 +62,7 @@
     <p class="lead text-secondary mb-3">بصوت فضيلة الشيخ القارئ <strong>صابر عبد الحكم</strong></p>
     <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
         <a href="/surah/1" class="btn btn-quran-primary">سورة الفاتحة مباشرة</a>
-        <a href="/mushaf/warsh/page/1" class="btn btn-outline-success">📖 تصفح المصحف الشريف (MARW)</a>
+        <a href="/mushaf/warsh/page/1" class="btn btn-outline-success">📖 تصفح المصحف الشريف</a>
         <a href="#surahs-grid" class="btn btn-quran-outline">فهرس السور (114)</a>
     </div>
 </div>

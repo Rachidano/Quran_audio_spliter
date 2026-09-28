@@ -389,5 +389,49 @@ public class AnnotationServiceTests
         Assert.True(undoParent.Success);
         Assert.Equal(parentId, undoParent.RemovedSegmentId);
     }
+    [Theory]
+    [InlineData("FullAyah", AudioSegmentType.FullAyah)]
+    [InlineData("PartialAyah", AudioSegmentType.PartialAyah)]
+    public async Task ExplicitRepeat_PreservesNextAyahAndClassifiesExtent(string extent, AudioSegmentType expected)
+    {
+        using var db = CreateInMemoryDbContext(Guid.NewGuid().ToString());
+        var source = new SourceAudio { Id = Guid.NewGuid(), SurahId = 2, StorageKey = "sources/002/original.mp3", OriginalFileName = "002.mp3", DurationMs = 90000 };
+        db.SourceAudios.Add(source);
+        db.Surahs.Add(new Surah { Id = 2, Number = 2, NameArabic = "test", NameLatin = "test", AyahCount = 285 });
+        var corpus = new QuranCorpus { Code = CorpusResolutionService.MarwCorpusCode, NameArabic = "test", CountingSystem = "test", Provenance = "fixture" };
+        db.CorpusAyahs.Add(new CorpusAyah { Corpus = corpus, SurahNumber = 2, AyahNumber = 4, TextArabic = "fixture", SearchText = "" });
+        await db.SaveChangesAsync();
+        var service = new AnnotationService(db, NullLogger<AnnotationService>.Instance, new CorpusResolutionService(db, NullLogger<CorpusResolutionService>.Instance, null));
+        await service.UpdateSessionAsync(new UpdateSessionRequest(source.Id, 1000, 2, 5, null, false, null), "test");
+        var req = new CaptureRepeatRequest(source.Id, null, 1000, 5000, null, "repeat", MarwPilotCorpus.EditionCode, null, "2:4", extent, "DifferentObserved");
+        var saved = await service.CaptureRepeatAsync(req, "test");
+        Assert.Equal("2:4", saved.Reference);
+        Assert.Equal(expected, saved.SegmentType);
+        Assert.Equal(AudioSegmentStatus.Draft, saved.Status);
+        var session = await service.GetOrCreateSessionAsync("test", source.Id);
+        Assert.Equal(5, session.CurrentAyahNumber);
+        Assert.Equal(5000, session.CurrentTimeMs);
+        var stored = await db.AudioSegments.FindAsync(saved.Id);
+        Assert.Contains("DifferentObserved", stored!.ObservationJson!);
+        Assert.Contains(extent, stored.ObservationJson!);
+        await Assert.ThrowsAsync<ArgumentException>(() => service.CaptureRepeatAsync(req with { TargetReference = "2:999" }, "test"));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.CaptureRepeatAsync(req with { Extent = "invalid" }, "test"));
+    }
+
+    [Theory]
+    [InlineData(AudioSegmentType.PartialAyah, 4)]
+    [InlineData(AudioSegmentType.Continuation, 5)]
+    public async Task PartialAndContinuation_AreNeverSavedAsFullAyah(AudioSegmentType type, int nextAyah)
+    {
+        using var db = CreateInMemoryDbContext(Guid.NewGuid().ToString());
+        var source = new SourceAudio { Id = Guid.NewGuid(), StorageKey = "test", OriginalFileName = "test", DurationMs = 90000 };
+        db.SourceAudios.Add(source);
+        db.Surahs.Add(new Surah { Number = 2, NameArabic = "test", NameLatin = "test", AyahCount = 285 });
+        await db.SaveChangesAsync();
+        var service = new AnnotationService(db, NullLogger<AnnotationService>.Instance, new CorpusResolutionService(db, NullLogger<CorpusResolutionService>.Instance, null));
+        var result = await service.CaptureEndAyahAsync(new CaptureEndAyahRequest(source.Id, 5000, 1000, "2:4", null, null, null, null, null, null, type), "test");
+        Assert.Equal(type, result.SavedOccurrence.SegmentType);
+        Assert.Equal(nextAyah, result.NextAyahNumber);
+    }
 }
 

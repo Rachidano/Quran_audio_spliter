@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="~/css/warsh-pilot.css" asp-append-version="true" />
 <section id="warsh-pilot" data-page-number="@Model.PageNumber" data-initial-reference="@Model.Reference" data-preview-passage="@Model.PreviewPassage">
     <header class="pilot-heading">
-        <div><h1>مصحف الجزائر الإلكتروني — ورش</h1><p>نسخة MARW الجديدة — 604 صفحات</p></div>
+        <div><h1>مصحف الجزائر الإلكتروني — ورش</h1><p>صور مصدرنا الرسمي — 604 صفحات</p></div>
         <nav aria-label="صفحات المصحف" class="pilot-pages">
             @foreach (var number in Model.NavigationPages)
             {
@@ -65,7 +65,11 @@
             </div>
             <div class="passage-controls my-3">
                 <p id="playback-description" class="small text-muted mb-2"></p>
-                <button id="passage-toggle" type="button" class="btn btn-success w-100" disabled aria-pressed="false">▶ تشغيل</button>
+                <div class="d-flex gap-2 align-items-stretch">
+                    <button id="passage-toggle" type="button" class="btn btn-success flex-grow-1" disabled aria-pressed="false">▶ تشغيل</button>
+                    <a id="passage-download" class="btn btn-outline-success disabled d-flex align-items-center" aria-disabled="true" tabindex="-1" download aria-label="تحميل صوت الآية" title="تحميل صوت الآية">⬇</a>
+                </div>
+                <p id="download-description" class="small text-muted mt-2 mb-0" role="status"></p>
                 <label class="visually-hidden" for="passage-seek">موضع التشغيل داخل المقطع</label>
                 <input id="passage-seek" type="range" min="0" max="0" step="0.1" value="0" dir="ltr" disabled />
                 <div id="passage-time" class="small text-muted text-center" dir="ltr">00:00 / 00:00</div>
@@ -91,7 +95,7 @@
         </aside>
     </div>
     <p id="pilot-image-error" class="alert alert-danger" hidden>تعذّر تحميل الصورة. أعد تحميل الصفحة.</p>
-    <p class="pilot-credit">الصور وخريطة الآيات: <a href="https://mushaf.marw.dz/web/ar/mushaf/newMushaf/1">مصحف الجزائر الإلكتروني — MARW / newMushaf</a>. هذه النسخة قيد المراجعة.</p>
+    <p class="pilot-credit">الصور وخريطة الآيات: <a href="https://mushaf.marw.dz/web/ar/mushaf/newMushaf/1">مصدرنا الرسمي</a>. هذه النسخة قيد المراجعة.</p>
 </section>
 @section Scripts {
     <script src="~/js/warsh-pilot.js" asp-append-version="true" defer></script>

@@ -24,6 +24,8 @@ if (args.Length == 1 && args[0] == "--check-warsh-pilot")
 }
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMemoryCache();
 builder.WebHost.UseStaticWebAssets();
 
 // Isolated local review sessions do not reuse another Windows user's DPAPI keys.

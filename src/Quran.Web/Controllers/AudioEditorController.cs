@@ -62,7 +62,7 @@ public class AudioEditorController : ControllerBase
                 });
             }
         }
-        return NotFound(new { message = $"لم يتم العثور على موضع الآية {surahNumber}:{ayahNumber} في مصحف MARW." });
+        return NotFound(new { message = $"لم يتم العثور على موضع الآية {surahNumber}:{ayahNumber} في مصحف مصدرنا الرسمي." });
     }
 
     [HttpPost("capture/end-ayah")]

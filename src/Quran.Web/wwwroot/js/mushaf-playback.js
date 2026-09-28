@@ -23,7 +23,55 @@
     const duration = () => active ? Math.max(0, (active.endMs - active.startMs) / 1000) : 0;
     const end = () => start() + duration();
     const format = seconds => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
-    const label = p => `${p.wajhName || 'وجه غير محدد'} · ${{1:'آية كاملة',2:'جزء من آية',3:'إعادة',4:'تكملة'}[p.segmentType] || 'مقطع'} · ${((p.endMs-p.startMs)/1000).toFixed(1)} ث${p.status !== 'Published' ? ' — معاينة' : ''}`;
+    const label = p => `${p.wajhName || 'وجه غير محدد'} · ${p.isRepetition && p.segmentType !== 3 ? 'إعادة: ' : ''}${{1:'آية كاملة',2:'جزء من آية',3:'إعادة',4:'تكملة'}[p.segmentType] || 'مقطع'} · ${((p.endMs-p.startMs)/1000).toFixed(1)} ث${p.status !== 'Published' ? ' — معاينة' : ''}`;
+
+    const download = document.getElementById('passage-download');
+    const downloadDescription = document.getElementById('download-description');
+    let downloadRevision = 0;
+    const surahDownloads = new Map();
+    async function updateDownload() {
+        const revision = ++downloadRevision;
+        download.removeAttribute('href');
+        download.classList.add('disabled');
+        download.setAttribute('aria-disabled', 'true');
+        download.tabIndex = -1;
+        const continuous = mode.value === 'continuous';
+        const title = continuous ? 'تحميل تسجيل السورة الأصلي الكامل' : 'تحميل صوت الآية';
+        download.title = title; download.setAttribute('aria-label', title);
+        downloadDescription.textContent = '';
+        let url = null;
+        if (!continuous) {
+            if (active?.status === 'Published' && active.segmentType === 1 && active.isCutAsset) {
+                url = `/audio/downloads/ayah/${encodeURIComponent(active.id)}`;
+                downloadDescription.textContent = 'تحميل الآية كاملة بالوجه المختار.';
+            } else downloadDescription.textContent = 'يتاح التحميل عند اختيار آية كاملة منشورة.';
+        } else {
+            const surah = Number((currentReference || '').split(':')[0]);
+            if (!Number.isInteger(surah) || surah < 1 || surah > 114) {
+                downloadDescription.textContent = 'اختر آية لتحديد السورة المراد تحميلها.'; return;
+            }
+            downloadDescription.textContent = 'جارٍ التحقق من تسجيل السورة…';
+            try {
+                if (!surahDownloads.has(surah)) surahDownloads.set(surah, fetch(`/api/audio-downloads/surah/${surah}`).then(r => {
+                    if (!r.ok) throw new Error(); return r.json();
+                }));
+                const data = await surahDownloads.get(surah);
+                if (revision !== downloadRevision) return;
+                url = data.available ? data.downloadUrl : null;
+                downloadDescription.textContent = url ? `تحميل السورة ${surah} كاملة: التسجيل الأصلي بأوجهه وتكراراته.` : 'تسجيل السورة الكامل غير متاح للتحميل حالياً.';
+            } catch {
+                surahDownloads.delete(surah);
+                if (revision === downloadRevision) downloadDescription.textContent = 'تعذر التحقق من توفر التسجيل الكامل.';
+                return;
+            }
+        }
+        if (revision !== downloadRevision || !url) return;
+        download.href = url;
+        download.classList.remove('disabled');
+        download.setAttribute('aria-disabled', 'false');
+        download.tabIndex = 0;
+    }
+    download.addEventListener('click', event => { if (download.getAttribute('aria-disabled') === 'true') event.preventDefault(); });
 
     function update() {
         const elapsed = active ? Math.min(duration(), Math.max(0, audio.currentTime - start())) : 0;
@@ -44,12 +92,14 @@
         seek.disabled = true;
         seek.max = 0;
         description.textContent = '';
+        void updateDownload();
         update();
     }
     function choose(p, autoplay = false) {
         reset();
         if (!p?.audioUrl || !(p.endMs > p.startMs)) return;
         active = p;
+        void updateDownload();
         autoStart = autoplay;
         description.textContent = label(p);
         seek.max = duration();
@@ -59,9 +109,10 @@
     }
     function render(autoplay = false) {
         const filtered = passages.filter(p => !filter.value || (p.wajhCatalogCode || 'unqualified') === filter.value);
-        selector.replaceChildren(...filtered.map(p => new Option(label(p), p.id)));
-        container.hidden = filtered.length < 2;
-        const preferred = mode.value === 'continuous' ? filtered.find(p => p.segmentType === 1 && p.status === 'Published') : filtered[0];
+        const eligible = mode.value === 'continuous' ? filtered.filter(p => p.segmentType === 1 && p.status === 'Published') : filtered;
+        selector.replaceChildren(...eligible.map(p => new Option(label(p), p.id)));
+        container.hidden = eligible.length < 2;
+        const preferred = eligible[0];
         selector.value = preferred?.id || '';
         choose(preferred, autoplay);
         if (filtered.length && !preferred) message.textContent = 'لا توجد آية كاملة منشورة لهذا الوجه؛ توقفت القراءة المتواصلة.';
@@ -189,7 +240,9 @@
     mode.addEventListener('change', () => {
         ++flow; autoStart = false;
         try { sessionStorage.setItem('mushaf-reading-mode', mode.value); } catch {}
-        message.textContent = mode.value === 'continuous' ? 'تُقرأ الآيات الكاملة تباعاً بالوجه نفسه. يتوقف التشغيل عند غياب تسجيل مطابق.' : 'يتوقف التشغيل بعد الآية الحالية.';
+        render();
+        void updateDownload();
+        if (active) message.textContent = mode.value === 'continuous' ? 'تُقرأ الآيات الكاملة تباعاً بالوجه نفسه. يتوقف التشغيل عند غياب تسجيل مطابق.' : 'يتوقف التشغيل بعد الآية الحالية.';
     });
     root.addEventListener('ayah-selected', e => load(e.detail));
     const timer = setInterval(enforceBounds, 40);

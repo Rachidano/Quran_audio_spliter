@@ -18,7 +18,7 @@
    const selectedConstraints=(data.constraints||[]).filter(e=>(!route.value||e.routeCode===route.value)&&JSON.stringify(e).includes(search.value.trim()));
    selectedConstraints.forEach(e=>{
     const card=document.createElement('section');card.className='border rounded p-3 my-3';card.dataset.constraint=e.code;
-    for(const [tag,text] of [['h3',e.nameArabic],['p',e.contextArabic],['p',e.explanationArabic],['p','قيد مقترح — لم يعتمد ولم يُفعّل آليًا']]){const el=document.createElement(tag);el.textContent=text;card.append(el);}
+    for(const [tag,text] of [['h3',e.nameArabic],['p',e.contextArabic],['p',e.explanationArabic],['p','قيد مقترح — لم يعتمد ولم يُفعّل آليًا']]){const el=document.createElement(tag);el.textContent=String(text ?? '').replace(/MARW/g, 'مصدرنا الرسمي');card.append(el);}
     e.sourceIds.forEach(id=>{const s=data.sources.find(s=>s.id===id),a=document.createElement('a');a.href=s.url;a.textContent=s.locator;a.target='_blank';a.rel='noopener';card.append(a);});constraints.append(card);
    });
    if(!selectedConstraints.length)constraints.textContent='لا توجد قيود مدخلة لهذا الاختيار بعد.';
@@ -32,7 +32,7 @@
      };card.append(edit);
      const remove=document.createElement('button');remove.type='button';remove.className='btn btn-outline-danger mx-2';remove.textContent='حذف';remove.onclick=async()=>{if(!confirm('حذف هذا الوجه غير المستخدم من النظام؟'))return;try{const r=await fetch(`/api/awjuh/${e.id}?version=${e.version}`,{method:'DELETE'});if(!r.ok)throw Error((await r.json()).message||'تعذر الحذف');location.reload();}catch(err){status.textContent=err.message;}};card.append(remove);
     }
-    for(const [tag,text] of [['h2',e.nameArabic],['p',data.routes.find(r=>r.code===e.routeCode).name],['p',e.scope],['p',e.excludedScope||''],['p',`الحالة: ${states[e.status]||e.status}`],['p',e.sourceCitation||'']]){const el=document.createElement(tag);el.textContent=text;card.append(el);}
+    for(const [tag,text] of [['h2',e.nameArabic],['p',data.routes.find(r=>r.code===e.routeCode).name],['p',e.scope],['p',e.excludedScope||''],['p',`الحالة: ${states[e.status]||e.status}`],['p',e.sourceCitation||'']]){const el=document.createElement(tag);el.textContent=String(text ?? '').replace(/MARW/g, 'مصدرنا الرسمي');card.append(el);}
     const labels={badal:'البدل',linMahmuz:'اللين المهموز',yaSin:'ياء يس',nunBeforeWaw:'النون قبل الواو',maUndhira:'ما أنذر',abaahum:'آباءهم'};
     const components=document.createElement('ul');Object.entries(e.components).forEach(([key,value])=>{const li=document.createElement('li');li.textContent=`${labels[key]||key}: ${value}`;components.append(li);});card.append(components);
     if(e.sourceBooks){const books=document.createElement('p');books.textContent=`عزو المصدر للتركيب ${e.sourceBranch}: ${e.sourceBooks.join('، ')}`;card.append(books);}

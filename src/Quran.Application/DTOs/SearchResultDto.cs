@@ -6,5 +6,7 @@ public record SearchResultDto(
     string SurahNameLatin,
     int AyahNumber,
     string TextWarsh,
-    string MatchedText
+    string MatchedText,
+    int? PageNumber = null,
+    bool IsProvisional = false
 );

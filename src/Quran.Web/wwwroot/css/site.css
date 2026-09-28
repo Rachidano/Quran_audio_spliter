@@ -1,3 +1,33 @@
+@font-face {
+  font-family: 'Amiri Quran';
+  src: url('../fonts/amiri-quran/AmiriQuran.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Amiri Warsh Fallback';
+  src: url('../fonts/amiri-quran/Amiri-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Uthmanic Warsh';
+  src: url('../fonts/warsh/warsh.10.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.search-ayah-number {
+  font-family: Arial, sans-serif;
+  font-size: 0.7em;
+  white-space: nowrap;
+}
+
 html {
   font-size: 14px;
 }

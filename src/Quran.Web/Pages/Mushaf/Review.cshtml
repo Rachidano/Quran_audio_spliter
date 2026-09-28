@@ -21,12 +21,12 @@
         <article class="review-card" data-surah="@item.Surah" data-page="@item.Page.Number" data-fingerprint="@item.Fingerprint" data-search="@item.Surah @item.Name page @item.Page.Number">
             <h2>@item.Surah — <span lang="ar" dir="rtl">@item.Name</span></h2>
             <p>Page @item.Page.Number · Référence @item.Region.Reference</p>
-            <p>Revue assistée : texte à partir de la ligne @Model.FirstTextLine(item.Surah) de la zone MARW, en-tête exclu.</p>
+            <p>Revue assistée : texte à partir de la ligne @Model.FirstTextLine(item.Surah) de la zone de notre source officielle, en-tête exclu.</p>
             <div class="review-image">
                 <img loading="lazy" decoding="async" width="@item.Page.Width" height="@item.Page.Height" src="/api/mushaf/marw-pilot/@Model.Revision/pages/@item.Page.Number/image.png" alt="Page @item.Page.Number, début de la sourate @item.Surah" />
                 <svg viewBox="@item.Page.ViewBox" aria-hidden="true"><path d="@item.Region.PathData" /></svg>
             </div>
-            <p><a href="/mushaf/page/@item.Page.Number?Reference=@item.Region.Reference" target="_blank" rel="noopener">Examiner en grand dans le lecteur</a> · <a href="https://mushaf.marw.dz/web/ar/mushaf/newMushaf/@item.Page.Number?surah=@item.Surah&ayah=1&menu=masahif" target="_blank" rel="noopener">Source MARW</a></p>
+            <p><a href="/mushaf/page/@item.Page.Number?Reference=@item.Region.Reference" target="_blank" rel="noopener">Examiner en grand dans le lecteur</a> · <a href="https://mushaf.marw.dz/web/ar/mushaf/newMushaf/@item.Page.Number?surah=@item.Surah&ayah=1&menu=masahif" target="_blank" rel="noopener">Notre source officielle</a></p>
             <label for="status-@item.Surah">Votre contre-vérification</label>
             <select id="status-@item.Surah" class="review-status"><option value="pending">À examiner</option><option value="issue">À corriger</option><option value="checked">Conforme</option></select>
             <label for="note-@item.Surah">Observation</label>

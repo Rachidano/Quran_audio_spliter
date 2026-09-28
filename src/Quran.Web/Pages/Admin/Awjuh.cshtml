@@ -137,8 +137,8 @@
                                     </td>
                                     <td>
                                         <div class="fw-bold text-dark fs-6">@w.NameArabic</div>
-                                        <div class="small text-muted text-truncate" style="max-width: 320px;" title="@w.Description">
-                                            @w.Description
+                                        <div class="small text-muted text-truncate" style="max-width: 320px;" title="@(w.Description?.Replace("MARW", "مصدرنا الرسمي"))">
+                                            @(w.Description?.Replace("MARW", "مصدرنا الرسمي"))
                                         </div>
                                     </td>
                                     <td>
@@ -276,7 +276,7 @@
                                         <td><strong>@c.RouteName</strong></td>
                                         <td>@c.SourceWorkTitle</td>
                                         <td>@c.ChapterOrSection @(c.SurahNumber.HasValue ? $"({c.SurahNumber})" : "")</td>
-                                        <td>@c.ScopeContext</td>
+                                        <td>@(c.ScopeContext?.Replace("MARW", "مصدرنا الرسمي"))</td>
                                         <td>
                                             @switch (c.AnalysisStatus)
                                             {
@@ -302,10 +302,10 @@
                                         </td>
                                         <td class="text-center fw-bold">@c.EntriesCount</td>
                                         <td class="text-center fw-bold">@c.ConstraintsCount</td>
-                                        <td><small class="text-muted">@c.Notes</small></td>
+                                        <td><small class="text-muted">@(c.Notes?.Replace("MARW", "مصدرنا الرسمي"))</small></td>
                                         <td><small>@(c.LastReviewedAt?.ToString("yyyy-MM-dd") ?? "—")</small></td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openCoverageModal(@c.Id, '@c.AnalysisStatus', '@c.Notes')">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openCoverageModal(@c.Id, '@c.AnalysisStatus', '@(c.Notes?.Replace("MARW", "مصدرنا الرسمي"))')">
                                                 تحديث
                                             </button>
                                         </td>
@@ -666,8 +666,8 @@
             document.getElementById('wajhName').value = data.nameArabic;
             document.getElementById('wajhCategory').value = data.category || 'Tahrirat';
             document.getElementById('wajhRuleGroup').value = data.ruleGroup || '';
-            document.getElementById('wajhScope').value = data.description || '';
-            document.getElementById('wajhExcluded').value = data.excludedScope || '';
+            document.getElementById('wajhScope').value = (data.description || '').replace(/MARW/g, 'مصدرنا الرسمي');
+            document.getElementById('wajhExcluded').value = (data.excludedScope || '').replace(/MARW/g, 'مصدرنا الرسمي');
             document.getElementById('wajhSource').value = data.sourceCitation || '';
 
             if (data.reviewStatus === 'Approved') {

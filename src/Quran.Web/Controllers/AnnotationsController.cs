@@ -206,6 +206,13 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
         if (seg != null) db.AudioSegments.Remove(seg);
         await db.SaveChangesAsync(); return NoContent();
     }
+    private static bool IsRepetition(AudioSegment segment)
+    {
+        if (segment.RepeatOfId.HasValue || segment.SegmentType == Quran.Domain.Enums.AudioSegmentType.Repetition) return true;
+        try { return JsonNode.Parse(segment.ObservationJson ?? "{}") is JsonObject observation && observation["kind"]?.ToString() == "repetition"; }
+        catch (JsonException) { return false; }
+    }
+
     [HttpGet("playback")]
     [AllowAnonymous]
     public async Task<IActionResult> Playback([FromQuery] string reference)
@@ -226,6 +233,7 @@ public class AnnotationsController(QuranDbContext db, IStorageService storage, I
                 endMs = s.EndMs,
                 reference = s.Reference,
                 segmentType = (int)s.SegmentType,
+                isRepetition = IsRepetition(s),
                 repeatOfId = s.RepeatOfId?.ToString(),
                 notes = s.Notes,
                 serverVersion = s.Version,

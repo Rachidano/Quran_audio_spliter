@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using System.Text;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
 using Quran.Application.Common;
 using Quran.Application.DTOs;
@@ -15,9 +17,12 @@ public partial class QuranReaderService : IQuranReaderService
     [GeneratedRegex(@"^(\d{1,3})\s*[:\s\-]\s*(\d{1,3})$")]
     private static partial Regex SurahAyahReferenceRegex();
 
-    public QuranReaderService(QuranDbContext dbContext)
+    private readonly IMemoryCache? _searchCache;
+
+    public QuranReaderService(QuranDbContext dbContext, IMemoryCache? searchCache = null)
     {
         _dbContext = dbContext;
+        _searchCache = searchCache;
     }
 
     public async Task<IReadOnlyList<SurahDto>> GetAllSurahsAsync(CancellationToken cancellationToken = default)
@@ -70,14 +75,77 @@ public partial class QuranReaderService : IQuranReaderService
 
     public async Task<IReadOnlyList<SearchResultDto>> SearchAsync(string query, int maxResults = 20, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(query) || maxResults <= 0) return Array.Empty<SearchResultDto>();
-        var match = SurahAyahReferenceRegex().Match(query.Trim());
-        if (!match.Success || !int.TryParse(match.Groups[1].Value, out var surah) || !int.TryParse(match.Groups[2].Value, out var ayah))
-            return Array.Empty<SearchResultDto>();
-        var found = await GetAyahAsync(surah, ayah, cancellationToken);
-        if (found == null) return Array.Empty<SearchResultDto>();
-        var info = await GetSurahByNumberAsync(surah, cancellationToken);
-        return new[] { new SearchResultDto(surah, found.SurahNameArabic, info?.NameLatin ?? "", ayah, "", "") };
+        if (string.IsNullOrWhiteSpace(query) || query.Length > 200 || maxResults <= 0) return Array.Empty<SearchResultDto>();
+        maxResults = Math.Min(maxResults, 100);
+        var referenceQuery = string.Concat(query.Trim().Select(c => char.IsDigit(c) ? (char)('0' + (int)char.GetNumericValue(c)) : c));
+        var match = SurahAyahReferenceRegex().Match(referenceQuery);
+        if (match.Success && int.TryParse(match.Groups[1].Value, out var surah) && int.TryParse(match.Groups[2].Value, out var ayah))
+        {
+            return await (from a in _dbContext.CorpusAyahs.AsNoTracking()
+                          join s in _dbContext.Surahs on a.SurahNumber equals s.Number
+                          where a.Corpus!.Code == CorpusResolutionService.MarwCorpusCode && a.SurahNumber == surah && a.AyahNumber == ayah
+                          select new SearchResultDto(s.Number, s.NameArabic, s.NameLatin, a.AyahNumber, "", "", a.PageNumberHint, false))
+                          .Take(1).ToListAsync(cancellationToken);
+        }
+        var term = SearchKey(query);
+        if (term.Length < 2) return Array.Empty<SearchResultDto>();
+        var expandedTerm = SearchKey(query.Replace("\u0670", "ا"));
+        var index = _searchCache == null ? await BuildSearchIndex(cancellationToken)
+            : await _searchCache.GetOrCreateAsync("warsh-candidate-search-v2", async entry => {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+                return await BuildSearchIndex(cancellationToken);
+            });
+        return index!.Where(row => MatchesPhrase(row, term.Split(' '), expandedTerm.Split(' ')))
+            .Take(maxResults).Select(row => row.Result).ToList();
+    }
+
+    private sealed record SearchEntry(string[] Words, string[] ExpandedWords, SearchResultDto Result);
+
+    private static bool MatchesPhrase(SearchEntry row, string[] words, string[] expanded)
+    {
+        // Dagger-alif may be silent in one query word (ذلك) and explicit in another (الكتاب).
+        // Compare each word's variants, keeping phrase order and adjacency.
+        for (var offset = 0; offset <= row.Words.Length - words.Length; offset++)
+        {
+            var matches = true;
+            for (var i = 0; i < words.Length; i++)
+            {
+                var plain = row.Words[offset + i];
+                var full = row.ExpandedWords.ElementAtOrDefault(offset + i) ?? plain;
+                var alternate = expanded.ElementAtOrDefault(i) ?? words[i];
+                bool WordMatches(string source, string term) => words.Length == 1
+                    ? source.Contains(term, StringComparison.Ordinal)
+                    : string.Equals(source, term, StringComparison.Ordinal);
+                if (!WordMatches(plain, words[i]) && !WordMatches(full, words[i])
+                    && !WordMatches(plain, alternate) && !WordMatches(full, alternate))
+                { matches = false; break; }
+            }
+            if (matches) return true;
+        }
+        return false;
+    }
+
+    private static string SearchKey(string input)
+    {
+        var normalized = ArabicTextNormalizer.Normalize(input.Normalize(NormalizationForm.FormKC))
+            .Replace('ؤ', 'و').Replace('ئ', 'ي').Replace('ی', 'ي').Replace("ء", "");
+        return Regex.Replace(Regex.Replace(normalized, @"[^\p{L}\s]", " "), @"\s+", " ").Trim();
+    }
+
+    private async Task<List<SearchEntry>> BuildSearchIndex(CancellationToken ct)
+    {
+        // Candidate text is a provisional search preview; the reading view remains the MARW image.
+        var rows = await (from candidate in _dbContext.CorpusAyahs.AsNoTracking()
+                          join canonical in _dbContext.CorpusAyahs.AsNoTracking()
+                            on new { candidate.SurahNumber, candidate.AyahNumber } equals new { canonical.SurahNumber, canonical.AyahNumber }
+                          join surah in _dbContext.Surahs on canonical.SurahNumber equals surah.Number
+                          where candidate.Corpus!.Code == "qpc-warsh-v10-candidate"
+                            && canonical.Corpus!.Code == CorpusResolutionService.MarwCorpusCode
+                          orderby canonical.SurahNumber, canonical.AyahNumber
+                          select new { candidate.TextArabic, canonical.SurahNumber, canonical.AyahNumber,
+                              canonical.PageNumberHint, surah.NameArabic, surah.NameLatin }).ToListAsync(ct);
+        return rows.Select(row => new SearchEntry(SearchKey(row.TextArabic).Split(' '), SearchKey(row.TextArabic.Replace("\u0670", "ا")).Split(' '),
+            new SearchResultDto(row.SurahNumber, row.NameArabic, row.NameLatin, row.AyahNumber, row.TextArabic, "", row.PageNumberHint, true))).ToList();
     }
 
     private async Task<IReadOnlyList<AyahDto>> GetCanonicalAyahsAsync(int surahNumber, CancellationToken ct)

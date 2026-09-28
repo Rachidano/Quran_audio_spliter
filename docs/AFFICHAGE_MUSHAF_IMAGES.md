@@ -13,3 +13,7 @@ Décision utilisateur : conserver comme présentation de lecture uniquement le M
 Vérifications : 2 tests unitaires du lecteur, 12 tests HTTP des pages publiques et de la revue réussis. Edge : redirection de Baqara, chargement réel de l’image, recherche sans texte de verset, absence de texte dans le studio et l’API, maintien du filtre de وجه sans substitution lorsqu’il est indisponible.
 
 Cette décision ne vaut pas qualification savante automatique de toutes les images ou des délimitations : elle fixe la présentation choisie par l’utilisateur et retire le texte numérique non qualifié.
+
+## Évolution du 26 septembre 2026
+
+À la demande explicite de l’utilisateur, la recherche textuelle provisoire est activée et ses résultats affichent le texte intégral du corpus candidat pour identifier l’ayah. Cette exception concerne uniquement les aperçus de recherche ; le lecteur et le studio restent en images. Voir `RECHERCHE_TEXTUELLE.md` pour le comportement actuel.
