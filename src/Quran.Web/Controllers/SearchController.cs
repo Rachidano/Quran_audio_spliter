@@ -16,7 +16,7 @@ public class SearchController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<SearchResultDto>>> Search([FromQuery] string q, [FromQuery] int limit = 20, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<IReadOnlyList<SearchResultDto>>> Search([FromQuery] string q, [FromQuery] int limit = int.MaxValue, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(q))
             return Ok(Array.Empty<SearchResultDto>());

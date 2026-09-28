@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
 using Quran.Application.Common;
@@ -13,9 +11,6 @@ namespace Quran.Infrastructure.Services;
 public partial class QuranReaderService : IQuranReaderService
 {
     private readonly QuranDbContext _dbContext;
-
-    [GeneratedRegex(@"^(\d{1,3})\s*[:\s\-]\s*(\d{1,3})$")]
-    private static partial Regex SurahAyahReferenceRegex();
 
     private readonly IMemoryCache? _searchCache;
 
@@ -73,13 +68,10 @@ public partial class QuranReaderService : IQuranReaderService
     public async Task<AyahDto?> GetAyahAsync(int surahNumber, int ayahNumber, CancellationToken cancellationToken = default) =>
         (await GetCanonicalAyahsAsync(surahNumber, cancellationToken)).FirstOrDefault(a => a.AyahNumber == ayahNumber);
 
-    public async Task<IReadOnlyList<SearchResultDto>> SearchAsync(string query, int maxResults = 20, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SearchResultDto>> SearchAsync(string query, int maxResults = int.MaxValue, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(query) || query.Length > 200 || maxResults <= 0) return Array.Empty<SearchResultDto>();
-        maxResults = Math.Min(maxResults, 100);
-        var referenceQuery = string.Concat(query.Trim().Select(c => char.IsDigit(c) ? (char)('0' + (int)char.GetNumericValue(c)) : c));
-        var match = SurahAyahReferenceRegex().Match(referenceQuery);
-        if (match.Success && int.TryParse(match.Groups[1].Value, out var surah) && int.TryParse(match.Groups[2].Value, out var ayah))
+        if (QuranSearchQuery.TryParseReference(query, out var surah, out var ayah))
         {
             return await (from a in _dbContext.CorpusAyahs.AsNoTracking()
                           join s in _dbContext.Surahs on a.SurahNumber equals s.Number
@@ -88,7 +80,7 @@ public partial class QuranReaderService : IQuranReaderService
                           .Take(1).ToListAsync(cancellationToken);
         }
         var term = SearchKey(query);
-        if (term.Length < 2) return Array.Empty<SearchResultDto>();
+        if (term.Count(char.IsLetter) < 3) return Array.Empty<SearchResultDto>();
         var expandedTerm = SearchKey(query.Replace("\u0670", "ا"));
         var index = _searchCache == null ? await BuildSearchIndex(cancellationToken)
             : await _searchCache.GetOrCreateAsync("warsh-candidate-search-v2", async entry => {
@@ -125,12 +117,7 @@ public partial class QuranReaderService : IQuranReaderService
         return false;
     }
 
-    private static string SearchKey(string input)
-    {
-        var normalized = ArabicTextNormalizer.Normalize(input.Normalize(NormalizationForm.FormKC))
-            .Replace('ؤ', 'و').Replace('ئ', 'ي').Replace('ی', 'ي').Replace("ء", "");
-        return Regex.Replace(Regex.Replace(normalized, @"[^\p{L}\s]", " "), @"\s+", " ").Trim();
-    }
+    private static string SearchKey(string input) => QuranSearchQuery.Normalize(input);
 
     private async Task<List<SearchEntry>> BuildSearchIndex(CancellationToken ct)
     {

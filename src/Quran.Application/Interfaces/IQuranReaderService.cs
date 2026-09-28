@@ -8,5 +8,5 @@ public interface IQuranReaderService
     Task<SurahDto?> GetSurahByNumberAsync(int number, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AyahDto>> GetAyahsBySurahAsync(int surahNumber, CancellationToken cancellationToken = default);
     Task<AyahDto?> GetAyahAsync(int surahNumber, int ayahNumber, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<SearchResultDto>> SearchAsync(string query, int maxResults = 20, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SearchResultDto>> SearchAsync(string query, int maxResults = int.MaxValue, CancellationToken cancellationToken = default);
 }

@@ -136,4 +136,25 @@ public class QuranReaderServiceTests
         Assert.Equal(expected ? 1 : 0, results.Count);
         if (expected) Assert.Equal(text, results[0].TextWarsh);
     }
+    [Fact]
+    public async Task Search_ReturnsAllMatchesAndRequiresThreeActualLetters()
+    {
+        using var db = CreateInMemoryDbContext(Guid.NewGuid().ToString());
+        db.Surahs.Add(new Quran.Domain.Entities.Surah { Number = 2, NameArabic = "test", NameLatin = "test" });
+        foreach (var code in new[] { "marw-newMushaf", "qpc-warsh-v10-candidate" })
+        {
+            var corpus = new Quran.Domain.Entities.QuranCorpus { Code = code, NameArabic = "test", CountingSystem = "test", Provenance = "fixture" };
+            for (var n = 1; n <= 125; n++)
+                db.CorpusAyahs.Add(new Quran.Domain.Entities.CorpusAyah { Corpus = corpus, SurahNumber = 2, AyahNumber = n, TextArabic = "الحمد", SearchText = "" });
+        }
+        await db.SaveChangesAsync();
+        var reader = new QuranReaderService(db);
+        var matches = await reader.SearchAsync("حمد");
+        Assert.Equal(125, matches.Count);
+        Assert.Equal(125, matches.Last().AyahNumber);
+        Assert.Equal(110, (await reader.SearchAsync("حمد", 110)).Count);
+        foreach (var query in new[] { "حم", "حَمَ", "حــم", "ح م", "حم123" })
+            Assert.Empty(await reader.SearchAsync(query));
+        Assert.Single(await reader.SearchAsync("٢:٤"));
+    }
 }

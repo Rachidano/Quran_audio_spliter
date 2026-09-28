@@ -8,7 +8,7 @@ La comparaison ignore le tashkīl et le tatweel, rapproche certaines formes de l
 
 Les résultats textuels exposent la sourate, l’ayah, la page, le caractère provisoire (`IsProvisional`) et le texte candidat original (`TextWarsh`), sans transformation de son orthographe. `MatchedText` reste vide. Un résultat ouvre l’image du Mushaf avec la référence sélectionnée. La recherche exacte par numéro n’est pas signalée comme provenant du texte candidat.
 
-Interface : champ de recherche sur l’accueil et dans la barre de navigation, avertissement explicite pour les recherches textuelles, jusqu’à 20 résultats affichés (raffiner l’expression au besoin). L’API plafonne les résultats à 100 et les requêtes à 200 caractères ; les recherches vides ou de moins de deux caractères normalisés ne parcourent pas le corpus.
+Interface : champ de recherche sur l’accueil et dans la barre de navigation, avertissement explicite pour les recherches textuelles, tous les résultats accessibles par pagination de 20 entrées avec nombre total et navigation première/précédente/suivante/dernière. L’API renvoie toutes les correspondances par défaut ; un paramètre limit explicite reste possible. Les requêtes sont limitées à 200 caractères et doivent contenir au moins trois lettres après normalisation (espaces, chiffres, tashkīl et tatweel ne comptent pas). Les références telles que 2:4 restent acceptées.
 
 La qualification intégrale du candidat reste à effectuer. Des différences orthographiques ou de délimitation peuvent entraîner des résultats manquants ou mal associés. Le texte aperçu porte la mention arabe « نص مساعد للبحث — قيد المراجعة » ; il ne remplace pas l’image de référence.
 

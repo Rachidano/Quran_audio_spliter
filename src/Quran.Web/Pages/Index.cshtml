@@ -10,7 +10,7 @@
         <input id="quran-search" name="q" value="@Model.Q" class="form-control" maxlength="200" placeholder="أكتب كلمة أو آية أو رقم" />
         <button class="btn btn-success" type="submit">بحث</button>
     </div>
-    <p class="small text-muted mt-2">البحث مع التشكيل أو بدونه. عند إدخال عدة كلمات من الآية، تُبحث كاملة ومتتابعة بالترتيب نفسه. اضغط على النتيجة لفتح الآية في صورة المصحف.</p>
+    <p class="small text-muted mt-2">أدخل ثلاثة أحرف على الأقل، مع التشكيل أو بدونه، أو رقم السورة والآية مثل <bdi>2:4</bdi>. عند إدخال عدة كلمات من الآية، تُبحث كاملة ومتتابعة بالترتيب نفسه. اضغط على النتيجة لفتح الآية في صورة المصحف.</p>
 </form>
 @if (Model.Q?.Any(char.IsLetter) == true)
 {
@@ -20,13 +20,18 @@
 @if (!string.IsNullOrWhiteSpace(Model.Q))
 {
     <div class="mb-4">
-        <h4 class="mb-3">🔍 نتائج البحث عن : <span class="text-success">"@Model.Q"</span> (@Model.SearchResults.Count نتيجة — حتى 20 نتيجة لكل بحث)</h4>
+        <h4 class="mb-3">🔍 نتائج البحث عن : <span class="text-success">"@Model.Q"</span> (@Model.TotalResults نتيجة)</h4>
         
-        @if (Model.SearchResults.Count == 0)
+        @if (Model.SearchError != null)
+        {
+            <div class="alert alert-warning" role="alert">@Model.SearchError</div>
+        }
+        else if (Model.SearchResults.Count == 0)
         {
             <div class="alert alert-warning">
-                لم يُعثر على نتيجة. جرّب كلمة من الآية (حرفان على الأقل)، أو رقم السورة والآية مثل <code>2:4</code>.
+                لم يُعثر على نتيجة. جرّب كلمة من الآية (ثلاثة أحرف على الأقل)، أو رقم السورة والآية مثل <code>2:4</code>.
             </div>
+
         }
         else
         {
@@ -51,6 +56,28 @@
                     </a>
                 }
             </div>
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="search-pagination mt-3" aria-label="صفحات نتائج البحث">
+                    <p>الصفحة @Model.ResultPage من @Model.TotalPages — جميع النتائج متاحة عبر الصفحات.</p>
+                    <ul class="pagination flex-wrap">
+                        @if (Model.ResultPage > 1)
+                        {
+                            <li class="page-item"><a class="page-link" asp-page="/Index" asp-route-q="@Model.Q" asp-route-resultPage="1">الأولى</a></li>
+                            <li class="page-item"><a class="page-link" asp-page="/Index" asp-route-q="@Model.Q" asp-route-resultPage="@(Model.ResultPage - 1)">السابقة</a></li>
+                        }
+                        @for (var n = Math.Max(1, Model.ResultPage - 2); n <= Math.Min(Model.TotalPages, Model.ResultPage + 2); n++)
+                        {
+                            <li class="page-item @(n == Model.ResultPage ? "active" : "")"><a class="page-link" asp-page="/Index" asp-route-q="@Model.Q" asp-route-resultPage="@n" aria-current="@(n == Model.ResultPage ? "page" : null)">@n</a></li>
+                        }
+                        @if (Model.ResultPage < Model.TotalPages)
+                        {
+                            <li class="page-item"><a class="page-link" asp-page="/Index" asp-route-q="@Model.Q" asp-route-resultPage="@(Model.ResultPage + 1)">التالية</a></li>
+                            <li class="page-item"><a class="page-link" asp-page="/Index" asp-route-q="@Model.Q" asp-route-resultPage="@Model.TotalPages">الأخيرة</a></li>
+                        }
+                    </ul>
+                </nav>
+            }
         }
     </div>
     <hr class="my-5" />
