@@ -1,0 +1,19 @@
+{
+  "ayahId": "1:1",
+  "surahNumber": 1,
+  "ayahNumber": 1,
+  "pageNumber": 1,
+  "revision": 1,
+  "status": "Suggested",
+  "width": 112,
+  "height": 152,
+  "imageSha256": "A37618289DE70845C82B30ECA6FF1C8824E3C1457ECEC6DF832466FD0006D521",
+  "sourcePageSha256": "EC402FE195C40FB66B88488A4E7D3D08348982F164764CC4DE0D04AC2C79AFE3",
+  "margins": {
+    "top": 0,
+    "bottom": 0,
+    "left": 0,
+    "right": 0
+  },
+  "generatedAtUtc": "2026-10-11T22:16:03.9167861Z"
+}

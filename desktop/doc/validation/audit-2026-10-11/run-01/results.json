@@ -1,0 +1,38 @@
+[
+  {
+    "id": "A01",
+    "expected": "Aucune r\u00E9gion : refuser l\u0027extraction",
+    "passed": false,
+    "actual": "Success=True; taille=512x212"
+  },
+  {
+    "id": "A02",
+    "expected": "Ayah sur deux pages : inclure les pixels de la deuxi\u00E8me page",
+    "passed": false,
+    "actual": "Pixels bleus=0"
+  },
+  {
+    "id": "A03",
+    "expected": "Refuser Ready pour une reprise partielle et une image non approuv\u00E9es",
+    "passed": false,
+    "actual": "Success=True; status=Ready; image=Suggested"
+  },
+  {
+    "id": "A04",
+    "expected": "Conserver deux nouvelles reprises distinctes",
+    "passed": false,
+    "actual": "Reprises conserv\u00E9es=1; d\u00E9buts=20"
+  },
+  {
+    "id": "A05",
+    "expected": "La sauvegarde compl\u00E8te conserve la session config.json",
+    "passed": false,
+    "actual": "config.json pr\u00E9sent=False"
+  },
+  {
+    "id": "A06",
+    "expected": "Refuser une sauvegarde dont la base ne correspond pas \u00E0 son empreinte",
+    "passed": false,
+    "actual": "Restore.Success=True"
+  }
+]

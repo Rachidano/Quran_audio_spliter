@@ -1,0 +1,92 @@
+{
+  "inventoryItemsCount": 114,
+  "reciterName": "Saber Abdelhakam (Saber Abdelhakam)",
+  "physicalSourceFiles": [
+    {
+      "relativePath": "data/audio/sources/001/original.mp3",
+      "fileName": "original.mp3",
+      "isTmp": false,
+      "sizeBytes": 1129009,
+      "sha256": "318878f5983da82a52114b2440ceb50376a2a886ea17b55d99c9ce503f36f7c8",
+      "formatName": "mp3",
+      "durationSec": "67.325567",
+      "bitRate": "134155",
+      "audioStream": {
+        "codec_name": "mp3",
+        "sample_rate": "44100",
+        "channels": 2,
+        "channel_layout": "stereo",
+        "duration": "67.325563",
+        "bit_rate": "128000"
+      },
+      "probeError": null
+    },
+    {
+      "relativePath": "data/audio/sources/002/original.mp3",
+      "fileName": "original.mp3",
+      "isTmp": false,
+      "sizeBytes": 247766723,
+      "sha256": "7dec4d89cf366aecd3e0e5751ed4f7a834bb2017268a5355e045bc702956b90c",
+      "formatName": "mp3",
+      "durationSec": "15482.182689",
+      "bitRate": "128026",
+      "audioStream": {
+        "codec_name": "mp3",
+        "sample_rate": "44100",
+        "channels": 2,
+        "channel_layout": "stereo",
+        "duration": "15482.182688",
+        "bit_rate": "128000"
+      },
+      "probeError": null
+    },
+    {
+      "relativePath": "data/audio/sources/003/original.mp3.tmp",
+      "fileName": "original.mp3.tmp",
+      "isTmp": true,
+      "sizeBytes": 43646487,
+      "sha256": "f1aebe075406abeacb193eb0a1c2cc949b16501b62e4ce3983db2f7676f7f56f",
+      "formatName": "mp3",
+      "durationSec": "2724.667938",
+      "bitRate": "128152",
+      "audioStream": {
+        "codec_name": "mp3",
+        "sample_rate": "44100",
+        "channels": 2,
+        "channel_layout": "stereo",
+        "duration": "2724.667937",
+        "bit_rate": "128000"
+      },
+      "probeError": null
+    },
+    {
+      "relativePath": "data/audio/sources/112/original.mp3",
+      "fileName": "original.mp3",
+      "isTmp": false,
+      "sizeBytes": 571451,
+      "sha256": "7f9ab4b5ee444aa90e93bae6bd566b7e23678aa714393a76a76143eb6b054691",
+      "formatName": "mp3",
+      "durationSec": "32.478189",
+      "bitRate": "140759",
+      "audioStream": {
+        "codec_name": "mp3",
+        "sample_rate": "44100",
+        "channels": 2,
+        "channel_layout": "stereo",
+        "duration": "32.478187",
+        "bit_rate": "128000"
+      },
+      "probeError": null
+    }
+  ],
+  "summary": {
+    "completeFiles": [
+      "data/audio/sources/001/original.mp3",
+      "data/audio/sources/002/original.mp3",
+      "data/audio/sources/112/original.mp3"
+    ],
+    "incompleteFiles": [
+      "data/audio/sources/003/original.mp3.tmp"
+    ]
+  }
+}

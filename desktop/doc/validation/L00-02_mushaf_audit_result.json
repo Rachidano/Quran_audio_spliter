@@ -1,0 +1,33 @@
+{
+  "edition": "newMushaf",
+  "revision": "20260913-full",
+  "recordedAtUtc": "2026-09-13T09:17:40.8517962Z",
+  "pageCount": 604,
+  "manifestFilesCount": 1208,
+  "totalPngSizeBytes": 139575979,
+  "totalJsonSizeBytes": 2146542,
+  "missingFilesCount": 0,
+  "shaMismatchesCount": 0,
+  "sizeMismatchesCount": 0,
+  "pngHeaderErrorsCount": 0,
+  "uniqueDimensions": [
+    [
+      1241,
+      1754
+    ]
+  ],
+  "totalSurahs": 114,
+  "surahRange": [
+    1,
+    114
+  ],
+  "totalUniqueAyat": 6214,
+  "baqaraAyahCount": 285,
+  "baqaraMaxAyah": 285,
+  "totalRows": 6214,
+  "continuationsCount": 0,
+  "boundsErrorsCount": 0,
+  "shaMismatches": [],
+  "sizeMismatches": [],
+  "missingFiles": []
+}

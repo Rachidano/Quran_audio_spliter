@@ -1,0 +1,50 @@
+[
+  {
+    "id": "A01",
+    "expected": "Aucune r\u00E9gion : refuser l\u0027extraction",
+    "passed": false,
+    "actual": "Success=True; taille=512x212"
+  },
+  {
+    "id": "A02",
+    "expected": "Ayah sur deux pages : inclure les pixels de la deuxi\u00E8me page",
+    "passed": false,
+    "actual": "Pixels bleus=0"
+  },
+  {
+    "id": "A03",
+    "expected": "Refuser Ready pour une reprise partielle et une image non approuv\u00E9es",
+    "passed": false,
+    "actual": "Success=True; status=Ready; image=Suggested"
+  },
+  {
+    "id": "A04",
+    "expected": "Conserver deux nouvelles reprises distinctes",
+    "passed": false,
+    "actual": "Reprises conserv\u00E9es=1; d\u00E9buts=20"
+  },
+  {
+    "id": "A05",
+    "expected": "La sauvegarde compl\u00E8te conserve la session config.json",
+    "passed": false,
+    "actual": "config.json pr\u00E9sent=False"
+  },
+  {
+    "id": "A06",
+    "expected": "Refuser une sauvegarde dont la base ne correspond pas \u00E0 son empreinte",
+    "passed": false,
+    "actual": "Restore.Success=True"
+  },
+  {
+    "id": "A07",
+    "expected": "Importer le manifeste r\u00E9el du d\u00E9p\u00F4t",
+    "passed": false,
+    "actual": "KeyNotFoundException: The given key was not present in the dictionary."
+  },
+  {
+    "id": "A08",
+    "expected": "T\u00E9l\u00E9chargement simul\u00E9 localement : enregistrer le MP3 re\u00E7u",
+    "passed": false,
+    "actual": "\u0641\u0634\u0644 \u0627\u0633\u062A\u064A\u0631\u0627\u062F \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0635\u0648\u062A\u064A: The process cannot access the file \u0027D:\\Projets\\ITComp\\Quran\\desktop\\doc\\validation\\audit-2026-10-11\\run-02\\workspace\\media\\audio\\husary\\001.mp3\u0027 because it is being used by another process."
+  }
+]

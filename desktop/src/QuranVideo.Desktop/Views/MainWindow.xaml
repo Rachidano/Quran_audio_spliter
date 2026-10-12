@@ -1,0 +1,162 @@
+<Window x:Class="QuranVideo.Desktop.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:QuranVideo.Desktop.ViewModels"
+        xmlns:views="clr-namespace:QuranVideo.Desktop.Views"
+        mc:Ignorable="d"
+        Title="صانع فيديو القرآن الكريم — برواية ورش عن نافع" 
+        Icon="pack://application:,,,/Resources/app.ico"
+        Height="760" Width="1120" MinHeight="680" MinWidth="960"
+        WindowStartupLocation="CenterScreen"
+        FlowDirection="RightToLeft"
+        FontFamily="Segoe UI, Tahoma, Arial"
+        Background="#f8fafc">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <!-- DataTemplates for Main Views -->
+        <DataTemplate DataType="{x:Type vm:LibraryViewModel}">
+            <views:LibraryView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:StudioViewModel}">
+            <views:StudioView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:BatchExportViewModel}">
+            <views:BatchExportView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:MyVideosViewModel}">
+            <views:MyVideosView/>
+        </DataTemplate>
+
+        <!-- Navigation Tab Style -->
+        <Style x:Key="NavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#334155"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="BorderThickness" Value="0,0,0,3"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Header Navigation Bar -->
+        <Border Grid.Row="0" Background="White" BorderBrush="#e2e8f0" BorderThickness="0,0,0,1">
+            <Grid Margin="24,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Brand / Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,12,32,12">
+                    <Border Background="#15803d" Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0">
+                        <TextBlock Text="📖" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="صانع فيديو القرآن الكريم" FontSize="18" FontWeight="Bold" Foreground="#0f172a"/>
+                        <TextBlock Text="برواية ورش عن نافع" FontSize="12" FontWeight="SemiBold" Foreground="#15803d"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- The 3 Primary Tabs (L02-03) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <!-- 1. المكتبة -->
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectLibraryCommand}">
+                        <Button.Triggers>
+                            <!-- Visual triggers for active state -->
+                        </Button.Triggers>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="المكتبة" Margin="0,0,6,0"/>
+                            <TextBlock Text="📚"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 2. إعداد الفيديو -->
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectStudioCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="إعداد الفيديو" Margin="0,0,6,0"/>
+                            <TextBlock Text="🎬"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 3. التصدير بالدفعة -->
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectBatchExportCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="التصدير بالدفعة" Margin="0,0,6,0"/>
+                            <TextBlock Text="📋"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 4. فيديوهاتي -->
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectMyVideosCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="فيديوهاتي" Margin="0,0,6,0"/>
+                            <TextBlock Text="📁"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Secondary Actions: Settings -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding ToggleSettingsCommand}" Background="#f1f5f9" Foreground="#334155"
+                            FontWeight="SemiBold" FontSize="13" Padding="12,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="الإعدادات" Margin="0,0,6,0"/>
+                            <TextBlock Text="⚙"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Body: Active View -->
+        <ContentControl Grid.Row="1" Content="{Binding CurrentContentViewModel}"/>
+
+        <!-- Bottom Status Bar -->
+        <Border Grid.Row="2" Background="White" BorderBrush="#e2e8f0" BorderThickness="0,1,0,0" Padding="20,8">
+            <DockPanel>
+                <!-- LTR Workspace Path -->
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="مجلد العمل: " Foreground="#64748b" FontSize="12"/>
+                    <TextBlock Text="{Binding WorkspacePath}" FlowDirection="LeftToRight" Foreground="#0f172a" FontSize="12" FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <!-- Status Text -->
+                <TextBlock Text="{Binding StatusText}" Foreground="#15803d" FontWeight="SemiBold" FontSize="13" 
+                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Settings Dialog Overlay -->
+        <Grid Grid.RowSpan="3"
+              Visibility="{Binding IsSettingsOpen, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+            <views:SettingsDialog DataContext="{Binding SettingsVM}"/>
+        </Grid>
+    </Grid>
+</Window>

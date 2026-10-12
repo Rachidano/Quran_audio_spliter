@@ -1,0 +1,195 @@
+{
+  "ExecutionDate": "2026-10-11T20:46:37.9929645Z",
+  "ImagesGenerated": [
+    {
+      "Case": "01_Fatiha_1_1",
+      "Surah": 1,
+      "Ayah": 1,
+      "Page": 1,
+      "RectCount": 1,
+      "BBox": {
+        "RoundX": 242,
+        "RoundY": 662,
+        "RoundWidth": 556,
+        "RoundHeight": 101
+      },
+      "IsolatedImage": "01_Fatiha_1_1_isolated.png",
+      "ComparisonImage": "01_Fatiha_1_1_comparison.png"
+    },
+    {
+      "Case": "02_Fatiha_1_7",
+      "Surah": 1,
+      "Ayah": 7,
+      "Page": 1,
+      "RectCount": 2,
+      "BBox": {
+        "RoundX": 140,
+        "RoundY": 999,
+        "RoundWidth": 658,
+        "RoundHeight": 185
+      },
+      "IsolatedImage": "02_Fatiha_1_7_isolated.png",
+      "ComparisonImage": "02_Fatiha_1_7_comparison.png"
+    },
+    {
+      "Case": "03_Baqara_2_1",
+      "Surah": 2,
+      "Ayah": 1,
+      "Page": 2,
+      "RectCount": 2,
+      "BBox": {
+        "RoundX": 442,
+        "RoundY": 651,
+        "RoundWidth": 660,
+        "RoundHeight": 183
+      },
+      "IsolatedImage": "03_Baqara_2_1_isolated.png",
+      "ComparisonImage": "03_Baqara_2_1_comparison.png"
+    },
+    {
+      "Case": "04_Baqara_2_2",
+      "Surah": 2,
+      "Ayah": 2,
+      "Page": 2,
+      "RectCount": 2,
+      "BBox": {
+        "RoundX": 442,
+        "RoundY": 734,
+        "RoundWidth": 660,
+        "RoundHeight": 183
+      },
+      "IsolatedImage": "04_Baqara_2_2_isolated.png",
+      "ComparisonImage": "04_Baqara_2_2_comparison.png"
+    },
+    {
+      "Case": "05_Baqara_2_4",
+      "Surah": 2,
+      "Ayah": 4,
+      "Page": 2,
+      "RectCount": 2,
+      "BBox": {
+        "RoundX": 442,
+        "RoundY": 983,
+        "RoundWidth": 660,
+        "RoundHeight": 183
+      },
+      "IsolatedImage": "05_Baqara_2_4_isolated.png",
+      "ComparisonImage": "05_Baqara_2_4_comparison.png"
+    },
+    {
+      "Case": "06_Baqara_2_255_Kursi",
+      "Surah": 2,
+      "Ayah": 255,
+      "Page": 42,
+      "RectCount": 3,
+      "BBox": {
+        "RoundX": 201,
+        "RoundY": 1215,
+        "RoundWidth": 839,
+        "RoundHeight": 244
+      },
+      "IsolatedImage": "06_Baqara_2_255_Kursi_isolated.png",
+      "ComparisonImage": "06_Baqara_2_255_Kursi_comparison.png"
+    },
+    {
+      "Case": "07_Baqara_2_282_Dayn",
+      "Surah": 2,
+      "Ayah": 282,
+      "Page": 49,
+      "RectCount": 3,
+      "BBox": {
+        "RoundX": 201,
+        "RoundY": 309,
+        "RoundWidth": 839,
+        "RoundHeight": 320
+      },
+      "IsolatedImage": "07_Baqara_2_282_Dayn_isolated.png",
+      "ComparisonImage": "07_Baqara_2_282_Dayn_comparison.png"
+    },
+    {
+      "Case": "08_Ikhlas_112_1",
+      "Surah": 112,
+      "Ayah": 1,
+      "Page": 604,
+      "RectCount": 1,
+      "BBox": {
+        "RoundX": 713,
+        "RoundY": 460,
+        "RoundWidth": 327,
+        "RoundHeight": 93
+      },
+      "IsolatedImage": "08_Ikhlas_112_1_isolated.png",
+      "ComparisonImage": "08_Ikhlas_112_1_comparison.png"
+    },
+    {
+      "Case": "09_Ikhlas_112_4",
+      "Surah": 112,
+      "Ayah": 4,
+      "Page": 604,
+      "RectCount": 1,
+      "BBox": {
+        "RoundX": 375,
+        "RoundY": 536,
+        "RoundWidth": 456,
+        "RoundHeight": 92
+      },
+      "IsolatedImage": "09_Ikhlas_112_4_isolated.png",
+      "ComparisonImage": "09_Ikhlas_112_4_comparison.png"
+    }
+  ],
+  "AudioBenchmark": [
+    {
+      "AudioFile": "D:\\Projets\\ITComp\\Quran\\data/audio/sources\\001/original.mp3",
+      "FileSizeBytes": 1129009,
+      "FFprobeDurationSec": 67.325567,
+      "NAudioDurationSec": 67.3175623,
+      "NAudioTotalSamples": 2968704,
+      "SampleRate": 44100,
+      "Channels": 2,
+      "SeekDiscrepancyMs": 0.005650000005630318,
+      "EvaluationDecision": "NAudio MediaFoundation direct seek is precise (\u003C15ms discrepancy)"
+    },
+    {
+      "AudioFile": "D:\\Projets\\ITComp\\Quran\\data/audio/sources\\112/original.mp3",
+      "FileSizeBytes": 571451,
+      "FFprobeDurationSec": 32.478189,
+      "NAudioDurationSec": 32.470187,
+      "NAudioTotalSamples": 1431935,
+      "SampleRate": 44100,
+      "Channels": 2,
+      "SeekDiscrepancyMs": 0.0028000000007466497,
+      "EvaluationDecision": "NAudio MediaFoundation direct seek is precise (\u003C15ms discrepancy)"
+    },
+    {
+      "AudioFile": "D:\\Projets\\ITComp\\Quran\\data/audio/sources\\002/original.mp3",
+      "FileSizeBytes": 247766723,
+      "FFprobeDurationSec": 15482.182689,
+      "NAudioDurationSec": 15482.1746825,
+      "NAudioTotalSamples": 682763903,
+      "SampleRate": 44100,
+      "Channels": 2,
+      "SeekDiscrepancyMs": 0,
+      "EvaluationDecision": "NAudio MediaFoundation direct seek is precise (\u003C15ms discrepancy)"
+    }
+  ],
+  "HorizontalVideo": {
+    "Success": true,
+    "ErrorMessage": null,
+    "Width": 1920,
+    "Height": 1080,
+    "DurationSeconds": 5.8,
+    "VideoCodec": "h264",
+    "AudioCodec": "aac",
+    "FileSizeBytes": 178191
+  },
+  "VerticalVideo": {
+    "Success": true,
+    "ErrorMessage": null,
+    "Width": 1080,
+    "Height": 1920,
+    "DurationSeconds": 7.5,
+    "VideoCodec": "h264",
+    "AudioCodec": "aac",
+    "FileSizeBytes": 210110
+  }
+}

@@ -1,0 +1,185 @@
+using System.IO;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using QuranVideo.Desktop.Data;
+using QuranVideo.Desktop.Models;
+using QuranVideo.Desktop.Services;
+
+namespace QuranVideo.Desktop.ViewModels;
+
+public sealed partial class MainViewModel : ViewModelBase
+{
+    private readonly WorkspaceService _workspaceService;
+
+    [ObservableProperty]
+    private string _activeTab = "Library"; // "Library", "Studio", "MyVideos"
+
+    [ObservableProperty]
+    private ViewModelBase? _currentContentViewModel;
+
+    [ObservableProperty]
+    private bool _isSettingsOpen;
+
+    [ObservableProperty]
+    private string _statusText = "جاهز";
+
+    [ObservableProperty]
+    private string _workspacePath = string.Empty;
+
+    public LibraryViewModel LibraryVM { get; }
+    public StudioViewModel StudioVM { get; }
+    public BatchExportViewModel BatchExportVM { get; }
+    public MyVideosViewModel MyVideosVM { get; }
+    public SettingsViewModel SettingsVM { get; }
+    public QuranSearchService SearchService { get; } = new();
+
+    public MainViewModel(WorkspaceService workspaceService)
+    {
+        _workspaceService = workspaceService;
+        WorkspacePath = _workspaceService.WorkspacePath;
+
+        LibraryVM = new LibraryViewModel(NavigateToStudioWithTarget, SearchService);
+        StudioVM = new StudioViewModel(_workspaceService);
+        BatchExportVM = new BatchExportViewModel(_workspaceService);
+        MyVideosVM = new MyVideosViewModel(_workspaceService);
+        SettingsVM = new SettingsViewModel(_workspaceService, () => { IsSettingsOpen = false; _ = StudioVM.RefreshRecitersAsync(selectDefault: true); });
+
+        CurrentContentViewModel = LibraryVM;
+    }
+
+    public async Task InitializeSessionAsync()
+    {
+        var dbPath = _workspaceService.GetDatabasePath();
+
+        // 1. Initialize reciter collections (Saber Abdelhakam default, Al-Husary)
+        var reciterService = new RecitationLibraryService(_workspaceService);
+        await reciterService.InitializeDefaultCollectionAsync();
+        await StudioVM.RefreshRecitersAsync(selectDefault: true);
+
+        // 2. Auto-detect Mushaf pack on fresh startup if no edition exists yet
+        try
+        {
+            using var db = new AppDbContext(dbPath);
+            if (!await db.Editions.AnyAsync() || !await db.Regions.AnyAsync())
+            {
+                var candidates = new[]
+                {
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pack"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mushaf"),
+                    Path.Combine(_workspaceService.WorkspacePath, "pack"),
+                    @"D:\Projets\ITComp\Quran\data\mushaf\editions\marw-newMushaf\20260913-full",
+                    Path.GetFullPath("data/mushaf/editions/marw-newMushaf/20260913-full"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\data\mushaf\editions\marw-newMushaf\20260913-full")
+                };
+
+                string? foundPack = null;
+                foreach (var cand in candidates)
+                {
+                    if (Directory.Exists(cand) && File.Exists(Path.Combine(cand, "manifest.json")))
+                    {
+                        foundPack = cand;
+                        break;
+                    }
+                }
+
+                if (foundPack != null)
+                {
+                    StatusText = "جارٍ استيراد حزمة المصحف الشريف لأول مرة...";
+                    var importService = new CorpusImportService(_workspaceService);
+                    await importService.ImportPackAsync(foundPack);
+                    StatusText = "تم استيراد حزمة المصحف الشريف بنجاح";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Instance.LogWarning($"Impossible d'importer automatiquement le pack: {ex.Message}");
+        }
+
+        // 3. Initialize search index
+        await SearchService.InitializeAsync(dbPath);
+
+        // 4. Restore session
+        var session = await _workspaceService.LoadSessionStateAsync();
+        StudioVM.SetTarget(session.LastSurahNumber, session.LastAyahNumber);
+        StudioVM.IsHorizontal = session.LastOrientation == "Horizontal";
+        await StudioVM.LoadAyahImageAsync();
+
+        if (session.ActiveView == "Studio")
+        {
+            SelectStudio();
+        }
+        else if (session.ActiveView == "MyVideos")
+        {
+            SelectMyVideos();
+        }
+        else
+        {
+            SelectLibrary();
+        }
+    }
+
+    private void NavigateToStudioWithTarget(int surahNumber, int ayahNumber)
+    {
+        StudioVM.SetTarget(surahNumber, ayahNumber);
+        SelectStudio();
+    }
+
+    [RelayCommand]
+    public void SelectLibrary()
+    {
+        ActiveTab = "Library";
+        CurrentContentViewModel = LibraryVM;
+        StatusText = "المكتبة — استعراض السور والآيات";
+        SaveSession();
+    }
+
+    [RelayCommand]
+    public void SelectStudio()
+    {
+        ActiveTab = "Studio";
+        CurrentContentViewModel = StudioVM;
+        _ = StudioVM.RefreshRecitersAsync();
+        StatusText = $"إعداد الفيديو — {StudioVM.TargetDescription}";
+        _ = StudioVM.LoadAyahImageAsync();
+        SaveSession();
+    }
+
+    [RelayCommand]
+    public void SelectBatchExport()
+    {
+        ActiveTab = "BatchExport";
+        _ = BatchExportVM.LoadJobsAsync();
+        CurrentContentViewModel = BatchExportVM;
+        StatusText = "التصدير بالدفعة — إدارة قائمة الانتظار";
+        SaveSession();
+    }
+
+    [RelayCommand]
+    public void SelectMyVideos()
+    {
+        ActiveTab = "MyVideos";
+        MyVideosVM.RefreshVideos();
+        CurrentContentViewModel = MyVideosVM;
+        StatusText = "فيديوهاتي — استعراض المقاطع المنتجة";
+        SaveSession();
+    }
+
+    [RelayCommand]
+    public void ToggleSettings()
+    {
+        IsSettingsOpen = !IsSettingsOpen;
+    }
+
+    private void SaveSession()
+    {
+        _ = _workspaceService.SaveSessionStateAsync(new SessionState
+        {
+            ActiveView = ActiveTab,
+            LastSurahNumber = StudioVM.CurrentSurah.Number,
+            LastAyahNumber = StudioVM.CurrentAyahNumber,
+            LastOrientation = StudioVM.IsHorizontal ? "Horizontal" : "Vertical"
+        });
+    }
+}

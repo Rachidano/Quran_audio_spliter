@@ -1,0 +1,302 @@
+<UserControl x:Class="QuranVideo.Desktop.Views.SettingsDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:QuranVideo.Desktop.ViewModels"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <!-- Sleek Minimalist ScrollBar for Dialog -->
+        <Style x:Key="ModernScrollBarThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border Background="#cbd5e1" CornerRadius="3" Margin="1,0"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" Value="#94a3b8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="true">
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ModernScrollBarThumb}"/>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Action Button Style -->
+        <Style x:Key="ModernDialogButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" TargetName="border" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" TargetName="border" Value="0.75"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" TargetName="border" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="#80000000">
+        <!-- Dialog Container -->
+        <Border Background="White" CornerRadius="16" BorderBrush="#e2e8f0" BorderThickness="1"
+                Width="740" MaxHeight="680" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="28,24">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="30" ShadowDepth="10" Opacity="0.22" Color="#0f172a"/>
+            </Border.Effect>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 1. Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Background="#ecfdf5" Width="44" Height="44" CornerRadius="12" Margin="0,0,14,0">
+                            <TextBlock Text="⚙️" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="الإعدادات ومعلومات النظام" FontSize="20" FontWeight="Bold" Foreground="#0f172a"/>
+                            <TextBlock Text="إدارة مصادر التلاوات، حزمة المصحف الشريف، والنسخ الاحتياطي" FontSize="12" Foreground="#64748b" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Circular Close Button -->
+                    <Button Grid.Column="1" Command="{Binding CloseCommand}" Background="#f8fafc" BorderThickness="0" 
+                            Width="36" Height="36" Cursor="Hand" VerticalAlignment="Center" Style="{StaticResource ModernDialogButton}">
+                        <TextBlock Text="✕" FontSize="15" FontWeight="Bold" Foreground="#64748b"/>
+                    </Button>
+                </Grid>
+
+                <Separator Grid.Row="0" VerticalAlignment="Bottom" Background="#f1f5f9" Height="1" Margin="0,0,0,0"/>
+
+                <!-- 2. Scrollable Content -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,14,12,14">
+                    <StackPanel>
+                        <!-- App Version & Workspace Card -->
+                        <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Version row with distinct columns to prevent RTL overlap -->
+                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="🏷️" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="إصدار التطبيق :" Foreground="#475569" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="2" Background="#ecfdf5" BorderBrush="#a7f3d0" BorderThickness="1" CornerRadius="12" Padding="12,3">
+                                        <TextBlock Text="{Binding AppVersion, StringFormat='الإصدار {0}'}" FlowDirection="LeftToRight" 
+                                                   FontWeight="Bold" Foreground="#047857" FontSize="12"/>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Workspace Path row -->
+                                <StackPanel Grid.Row="1">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="📁" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="مجلد العمل الحالي :" Foreground="#475569" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="6" Padding="10,7">
+                                        <TextBlock Text="{Binding WorkspacePath}" FlowDirection="LeftToRight" Foreground="#1e293b" 
+                                                   FontSize="12" TextWrapping="Wrap" FontFamily="Consolas, Segoe UI"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Official Source Attribution Card -->
+                        <Border Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Background="#dcfce7" Width="38" Height="38" CornerRadius="8" Margin="0,0,12,0" VerticalAlignment="Top">
+                                    <TextBlock Text="📖" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="مصدر المصحف الشريف والرواية المعتمدة" FontWeight="Bold" FontSize="14" Foreground="#166534" Margin="0,0,0,4"/>
+                                    <TextBlock Text="استُخرجت صفحات وصور القرآن الكريم من البوابة الرسمية لوزارة الشؤون الدينية والأوقاف الجزائرية — مصحف الجزائر الإلكتروني (رواية ورش عن نافع)." 
+                                               Foreground="#15803d" FontSize="12" TextWrapping="Wrap" LineHeight="18"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Reciter Audio Links Card -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="🎙️" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="القراء وروابط التلاوات المباشرة" FontWeight="Bold" FontSize="14" Foreground="#0f172a" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="إعداد وتعديل روابط السور الـ114 لكل قارئ وتنزيل التلاوات بصيغة MP3 مباشرة من الإنترنت." 
+                                               FontSize="12" Foreground="#64748b" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="1" Command="{Binding OpenAudioSourcesCommand}" Style="{StaticResource ModernDialogButton}"
+                                        Background="#059669" Foreground="White" Padding="18,10" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="🎙️ إعداد روابط السور وتنزيلها" FontSize="13"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- Mushaf Pack Import Card -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="📦" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="حزمة المصحف الشريف (الصفحات والإحداثيات)" FontWeight="Bold" FontSize="14" Foreground="#0f172a" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="استيراد أو تحديث صفحات المصحف الشريف وإحداثيات الآيات من مجلد الحزمة (manifest.json)." 
+                                               FontSize="12" Foreground="#64748b" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding PackStatusMessage}" Foreground="#0d9488" FontSize="12" FontWeight="SemiBold" 
+                                               Margin="0,6,0,0" TextWrapping="Wrap" Visibility="{Binding PackStatusMessage.Length, Converter={x:Null}}"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="1" Command="{Binding ImportPackCommand}" Style="{StaticResource ModernDialogButton}"
+                                        Background="#0d9488" Foreground="White" Padding="18,10" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="📂 استيراد حزمة مصحف..." FontSize="13"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- Backup & Restore Card -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,14">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <TextBlock Text="💾" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="النسخ الاحتياطي والاسترجاع (حفظ المشروع)" FontWeight="Bold" FontSize="14" Foreground="#0f172a" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Text="حفظ كامل البيانات والتوقيتات والتسجيلات في أرشيف مضغوط آمن، أو استرجاع مشروع سابق." 
+                                                   FontSize="12" Foreground="#64748b" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Command="{Binding CreateBackupCommand}" Style="{StaticResource ModernDialogButton}"
+                                                Background="#15803d" Foreground="White" Padding="16,9" Margin="0,0,8,0">
+                                            <TextBlock Text="💾 إنشاء نسخة احتياطية"/>
+                                        </Button>
+                                        <Button Command="{Binding RestoreBackupCommand}" Style="{StaticResource ModernDialogButton}"
+                                                Background="#0284c7" Foreground="White" Padding="16,9">
+                                            <TextBlock Text="📥 استرجاع نسخة سابقة"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="{Binding BackupStatusMessage}" Foreground="#1e293b" FontSize="12" FontWeight="SemiBold" 
+                                           Margin="0,8,0,0" TextWrapping="Wrap" Visibility="{Binding BackupStatusMessage.Length, Converter={x:Null}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Diagnostics Card -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="📋" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="تقرير التشخيص والدعم الفني" FontWeight="Bold" FontSize="14" Foreground="#0f172a" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="تصدير ملف تشخيصي شامل بحالة النظام دون المساس بأي وسائط شخصية لتسهيل المساعدة الفنية." 
+                                               FontSize="12" Foreground="#64748b" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding DiagnosticStatusMessage}" Foreground="#15803d" FontSize="12" FontWeight="SemiBold" 
+                                               Margin="0,6,0,0" TextWrapping="Wrap" Visibility="{Binding DiagnosticStatusMessage.Length, Converter={x:Null}}"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="1" Command="{Binding ExportDiagnosticsAsyncCommand}" Style="{StaticResource ModernDialogButton}"
+                                        Background="#334155" Foreground="White" Padding="16,9" VerticalAlignment="Center">
+                                    <TextBlock Text="📋 تصدير ملف التشخيص"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 3. Footer -->
+                <Grid Grid.Row="2" Margin="0,14,0,0">
+                    <Separator VerticalAlignment="Top" Background="#f1f5f9" Height="1" Margin="0,0,0,12"/>
+                    <Button Command="{Binding CloseCommand}" Style="{StaticResource ModernDialogButton}"
+                            Background="#f1f5f9" Foreground="#334155" Padding="28,10" HorizontalAlignment="Center">
+                        <TextBlock Text="إغلاق النافذة" FontWeight="Bold" FontSize="13"/>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

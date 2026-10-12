@@ -1,0 +1,102 @@
+<UserControl x:Class="QuranVideo.Desktop.Views.MyVideosView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:QuranVideo.Desktop.ViewModels"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=vm:MyVideosViewModel}"
+             FlowDirection="RightToLeft"
+             d:DesignHeight="700" d:DesignWidth="1000">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Actions Toolbar -->
+        <Border Grid.Row="0" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button Command="{Binding PlaySelectedVideoCommand}" Background="#15803d" Foreground="White"
+                            FontWeight="Bold" FontSize="14" Padding="18,8" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="تشغيل المقطع" Margin="0,0,6,0"/>
+                            <TextBlock Text="▷"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding OpenVideosFolderCommand}" Background="#f1f5f9" Foreground="#334155"
+                            FontWeight="Bold" FontSize="14" Padding="16,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="0,0,8,0">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="فتح مجلد الفيديوهات" Margin="0,0,6,0"/>
+                            <TextBlock Text="📁"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding RefreshVideosCommand}" Background="#f8fafc" Foreground="#475569"
+                            Padding="12,8" BorderThickness="1" BorderBrush="#e2e8f0" Cursor="Hand">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                        <TextBlock Text="تحديث 🔄"/>
+                    </Button>
+                </StackPanel>
+
+                <TextBlock Text="سجل المقاطع المنتجة في مساحة العمل" FontSize="16" FontWeight="Bold" Foreground="#0f172a" 
+                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Videos List / Table -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="12">
+            <Grid>
+                <!-- Empty state -->
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Visibility="{Binding Videos.Count, Converter={x:Null}}">
+                    <TextBlock Text="🎬" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                    <TextBlock Text="لا توجد مقاطع فيديو منشأة بعد في هذا المجلد" FontSize="18" FontWeight="Bold" Foreground="#64748b" HorizontalAlignment="Center"/>
+                    <TextBlock Text="اختر سورة وآية من المكتبة واضغط 'إنشاء الفيديو' لبدء التوليد." FontSize="14" Foreground="#94a3b8" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                </StackPanel>
+
+                <!-- List of Videos -->
+                <ListBox ItemsSource="{Binding Videos}" SelectedItem="{Binding SelectedVideo}"
+                         BorderThickness="0" Background="Transparent">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="12,10" BorderBrush="#f1f5f9" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Video icon -->
+                                    <Border Grid.Column="0" Background="#f0fdf4" Width="40" Height="40" CornerRadius="6" Margin="0,0,12,0">
+                                        <TextBlock Text="🎬" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+
+                                    <!-- File Name -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding FileName}" FontSize="15" FontWeight="SemiBold" Foreground="#0f172a" FlowDirection="LeftToRight" HorizontalAlignment="Right"/>
+                                        <TextBlock Text="{Binding FullPath}" FontSize="11" Foreground="#94a3b8" FlowDirection="LeftToRight" HorizontalAlignment="Right"/>
+                                    </StackPanel>
+
+                                    <!-- Size -->
+                                    <TextBlock Grid.Column="2" Text="{Binding FormattedSize}" FontSize="13" Foreground="#475569" 
+                                               VerticalAlignment="Center" Margin="24,0"/>
+
+                                    <!-- Date -->
+                                    <TextBlock Grid.Column="3" Text="{Binding FormattedDate}" FontSize="12" Foreground="#64748b" 
+                                               FlowDirection="LeftToRight" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

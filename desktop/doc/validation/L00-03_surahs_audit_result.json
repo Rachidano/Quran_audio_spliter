@@ -1,0 +1,38 @@
+{
+  "edition": "newMushaf",
+  "revision": "20260913-full",
+  "provenance": "https://mushaf.marw.dz/web/ar/mushaf/newMushaf/1",
+  "recordedAtUtc": "2026-09-13T09:17:40.8517962Z",
+  "totalSurahs": 114,
+  "totalAyahs": 6214,
+  "baqaraAyahCount": 285,
+  "anomalies": [],
+  "differencesWithQpcCount": [],
+  "firstSurah": {
+    "number": 1,
+    "name": "الفاتحة",
+    "ayahCount": 7,
+    "startVerseNo": 1,
+    "endVerseNo": 7,
+    "startPage": 1,
+    "endPage": 1
+  },
+  "baqara": {
+    "number": 2,
+    "name": "البقرة",
+    "ayahCount": 285,
+    "startVerseNo": 8,
+    "endVerseNo": 292,
+    "startPage": 2,
+    "endPage": 49
+  },
+  "lastSurah": {
+    "number": 114,
+    "name": "الناس",
+    "ayahCount": 6,
+    "startVerseNo": 6209,
+    "endVerseNo": 6214,
+    "startPage": 604,
+    "endPage": 604
+  }
+}

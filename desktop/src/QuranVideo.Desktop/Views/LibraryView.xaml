@@ -1,0 +1,283 @@
+<UserControl x:Class="QuranVideo.Desktop.Views.LibraryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:QuranVideo.Desktop.ViewModels"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=vm:LibraryViewModel}"
+             FlowDirection="RightToLeft"
+             d:DesignHeight="700" d:DesignWidth="1000">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header and Source Attribution -->
+        <Border Grid.Row="0" Background="#f0fdf4" BorderBrush="#bbf7d0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+            <DockPanel>
+                <Border DockPanel.Dock="Right" Background="#15803d" CornerRadius="4" Padding="8,4" Margin="0,0,12,0">
+                    <TextBlock Text="مصدرنا الرسمي" Foreground="White" FontWeight="Bold" FontSize="13"/>
+                </Border>
+                <TextBlock VerticalAlignment="Center" FontSize="13" Foreground="#166534">
+                    <Run Text="المصحف الشريف برواية ورش عن نافع — مستخرج بدقة من مصحف الجزائر الإلكتروني (وزارة الشؤون الدينية والأوقاف)"/>
+                </TextBlock>
+            </DockPanel>
+        </Border>
+
+        <!-- Search Bar and Action Bar -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Search input with exact required label -->
+            <Border Grid.Column="0" Background="White" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="6" Padding="4">
+                <Grid>
+                    <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
+                             FontSize="15" Padding="10,6" BorderThickness="0" Background="Transparent"
+                             VerticalContentAlignment="Center"/>
+                    <TextBlock Text="أكتب كلمة أو آية أو رقم..." IsHitTestVisible="False" Foreground="#94a3b8" 
+                               FontSize="15" Margin="14,8,0,0" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Border>
+
+            <Button Grid.Column="1" Command="{Binding OpenInStudioCommand}" Margin="12,0,0,0"
+                    Background="#15803d" Foreground="White" FontWeight="Bold" FontSize="14"
+                    Padding="20,10" BorderThickness="0" Cursor="Hand">
+                <Button.Resources>
+                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                </Button.Resources>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="فتح في إعداد الفيديو" Margin="0,0,8,0"/>
+                    <TextBlock Text="⬅"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Validation message banner if any -->
+        <Border Grid.Row="1" Background="#fffbeb" BorderBrush="#fde68a" BorderThickness="1" CornerRadius="6" 
+                Padding="12,8" Margin="0,54,0,0" VerticalAlignment="Top"
+                Visibility="{Binding HasSearchValidationMessage, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+            <TextBlock Text="{Binding SearchValidationMessage}" Foreground="#b45309" FontSize="13" FontWeight="SemiBold"/>
+        </Border>
+
+        <!-- Main Content Area: Search Mode vs Surah List Mode -->
+        <Grid Grid.Row="2">
+            <!-- MODE 1: Search Results View -->
+            <Grid Visibility="{Binding IsSearchMode, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Search Header -->
+                <DockPanel Grid.Row="0" Margin="0,0,0,12">
+                    <TextBlock Text="{Binding SearchTotalCount, StringFormat='نتائج البحث : {0} آية مطابقة'}" 
+                               FontSize="16" FontWeight="Bold" Foreground="#0f172a" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <!-- Results List -->
+                <Border Grid.Row="1" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8">
+                    <ListBox ItemsSource="{Binding SearchResults}" SelectedItem="{Binding SelectedSearchResult}"
+                             BorderThickness="0" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="16,12" BorderBrush="#f1f5f9" BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <!-- Surah Name and Latin Ayah Number in Parentheses -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                <TextBlock Text="{Binding SurahNameArabic, StringFormat='سورة {0}'}" FontSize="15" FontWeight="Bold" Foreground="#15803d" Margin="0,0,6,0"/>
+                                                <TextBlock Text="{Binding AyahNumber, StringFormat='({0})'}" FontSize="14" FontWeight="Bold" Foreground="#0f172a" FlowDirection="LeftToRight"/>
+                                                <TextBlock Text="{Binding PageNumber, StringFormat=' — صفحة {0}'}" FontSize="13" Foreground="#64748b" Margin="8,0,0,0"/>
+                                            </StackPanel>
+
+                                            <!-- Original Arabic Quranic Text -->
+                                            <TextBlock Text="{Binding OriginalText}" FontSize="17" LineHeight="28" Foreground="#1e293b" TextWrapping="Wrap"/>
+                                        </StackPanel>
+
+                                        <!-- Direct Jump Button -->
+                                        <Button Grid.Column="1" Command="{Binding DataContext.OpenSearchResultInStudioCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                CommandParameter="{Binding}"
+                                                Background="#f0fdf4" Foreground="#166534" BorderBrush="#86efac" BorderThickness="1"
+                                                Padding="12,6" Cursor="Hand" VerticalAlignment="Center" Margin="16,0,0,0">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="اختيار الآية 🎬" FontWeight="Bold"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+
+                <!-- Pagination Toolbar -->
+                <Border Grid.Row="2" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,12,0,0">
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                            <Button Command="{Binding PreviousSearchPageCommand}" Background="#f1f5f9" Foreground="#334155"
+                                    FontWeight="Bold" Padding="14,6" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="0,0,8,0">
+                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                <TextBlock Text="السابق ➡"/>
+                            </Button>
+                            <Button Command="{Binding NextSearchPageCommand}" Background="#f1f5f9" Foreground="#334155"
+                                    FontWeight="Bold" Padding="14,6" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand">
+                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                <TextBlock Text="⬅ التالي"/>
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock Text="الصفحة " Foreground="#64748b"/>
+                            <TextBlock Text="{Binding SearchCurrentPage}" FontWeight="Bold" Foreground="#0f172a" FlowDirection="LeftToRight"/>
+                            <TextBlock Text=" من " Foreground="#64748b"/>
+                            <TextBlock Text="{Binding SearchTotalPages}" FontWeight="Bold" Foreground="#0f172a" FlowDirection="LeftToRight"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- MODE 2: Normal Surahs List & Details View -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSearchMode}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Surahs DataGrid -->
+                <Border Grid.Column="0" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Margin="0,0,16,0">
+                    <ListBox ItemsSource="{Binding FilteredSurahs}" SelectedItem="{Binding SelectedSurah}"
+                             BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12,10" BorderBrush="#f1f5f9" BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="45"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Number -->
+                                        <Border Grid.Column="0" Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="4" Width="36" Height="36" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding Number}" FlowDirection="LeftToRight" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="#334155"/>
+                                        </Border>
+                                        <!-- Arabic Name & Latin -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
+                                            <TextBlock Text="{Binding NameArabic}" FontSize="16" FontWeight="Bold" Foreground="#0f172a"/>
+                                            <TextBlock Text="{Binding NameLatin}" FontSize="12" Foreground="#64748b" FlowDirection="LeftToRight" HorizontalAlignment="Right"/>
+                                        </StackPanel>
+                                        <!-- Ayah Count -->
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="16,0">
+                                            <TextBlock Text="عدد الآيات" FontSize="11" Foreground="#94a3b8" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{Binding AyahCount}" FontSize="13" FontWeight="SemiBold" Foreground="#1e293b" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                        <!-- Page range -->
+                                        <StackPanel Grid.Column="3" VerticalAlignment="Center" Margin="8,0">
+                                            <TextBlock Text="الصفحات" FontSize="11" Foreground="#94a3b8" HorizontalAlignment="Center"/>
+                                            <TextBlock FontSize="12" Foreground="#475569" FlowDirection="LeftToRight">
+                                                <Run Text="{Binding StartPage, Mode=OneWay}"/>
+                                                <Run Text="-"/>
+                                                <Run Text="{Binding EndPage, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+
+                <!-- Selected Surah Quick Preview Card -->
+                <Border Grid.Column="1" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="20">
+                    <StackPanel>
+                        <TextBlock Text="تفاصيل السورة المختارة" FontSize="17" FontWeight="Bold" Foreground="#0f172a" Margin="0,0,0,16"/>
+
+                        <Border Background="#f8fafc" CornerRadius="6" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="{Binding SelectedSurah.NameArabic, FallbackValue='سورة الفاتحة'}" 
+                                           FontSize="24" FontWeight="Bold" Foreground="#15803d" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock Text="{Binding SelectedSurah.NameLatin, FallbackValue='Al-Fatihah'}" 
+                                           FontSize="14" Foreground="#64748b" HorizontalAlignment="Center" FlowDirection="LeftToRight" Margin="0,0,0,12"/>
+                                
+                                <Separator Margin="0,8"/>
+
+                                <Grid Margin="0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="رقم السورة في المصحف:" Foreground="#475569"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SelectedSurah.Number}" FontWeight="Bold" Foreground="#0f172a"/>
+                                </Grid>
+
+                                <Grid Margin="0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="إجمالي عدد الآيات (ورش):" Foreground="#475569"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SelectedSurah.AyahCount}" FontWeight="Bold" Foreground="#0f172a"/>
+                                </Grid>
+
+                                <Grid Margin="0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="صفحة البداية والنهاية:" Foreground="#475569"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" FlowDirection="RightToLeft">
+                                        <TextBlock Text="{Binding SelectedSurah.StartPage, Mode=OneWay}" FontWeight="Bold" Foreground="#0f172a"/>
+                                        <TextBlock Text=" إلى " FontWeight="Bold" Foreground="#475569" Margin="4,0"/>
+                                        <TextBlock Text="{Binding SelectedSurah.EndPage, Mode=OneWay}" FontWeight="Bold" Foreground="#0f172a"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Button Command="{Binding OpenInStudioCommand}" Background="#15803d" Foreground="White" 
+                                FontWeight="Bold" FontSize="15" Padding="0,14" BorderThickness="0" Cursor="Hand" Margin="0,10,0,0">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="الانتقال إلى استوديو إعداد الفيديو ⬅"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
