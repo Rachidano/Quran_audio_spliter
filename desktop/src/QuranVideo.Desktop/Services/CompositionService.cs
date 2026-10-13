@@ -11,11 +11,16 @@ public sealed class CompositionService
 {
     private readonly WorkspaceService _workspaceService;
     private readonly AyahImageService _imageService;
+    private readonly SequenceValidationService _sequenceValidator;
 
-    public CompositionService(WorkspaceService workspaceService, AyahImageService? imageService = null)
+    public CompositionService(
+        WorkspaceService workspaceService,
+        AyahImageService? imageService = null,
+        SequenceValidationService? sequenceValidator = null)
     {
         _workspaceService = workspaceService;
         _imageService = imageService ?? new AyahImageService(workspaceService);
+        _sequenceValidator = sequenceValidator ?? new SequenceValidationService(workspaceService);
     }
 
     private string GetDbPath() => Path.Combine(_workspaceService.WorkspacePath, "data", "quran.db");
@@ -120,8 +125,15 @@ public sealed class CompositionService
         return (true, null, comp);
     }
 
+    public Task<(bool Success, string? ErrorMessage, VideoCompositionEntity Composition)> RenderCompositionAsync(
+        int compositionId,
+        IProgress<int>? progress = null,
+        CancellationToken cancellationToken = default)
+        => RenderCompositionAsync(compositionId, settings: null, progress: progress, cancellationToken: cancellationToken);
+
     public async Task<(bool Success, string? ErrorMessage, VideoCompositionEntity Composition)> RenderCompositionAsync(
         int compositionId,
+        CardCompositionSettings? settings,
         IProgress<int>? progress = null,
         CancellationToken cancellationToken = default)
     {
@@ -171,7 +183,8 @@ public sealed class CompositionService
             comp.StartTimeSec,
             comp.EndTimeSec,
             finalVideoPath,
-            orientationEnum);
+            orientationEnum,
+            Settings: settings);
 
         var result = await FfmpegVideoGenerator.GenerateAyahVideoAsync(req, cancellationToken);
         progress?.Report(80);
@@ -236,6 +249,128 @@ public sealed class CompositionService
         progress?.Report(100);
 
         return (true, null, comp);
+    }
+
+    public async Task<(bool Success, string? ErrorMessage, VideoProjectEntity Project)> RenderProjectAsync(
+        int projectId,
+        IProgress<int>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        using var db = CreateDbContext();
+        var project = await db.Projects
+            .Include(p => p.SelectedAyahs)
+            .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
+
+        if (project == null)
+        {
+            return (false, "المشروع غير موجود في قاعدة البيانات.", new VideoProjectEntity());
+        }
+
+        // 1. Strict sequence validation
+        var validation = await _sequenceValidator.ValidateProjectAsync(project, checkPhysicalFiles: true, cancellationToken);
+        if (!validation.IsValid)
+        {
+            project.Status = "Failed";
+            project.ErrorMessage = string.Join("; ", validation.GetAllErrorMessages());
+            await db.SaveChangesAsync(cancellationToken);
+            return (false, project.ErrorMessage, project);
+        }
+
+        project.Status = "Rendering";
+        await db.SaveChangesAsync(cancellationToken);
+        progress?.Report(10);
+
+        // 2. Resolve audio source path
+        string? audioPath = null;
+        var audioSource = await db.AudioSources.FirstOrDefaultAsync(s => s.Id == project.AudioSourceId, cancellationToken);
+        if (audioSource != null && !string.IsNullOrWhiteSpace(audioSource.RelativeFilePath))
+        {
+            var p = _workspaceService.ToAbsolutePath(audioSource.RelativeFilePath);
+            if (File.Exists(p)) audioPath = p;
+        }
+
+        if (audioPath == null)
+        {
+            project.Status = "Failed";
+            project.ErrorMessage = "ملف التلاوة الصوتية المصدر لهذه السورة غير متوفر محلياً.";
+            await db.SaveChangesAsync(cancellationToken);
+            return (false, project.ErrorMessage, project);
+        }
+
+        // 3. Resolve Custom Background and Watermark Assets if any
+        string? customBgPath = null;
+        if (project.Background == BackgroundType.CustomImage && !string.IsNullOrWhiteSpace(project.CustomBackgroundPath))
+        {
+            var p = _workspaceService.ToAbsolutePath(project.CustomBackgroundPath);
+            if (File.Exists(p)) customBgPath = p;
+        }
+
+        string? watermarkImgPath = null;
+        if (project.Watermark == WatermarkType.Logo && !string.IsNullOrWhiteSpace(project.WatermarkImagePath))
+        {
+            var p = _workspaceService.ToAbsolutePath(project.WatermarkImagePath);
+            if (File.Exists(p)) watermarkImgPath = p;
+        }
+
+        // 4. Build CardCompositionSettings
+        var orientationEnum = project.Orientation == "Vertical" ? VideoOrientation.Vertical : VideoOrientation.Horizontal;
+        var (targetW, targetH) = orientationEnum == VideoOrientation.Horizontal ? (1920, 1080) : (1080, 1920);
+
+        var settings = new CardCompositionSettings(
+            TargetWidth: targetW,
+            TargetHeight: targetH,
+            BackgroundType: project.Background,
+            CustomBackgroundPath: customBgPath,
+            WatermarkType: project.Watermark,
+            WatermarkImagePath: watermarkImgPath,
+            WatermarkText: project.WatermarkText,
+            WatermarkPosition: project.WatermarkPosition,
+            WatermarkOpacity: project.WatermarkOpacity);
+
+        // 5. Build timeline entries
+        var timeline = new List<MultiAyahTimelineEntry>();
+        foreach (var item in validation.Items)
+        {
+            timeline.Add(new MultiAyahTimelineEntry(
+                item.AyahNumber,
+                item.ImagePath!,
+                item.ChosenPassage!.StartTimeSec,
+                item.ChosenPassage.EndTimeSec));
+        }
+
+        // 6. Output video path
+        var videosDir = Path.Combine(_workspaceService.WorkspacePath, "media", "videos");
+        Directory.CreateDirectory(videosDir);
+
+        var orientSuffix = orientationEnum == VideoOrientation.Horizontal ? "h" : "v";
+        var fileName = $"project_p{project.Id}_{project.SurahNumber:D3}_{project.StartAyahNumber:D3}_{project.EndAyahNumber:D3}_{project.ReciterId}_{orientSuffix}_r{project.Revision}.mp4";
+        var finalVideoPath = Path.Combine(videosDir, fileName);
+
+        var multiReq = new MultiAyahVideoRequest(
+            audioPath,
+            timeline,
+            finalVideoPath,
+            orientationEnum,
+            settings);
+
+        var result = await FfmpegVideoGenerator.GenerateMultiAyahVideoAsync(multiReq, progress, cancellationToken);
+        if (!result.Success)
+        {
+            project.Status = "Failed";
+            project.ErrorMessage = result.ErrorMessage;
+            await db.SaveChangesAsync(cancellationToken);
+            return (false, result.ErrorMessage, project);
+        }
+
+        project.Status = "Completed";
+        project.OutputVideoPath = Path.GetRelativePath(_workspaceService.WorkspacePath, finalVideoPath);
+        project.ErrorMessage = null;
+        project.LastRenderedAtUtc = DateTime.UtcNow;
+
+        await db.SaveChangesAsync(cancellationToken);
+        progress?.Report(100);
+
+        return (true, null, project);
     }
 
     private static string ComputeSha256(string filePath)

@@ -27,6 +27,9 @@
         <DataTemplate DataType="{x:Type vm:BatchExportViewModel}">
             <views:BatchExportView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CollectionsViewModel}">
+            <views:CollectionsView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:MyVideosViewModel}">
             <views:MyVideosView/>
         </DataTemplate>
@@ -112,7 +115,15 @@
                         </StackPanel>
                     </Button>
 
-                    <!-- 4. فيديوهاتي -->
+                    <!-- 4. مجموعاتي (V3) -->
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectCollectionsCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="مجموعاتي" Margin="0,0,6,0"/>
+                            <TextBlock Text="🗂️"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 5. فيديوهاتي -->
                     <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectMyVideosCommand}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="فيديوهاتي" Margin="0,0,6,0"/>

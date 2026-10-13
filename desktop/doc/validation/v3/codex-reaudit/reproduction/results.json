@@ -1,0 +1,42 @@
+[
+  {
+    "scenario": "valid-control",
+    "valid": true,
+    "errors": []
+  },
+  {
+    "scenario": "missing-saved-take",
+    "originalId": 1,
+    "selectedWithoutUserChoice": null,
+    "valid": false
+  },
+  {
+    "scenario": "changed-revision-wizard",
+    "beforeValid": false,
+    "afterOpenAndSaveValid": false,
+    "expectedAfterValid": false
+  },
+  {
+    "scenario": "changed-image-revision",
+    "expectedValid": false,
+    "actualValid": false
+  },
+  {
+    "scenario": "implicit-multiple-takes",
+    "originalId": 1,
+    "selectedWithoutUserChoice": null,
+    "valid": false
+  },
+  {
+    "scenario": "valid-first-incomplete-second-batch",
+    "firstValid": true,
+    "firstErrors": [],
+    "exportedFiles": 0,
+    "blocked": true
+  },
+  {
+    "scenario": "corrupt-existing-backup",
+    "blocked": true,
+    "error": "Le fichier de sauvegarde pr\u00E9-migration existant (D:\\Projets\\ITComp\\Quran\\desktop\\doc\\validation\\v3\\codex-reaudit\\reproduction\\backup-case-fdab5860a59246d998705366dd9db7cb\\data\\quran.db.pre_v3.bak) est corrompu ou n\u0027est pas une base SQLite valide. La migration ne peut pas continuer."
+  }
+]

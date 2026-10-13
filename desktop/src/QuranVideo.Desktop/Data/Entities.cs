@@ -316,6 +316,147 @@ public class BatchExportJobEntity
     public DateTime? CompletedAtUtc { get; set; }
 }
 
+public enum BackgroundType
+{
+    Light = 0,       // fond clair classique (#FFFFFF)
+    Dark = 1,        // fond sombre noble (#111827 / #0F172A) avec panneau clair préservant l'ayah
+    CustomImage = 2  // image personnelle importée par l'utilisateur
+}
+
+public enum WatermarkType
+{
+    None = 0,
+    Text = 1,
+    Logo = 2
+}
+
+public enum WatermarkPosition
+{
+    TopRight = 0,
+    TopLeft = 1,
+    BottomRight = 2,
+    BottomLeft = 3
+}
+
+public enum UserAssetType
+{
+    Background = 0,
+    Logo = 1
+}
+
+[Table("user_assets")]
+public class UserAssetEntity
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    public UserAssetType AssetType { get; set; }
+    public string RelativePath { get; set; } = string.Empty;
+    public string OriginalFileName { get; set; } = string.Empty;
+    public string Sha256 { get; set; } = string.Empty;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+[Table("video_projects")]
+public class VideoProjectEntity
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    public string Title { get; set; } = string.Empty;
+    public int SurahNumber { get; set; }
+    public int StartAyahNumber { get; set; }
+    public int EndAyahNumber { get; set; }
+    public string ReciterId { get; set; } = "saber_abdelhakam_warsh";
+    public string AudioSourceId { get; set; } = string.Empty;
+
+    public string Orientation { get; set; } = "Horizontal"; // "Horizontal" (16:9) ou "Vertical" (9:16)
+    public BackgroundType Background { get; set; } = BackgroundType.Light;
+    public string? CustomBackgroundPath { get; set; }
+
+    public WatermarkType Watermark { get; set; } = WatermarkType.None;
+    public string? WatermarkText { get; set; }
+    public string? WatermarkImagePath { get; set; }
+    public WatermarkPosition WatermarkPosition { get; set; } = WatermarkPosition.BottomLeft;
+    public double WatermarkOpacity { get; set; } = 0.85;
+    public bool IsWatermarkEnabled { get; set; } = true;
+
+    public int Revision { get; set; } = 1;
+    public string Status { get; set; } = "Draft"; // "Draft", "Ready", "Rendering", "Completed", "Failed"
+    public string? OutputVideoPath { get; set; }
+    public string? ErrorMessage { get; set; }
+    public DateTime? LastRenderedAtUtc { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    public List<ProjectAyahEntity> SelectedAyahs { get; set; } = new();
+}
+
+[Table("project_ayahs")]
+public class ProjectAyahEntity
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    public int ProjectId { get; set; }
+    public int OrderIndex { get; set; }
+    public int SurahNumber { get; set; }
+    public int AyahNumber { get; set; }
+    public string AyahId { get; set; } = string.Empty; // "surah:ayah"
+
+    public int PassageId { get; set; }
+    public int PassageRevision { get; set; }
+    public double StartTimeSec { get; set; }
+    public double EndTimeSec { get; set; }
+
+    public int ImageRecipeId { get; set; }
+    public int ImageRevision { get; set; }
+    public string RelativeImagePath { get; set; } = string.Empty;
+
+    public bool JunctionReviewed { get; set; } = false;
+
+    [ForeignKey(nameof(ProjectId))]
+    public VideoProjectEntity? Project { get; set; }
+}
+
+[Table("collections")]
+public class CollectionEntity
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    public List<CollectionItemEntity> Items { get; set; } = new();
+}
+
+[Table("collection_items")]
+public class CollectionItemEntity
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    public int CollectionId { get; set; }
+    public int ProjectId { get; set; }
+    public int OrderIndex { get; set; }
+    public DateTime AddedAtUtc { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey(nameof(CollectionId))]
+    public CollectionEntity? Collection { get; set; }
+
+    [ForeignKey(nameof(ProjectId))]
+    public VideoProjectEntity? Project { get; set; }
+}
+
+
 
 
 

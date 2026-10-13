@@ -20,6 +20,13 @@ public class AppDbContext : DbContext
     public DbSet<VideoCompositionEntity> Compositions => Set<VideoCompositionEntity>();
     public DbSet<BatchExportJobEntity> BatchJobs => Set<BatchExportJobEntity>();
 
+    // V3 DbSets
+    public DbSet<UserAssetEntity> UserAssets => Set<UserAssetEntity>();
+    public DbSet<VideoProjectEntity> Projects => Set<VideoProjectEntity>();
+    public DbSet<ProjectAyahEntity> ProjectAyahs => Set<ProjectAyahEntity>();
+    public DbSet<CollectionEntity> Collections => Set<CollectionEntity>();
+    public DbSet<CollectionItemEntity> CollectionItems => Set<CollectionItemEntity>();
+
     public AppDbContext(string dbPath)
     {
         _dbPath = dbPath;
@@ -60,5 +67,20 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<BatchExportJobEntity>()
             .HasIndex(j => new { j.Status, j.CreatedAtUtc });
+
+        // V3 Indexes
+        modelBuilder.Entity<VideoProjectEntity>()
+            .HasIndex(p => new { p.SurahNumber, p.StartAyahNumber, p.EndAyahNumber });
+
+        modelBuilder.Entity<ProjectAyahEntity>()
+            .HasIndex(pa => new { pa.ProjectId, pa.OrderIndex })
+            .IsUnique();
+
+        modelBuilder.Entity<CollectionItemEntity>()
+            .HasIndex(ci => new { ci.CollectionId, ci.ProjectId })
+            .IsUnique();
+
+        modelBuilder.Entity<UserAssetEntity>()
+            .HasIndex(ua => new { ua.AssetType, ua.Sha256 });
     }
 }

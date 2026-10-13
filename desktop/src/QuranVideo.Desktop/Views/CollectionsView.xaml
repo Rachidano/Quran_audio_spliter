@@ -1,0 +1,255 @@
+<UserControl x:Class="QuranVideo.Desktop.Views.CollectionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:QuranVideo.Desktop.ViewModels"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=vm:CollectionsViewModel}"
+             FlowDirection="RightToLeft"
+             d:DesignHeight="850" d:DesignWidth="1100">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- 1. Collections Toolbar -->
+            <Border Grid.Row="0" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+                <DockPanel LastChildFill="True">
+                    <!-- Left: Collection selector & CRUD buttons -->
+                    <WrapPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,6">
+                            <TextBlock Text="🗂️ المجموعة الحالية :" FontWeight="Bold" FontSize="14" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox ItemsSource="{Binding Collections}" SelectedItem="{Binding SelectedCollection}" DisplayMemberPath="Name"
+                                      MinWidth="190" Height="36" FontSize="13" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Create new collection button -->
+                        <Button Command="{Binding StartCreateCollectionCommand}" Background="#15803d" Foreground="White"
+                                FontWeight="Bold" FontSize="13" Padding="14,8" BorderThickness="0" Cursor="Hand" Margin="0,0,8,6">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="➕ مجموعة جديدة"/>
+                        </Button>
+
+                        <!-- Rename collection button -->
+                        <Button Command="{Binding StartRenameCollectionCommand}" Background="#f8fafc" Foreground="#0284c7"
+                                FontWeight="Bold" FontSize="13" Padding="12,8" BorderThickness="1" BorderBrush="#bae6fd" Cursor="Hand" Margin="0,0,8,6"
+                                IsEnabled="{Binding HasCollections}">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="✏️ تعديل الاسم"/>
+                        </Button>
+
+                        <!-- Delete collection button -->
+                        <Button Command="{Binding DeleteCollectionCommand}" Background="#fef2f2" Foreground="#dc2626"
+                                FontWeight="Bold" FontSize="13" Padding="12,8" BorderThickness="1" BorderBrush="#fecaca" Cursor="Hand" Margin="0,0,8,6"
+                                IsEnabled="{Binding HasCollections}" ToolTip="حذف هذه المجموعة فقط دون المساس بالمشاريع أو المقاطع الصوتية">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="🗑️ حذف المجموعة"/>
+                        </Button>
+                    </WrapPanel>
+
+                    <!-- Right: Batch Export Button -->
+                    <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Command="{Binding ExportCollectionBatchCommand}" Background="#1e40af" Foreground="White"
+                                FontWeight="Bold" FontSize="14" Padding="18,10" BorderThickness="0" Cursor="Hand"
+                                IsEnabled="{Binding HasItems}" ToolTip="تصدير كل عناصر هذه المجموعة كملفات فيديو MP4 منفصلة ومستقلة">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🚀 تصدير عناصر المجموعة (فيديوهات مستقلة)" Margin="0,0,8,0"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- 2. Inline Create Collection Dialog -->
+            <Border Grid.Row="1" Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16"
+                    Visibility="{Binding IsCreatingCollection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="إنشاء مجموعة موضوعية جديدة :" FontWeight="Bold" FontSize="14" Foreground="#15803d" Margin="0,0,0,10"/>
+                    <WrapPanel Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,6">
+                            <TextBlock Text="اسم المجموعة :" FontSize="12" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Text="{Binding NewCollectionName, UpdateSourceTrigger=PropertyChanged}" Width="240" Height="32" FontSize="13" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,6">
+                            <TextBlock Text="الوصف (اختياري) :" FontSize="12" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Text="{Binding NewCollectionDescription, UpdateSourceTrigger=PropertyChanged}" Width="280" Height="32" FontSize="13" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+
+                        <Button Command="{Binding ConfirmCreateCollectionCommand}" Background="#15803d" Foreground="White"
+                                FontWeight="Bold" Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,8,6">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="حفظ المجموعة ✔"/>
+                        </Button>
+
+                        <Button Command="{Binding CancelCreateCollectionCommand}" Background="#e2e8f0" Foreground="#475569"
+                                FontWeight="Bold" Padding="12,6" BorderThickness="0" Cursor="Hand" Margin="0,0,0,6">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="إلغاء ✖"/>
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- 2. Inline Rename Collection Dialog -->
+            <Border Grid.Row="1" Background="#f0f9ff" BorderBrush="#bae6fd" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16"
+                    Visibility="{Binding IsRenamingCollection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="تعديل اسم المجموعة :" FontWeight="Bold" FontSize="14" Foreground="#0284c7" Margin="0,0,0,10"/>
+                    <WrapPanel Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,6">
+                            <TextBlock Text="الاسم الجديد :" FontSize="12" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Text="{Binding RenamedCollectionName, UpdateSourceTrigger=PropertyChanged}" Width="280" Height="32" FontSize="13" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+
+                        <Button Command="{Binding ConfirmRenameCollectionCommand}" Background="#0284c7" Foreground="White"
+                                FontWeight="Bold" Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,8,6">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="تأكيد التعديل ✔"/>
+                        </Button>
+
+                        <Button Command="{Binding CancelRenameCollectionCommand}" Background="#e2e8f0" Foreground="#475569"
+                                FontWeight="Bold" Padding="12,6" BorderThickness="0" Cursor="Hand" Margin="0,0,0,6">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="إلغاء ✖"/>
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- 3. Batch Export Progress & Error Alert -->
+            <Border Grid.Row="2" Background="#f8fafc" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16"
+                    Visibility="{Binding IsExportingBatch, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <DockPanel LastChildFill="True" Margin="0,0,0,8">
+                        <TextBlock Text="{Binding BatchStatusMessage}" FontWeight="Bold" FontSize="13" Foreground="#1e40af" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                        <Button DockPanel.Dock="Right" Command="{Binding CancelBatchExportCommand}" Background="#fee2e2" Foreground="#b91c1c"
+                                FontWeight="Bold" Padding="12,4" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Right">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                            <TextBlock Text="⏹ إلغاء التصدير"/>
+                        </Button>
+                    </DockPanel>
+                    <ProgressBar Value="{Binding BatchExportProgress}" Maximum="100" Height="10"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Error Banner (V3-07-05 & V3-07-06) -->
+            <Border Grid.Row="2" Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,16"
+                    Visibility="{Binding BatchErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                <DockPanel>
+                    <TextBlock Text="🚫 " FontSize="16" DockPanel.Dock="Left" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding BatchErrorMessage}" Foreground="#b91c1c" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <!-- 4. Add Project to Collection Card -->
+            <Border Grid.Row="3" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16"
+                    Visibility="{Binding HasCollections, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="➕ إضافة مشروع فيديو محفوظ إلى هذه المجموعة :" FontWeight="Bold" FontSize="14" Foreground="#1e293b" Margin="0,0,0,10"/>
+                    <WrapPanel VerticalAlignment="Center">
+                        <ComboBox ItemsSource="{Binding AvailableProjectsToAdd}" SelectedItem="{Binding SelectedProjectToAdd}" DisplayMemberPath="Title"
+                                  MinWidth="320" Height="34" FontSize="13" VerticalContentAlignment="Center" Margin="0,0,12,6"/>
+
+                        <Button Command="{Binding AddProjectToCollectionCommand}" Background="#15803d" Foreground="White"
+                                FontWeight="Bold" Padding="16,6" BorderThickness="0" Cursor="Hand" Margin="0,0,0,6">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="إضافة للمجموعة ➕"/>
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- 5. Collection Items Table -->
+            <Border Grid.Row="4" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16">
+                <Grid>
+                    <!-- Empty state: No collections -->
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,32"
+                                Visibility="{Binding HasNoCollections, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="🗂️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="لا توجد أي مجموعات منشأة بعد" FontSize="18" FontWeight="Bold" Foreground="#64748b" HorizontalAlignment="Center"/>
+                        <TextBlock Text="اضغط على زر « ➕ مجموعة جديدة » بالأعلى لإنشاء مجموعتك الأولى وتنظيم المقاطع المرئية." FontSize="14" Foreground="#94a3b8" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+
+                    <!-- Empty state: Collection has no items -->
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,32"
+                                Visibility="{Binding HasNoItems, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="📋" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="هذه المجموعة فارغة حالياً" FontSize="18" FontWeight="Bold" Foreground="#64748b" HorizontalAlignment="Center"/>
+                        <TextBlock Text="اختر مشروعاً محفوظاً من القائمة المنسدلة أعلاه واضغط على « إضافة للمجموعة »." FontSize="14" Foreground="#94a3b8" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+
+                    <!-- Items List -->
+                    <ListBox ItemsSource="{Binding CurrentCollectionItems}" BorderThickness="0" Background="Transparent"
+                             Visibility="{Binding HasItems, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12,10" BorderBrush="#f1f5f9" BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Order Index Badge -->
+                                        <Border Grid.Column="0" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
+                                                Width="36" Height="36" CornerRadius="18" Margin="0,0,14,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding OrderIndex, StringFormat='#{0}'}" FontWeight="Bold" FontSize="13" Foreground="#475569" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <!-- Project Title & Details -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14" Foreground="#0f172a"/>
+                                            <TextBlock Text="{Binding Details}" FontSize="12" Foreground="#64748b" Margin="0,2,0,0"/>
+                                        </StackPanel>
+
+                                        <!-- Readiness Badge -->
+                                        <Border Grid.Column="2" Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="4" Padding="10,4" Margin="16,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding StatusBadge}" Foreground="{Binding StatusColor}" FontWeight="Bold" FontSize="12"/>
+                                        </Border>
+
+                                        <!-- Actions: Up, Down, Remove -->
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Command="{Binding DataContext.MoveItemUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
+                                                    Padding="8,4" Margin="0,0,4,0" Cursor="Hand" ToolTip="تقديم الترتيب">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                <TextBlock Text="▲" FontSize="11"/>
+                                            </Button>
+
+                                            <Button Command="{Binding DataContext.MoveItemDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
+                                                    Padding="8,4" Margin="0,0,8,0" Cursor="Hand" ToolTip="تأخير الترتيب">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                <TextBlock Text="▼" FontSize="11"/>
+                                            </Button>
+
+                                            <Button Command="{Binding DataContext.RemoveItemFromCollectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1"
+                                                    Padding="10,5" Cursor="Hand" ToolTip="إزالة هذا المشروع من المجموعة دون حذفه من البرنامج">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                <TextBlock Text="🗑️ إزالة" FontSize="11" Foreground="#b91c1c" FontWeight="Bold"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

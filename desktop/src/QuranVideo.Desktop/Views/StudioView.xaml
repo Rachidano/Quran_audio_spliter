@@ -8,645 +8,1440 @@
              d:DataContext="{d:DesignInstance Type=vm:StudioViewModel}"
              FlowDirection="RightToLeft"
              Focusable="True"
-             d:DesignHeight="850" d:DesignWidth="1100">
+             d:DesignHeight="950" d:DesignWidth="1150">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="24">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <StackPanel Margin="24">
 
-            <!-- 1. Header: Navigation between Ayat & Current Target Label -->
-            <Border Grid.Row="0" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,16">
-                <DockPanel LastChildFill="True">
-                    <!-- Navigation buttons -->
-                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                        <Button Command="{Binding PreviousAyahCommand}" Background="#f1f5f9" Foreground="#334155"
-                                FontWeight="Bold" Padding="16,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="0,0,8,0">
-                            <Button.Resources>
-                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                            </Button.Resources>
-                            <TextBlock Text="الآية السابقة ➡"/>
-                        </Button>
-                        <Button Command="{Binding NextAyahCommand}" Background="#f1f5f9" Foreground="#334155"
-                                FontWeight="Bold" Padding="16,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand">
-                            <Button.Resources>
-                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                            </Button.Resources>
-                            <TextBlock Text="⬅ الآية التالية"/>
-                        </Button>
-                    </StackPanel>
+            <!-- 0. Top Mode Selector Bar: V3 Multi-Ayah Wizard vs Single-Ayah Fine-Tuning Studio -->
+            <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="6" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Ayah target description & validation badge -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                        <Border Background="#dcfce7" CornerRadius="6" Padding="10,4" Margin="0,0,12,0"
-                                Visibility="{Binding IsCurrentPassageValidated, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="✔ معتمد" Foreground="#15803d" FontWeight="Bold" FontSize="13"/>
-                        </Border>
-                        <TextBlock Text="{Binding TargetDescription}" FontSize="20" FontWeight="Bold" Foreground="#15803d" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </DockPanel>
+                    <!-- Fine-Tuning Studio Button (Default & on the right in RTL) -->
+                    <Button Grid.Column="0" Command="{Binding SelectFineTuningModeCommand}" Cursor="Hand" Padding="16,10" BorderThickness="0" Margin="0,0,4,0">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#f1f5f9"/>
+                                <Setter Property="Foreground" Value="#475569"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFineTuningMode}" Value="True">
+                                        <Setter Property="Background" Value="#15803d"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <Button.Resources>
+                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style>
+                        </Button.Resources>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="🎛️ استوديو التدقيق والضبط الفردي للآيات" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Wizard Mode Button (On the left in RTL) -->
+                    <Button Grid.Column="1" Command="{Binding SelectWizardModeCommand}" Cursor="Hand" Padding="16,10" BorderThickness="0" Margin="4,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#f1f5f9"/>
+                                <Setter Property="Foreground" Value="#475569"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsWizardMode}" Value="True">
+                                        <Setter Property="Background" Value="#15803d"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <Button.Resources>
+                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style>
+                        </Button.Resources>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="🎬 معالج إنتاج فيديو الآيات المتتالية (المعالج V3)" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Border>
 
-            <!-- 2. Main Studio Grid: Left (Audio & Controls), Right (Mushaf Page & Export) -->
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="3*"/>
-                    <ColumnDefinition Width="2*"/>
-                </Grid.ColumnDefinitions>
+            <!-- ============================================================ -->
+            <!-- SECTION A: V3 4-STEP WIZARD (Visible when IsWizardMode = True) -->
+            <!-- ============================================================ -->
+            <StackPanel Visibility="{Binding IsWizardMode, Converter={StaticResource BooleanToVisibilityConverter}}">
 
-                <!-- Left Column: Audio Studio, Waveform, Timings, Advanced Drawer -->
-                <StackPanel Grid.Column="0" Margin="0,0,12,0">
-
-                    <!-- Audio Player & Waveform Scrubber Card -->
-                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="18" Margin="0,0,0,16">
-                        <StackPanel>
-                            <!-- Card Header: Title & Time display -->
-                            <DockPanel Margin="0,0,0,10">
-                                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="مشغل التلاوة ومخطط الصوت" FontWeight="Bold" FontSize="15" Foreground="#0f172a" Margin="0,0,8,0"/>
-                                    <TextBlock Text="🔊" FontSize="15"/>
-                                </StackPanel>
-                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" FlowDirection="LeftToRight">
-                                    <TextBlock Text="{Binding FormattedPlaybackTime}" FontSize="16" FontWeight="Bold" Foreground="#15803d"/>
-                                    <TextBlock Text=" / " FontSize="14" Foreground="#94a3b8" Margin="4,0"/>
-                                    <TextBlock Text="{Binding FormattedTotalDuration}" FontSize="14" Foreground="#64748b"/>
-                                </StackPanel>
-                            </DockPanel>
-
-                            <!-- Audio Source & Reciter Action Bar (Responsive multi-row for narrow & normal windows) -->
-                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,0,12">
-                                <StackPanel>
-                                    <!-- Row 1: Reciter selection & Links config -->
-                                    <WrapPanel VerticalAlignment="Center" Margin="0,0,0,6">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,4">
-                                            <TextBlock Text="🎙️ القارئ :" Foreground="#475569" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                            <ComboBox ItemsSource="{Binding Reciters}" SelectedItem="{Binding SelectedRecitation}" DisplayMemberPath="Name" 
-                                                      MinWidth="180" Height="32" FontSize="12" VerticalContentAlignment="Center"/>
-                                        </StackPanel>
-                                        <Button Command="{Binding ConfigureAudioSourcesCommand}" Background="#ecfdf5" Foreground="#047857" 
-                                                BorderBrush="#a7f3d0" BorderThickness="1" FontSize="11" FontWeight="Bold" Padding="10,4" Height="32" 
-                                                Margin="0,0,0,4" Cursor="Hand" ToolTip="عرض وتعديل روابط السور الـ114 لكل قارئ">
-                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                            <TextBlock Text="⚙️ روابط السور (114)"/>
-                                        </Button>
-                                    </WrapPanel>
-
-                                    <!-- Row 2: Audio Actions (Download, Local Import, Cancel) -->
-                                    <WrapPanel VerticalAlignment="Center">
-                                        <Button Command="{Binding DownloadSurahAudioCommand}" Background="#eff6ff" Foreground="#1d4ed8" BorderBrush="#bfdbfe" BorderThickness="1"
-                                                FontSize="11" FontWeight="Bold" Padding="10,4" Height="30" Cursor="Hand" Margin="0,0,8,4" ToolTip="تنزيل التلاوة تلقائياً عبر الإنترنت">
-                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                            <TextBlock Text="📥 تنزيل التلاوة"/>
-                                        </Button>
-
-                                        <Button Command="{Binding ImportLocalAudioCommand}" Background="#f0fdf4" Foreground="#15803d" BorderBrush="#86efac" BorderThickness="1"
-                                                FontSize="11" FontWeight="Bold" Padding="10,4" Height="30" Cursor="Hand" Margin="0,0,8,4" ToolTip="اختر ملف MP3 من حاسوبك لهذه السورة">
-                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                            <TextBlock Text="📂 استيراد MP3 محلي..."/>
-                                        </Button>
-
-                                        <Button Content="⏹ إلغاء التنزيل" Command="{Binding CancelAudioDownloadCommand}" IsEnabled="{Binding IsAudioDownloading}" 
-                                                Background="#fef2f2" Foreground="#b91c1c" BorderBrush="#fecaca" BorderThickness="1"
-                                                FontSize="11" FontWeight="Bold" Padding="8,4" Height="30" Margin="0,0,8,4" Cursor="Hand"
-                                                Visibility="{Binding IsAudioDownloading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
-                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                        </Button>
-                                    </WrapPanel>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Waveform Scrubber & Position Slider -->
-                            <Border Background="#0f172a" CornerRadius="8" Height="90" Padding="8" Margin="0,0,0,12">
-                                <Grid>
-                                    <!-- Waveform Bars Representation -->
-                                    <ItemsControl ItemsSource="{Binding WaveformPeaks}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <UniformGrid Rows="1"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border Background="#38bdf8" Width="2" Height="50" Margin="1,0" VerticalAlignment="Center"/>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-
-                                    <!-- Interactive Seek Slider overlay -->
-                                    <Slider Minimum="0" Maximum="{Binding AudioDurationSec, FallbackValue=100}" 
-                                            Value="{Binding CurrentPlaybackTimeSec}"
-                                            ValueChanged="OnWaveformSliderValueChanged"
-                                            IsMoveToPointEnabled="True"
-                                            VerticalAlignment="Center" Opacity="0.8" Cursor="Hand"/>
-                                </Grid>
-                            </Border>
-
-                            <!-- Audio Playback Controls -->
-                            <Grid Margin="0,0,0,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Play / Pause / Steps -->
-                                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                    <Button Command="{Binding TogglePlayPauseCommand}" Background="#15803d" Foreground="White"
-                                            FontWeight="Bold" Padding="16,8" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
-                                        <Button.Resources>
-                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                        </Button.Resources>
-                                        <TextBlock Text="▶ تشغيل / إيقاف (مسافة)"/>
-                                    </Button>
-
-                                    <Button Command="{Binding StepBackwardCommand}" Background="#f1f5f9" Foreground="#334155"
-                                            FontWeight="Bold" Padding="10,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="0,0,6,0" ToolTip="رجوع ثانية">
-                                        <Button.Resources>
-                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                        </Button.Resources>
-                                        <TextBlock Text="⏪ 1s"/>
-                                    </Button>
-
-                                    <Button Command="{Binding StepForwardCommand}" Background="#f1f5f9" Foreground="#334155"
-                                            FontWeight="Bold" Padding="10,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" ToolTip="تقديم ثانية">
-                                        <Button.Resources>
-                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                        </Button.Resources>
-                                        <TextBlock Text="1s ⏩"/>
-                                    </Button>
-                                </StackPanel>
-
-                                <!-- Preview & Undo -->
-                                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                    <Button Command="{Binding PreviewSegmentCommand}" Background="#eff6ff" Foreground="#1d4ed8"
-                                            FontWeight="Bold" Padding="14,8" BorderThickness="1" BorderBrush="#bfdbfe" Cursor="Hand" Margin="0,0,8,0">
-                                        <Button.Resources>
-                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                        </Button.Resources>
-                                        <TextBlock Text="🎧 معاينة المقطع"/>
-                                    </Button>
-
-                                    <Button Command="{Binding UndoLastSaveCommand}" Background="#fef2f2" Foreground="#b91c1c"
-                                            FontWeight="Bold" Padding="12,8" BorderThickness="1" BorderBrush="#fecaca" Cursor="Hand" ToolTip="تراجع (Ctrl+Z)">
-                                        <Button.Resources>
-                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                        </Button.Resources>
-                                        <TextBlock Text="↩ تراجع"/>
-                                    </Button>
-                                </StackPanel>
-                            </Grid>
-
-                            <!-- Primary Annotation Timing Actions (L06-02 & L06-03) -->
-                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="14">
-                                <StackPanel>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="16"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <!-- Start time box & F7 button -->
-                                        <StackPanel Grid.Column="0">
-                                            <DockPanel Margin="0,0,0,6">
-                                                <TextBlock Text="بداية الآية :" FontWeight="SemiBold" Foreground="#475569"/>
-                                                <TextBlock Text="{Binding FormattedStartTime}" FlowDirection="LeftToRight" FontWeight="Bold" 
-                                                           FontSize="15" Foreground="#0f172a" HorizontalAlignment="Right"/>
-                                            </DockPanel>
-
-                                            <Button Command="{Binding SetStartFromCursorCommand}" Background="#16a34a" Foreground="White"
-                                                    FontWeight="Bold" Padding="12,10" BorderThickness="0" Cursor="Hand" Margin="0,0,0,8">
-                                                <Button.Resources>
-                                                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                                </Button.Resources>
-                                                <TextBlock Text="🚩 تحديد البداية عند المؤشر (F7)"/>
-                                            </Button>
-
-                                            <!-- Fine adjustment for Start -->
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button Command="{Binding AdjustStartCommand}" CommandParameter="-0.1" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand">
-                                                    <TextBlock Text="-0.1s" FontSize="11"/>
-                                                </Button>
-                                                <Button Command="{Binding AdjustStartCommand}" CommandParameter="0.1" Background="#e2e8f0" Padding="6,2" Cursor="Hand">
-                                                    <TextBlock Text="+0.1s" FontSize="11"/>
-                                                </Button>
-                                            </StackPanel>
-                                        </StackPanel>
-
-                                        <!-- End time box & F8/Enter button -->
-                                        <StackPanel Grid.Column="2">
-                                            <DockPanel Margin="0,0,0,6">
-                                                <TextBlock Text="نهاية الآية والحفظ :" FontWeight="SemiBold" Foreground="#475569"/>
-                                                <TextBlock Text="{Binding FormattedEndTime}" FlowDirection="LeftToRight" FontWeight="Bold" 
-                                                           FontSize="15" Foreground="#0f172a" HorizontalAlignment="Right"/>
-                                            </DockPanel>
-
-                                            <Button Command="{Binding SaveEndAndAdvanceCommand}" Background="#0284c7" Foreground="White"
-                                                    FontWeight="Bold" Padding="12,10" BorderThickness="0" Cursor="Hand" Margin="0,0,0,8">
-                                                <Button.Resources>
-                                                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                                </Button.Resources>
-                                                <TextBlock Text="💾 حفظ والانتقal للتالية (F8 / Enter)"/>
-                                            </Button>
-
-                                            <!-- Fine adjustment for End -->
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button Command="{Binding AdjustEndCommand}" CommandParameter="-0.1" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand">
-                                                    <TextBlock Text="-0.1s" FontSize="11"/>
-                                                </Button>
-                                                <Button Command="{Binding AdjustEndCommand}" CommandParameter="0.1" Background="#e2e8f0" Padding="6,2" Cursor="Hand">
-                                                    <TextBlock Text="+0.1s" FontSize="11"/>
-                                                </Button>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <!-- Ayah Specific CRUD Operations Bar -->
-                                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,14,0,0">
-                                        <DockPanel LastChildFill="True">
-                                            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                                                <!-- Save changes without advancing -->
-                                                <Button Command="{Binding SaveCurrentPassageCommand}" Background="#0284c7" Foreground="White"
-                                                        FontWeight="Bold" Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
-                                                        ToolTip="حفظ أو تحديث توقيت هذه الآية دون الانتقال للآية التالية">
-                                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                                    <TextBlock Text="💾 حفظ التعديل للآية الحالية"/>
-                                                </Button>
-
-                                                <!-- Reset timing -->
-                                                <Button Command="{Binding ResetCurrentAyahTimingsCommand}" Background="#f1f5f9" Foreground="#475569"
-                                                        FontWeight="SemiBold" Padding="12,6" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="0,0,8,0"
-                                                        ToolTip="إعادة تعيين مؤشرات البداية والنهاية">
-                                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                                    <TextBlock Text="🔄 إعادة ضبط"/>
-                                                </Button>
-                                            </StackPanel>
-
-                                            <!-- Delete current passage button -->
-                                            <Button DockPanel.Dock="Right" Command="{Binding DeleteCurrentPassageCommand}" Background="#fef2f2" Foreground="#dc2626"
-                                                    BorderBrush="#fecaca" BorderThickness="1" FontWeight="Bold" Padding="14,6" Cursor="Hand" HorizontalAlignment="Right"
-                                                    ToolTip="حذف التسجيل الصوتي المخصص لهذه الآية نهائياً">
-                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                                <TextBlock Text="🗑️ حذف مقطع هذه الآية"/>
-                                            </Button>
-                                        </DockPanel>
-                                    </Border>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Advanced Drawer Toggle & Panel (L06-05 & L06-06) -->
-                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
-                        <StackPanel>
-                            <DockPanel Cursor="Hand" MouseLeftButtonUp="OnToggleAdvancedDrawerClicked">
-                                <TextBlock Text="⚙ خيارات إضافية وإدارة المقاطع المعادة (التحكم المتقدم)" FontWeight="Bold" FontSize="14" Foreground="#1e293b"/>
-                                <TextBlock Text="▼" HorizontalAlignment="Right" Foreground="#64748b"/>
-                            </DockPanel>
-
-                            <!-- Collapsible Content -->
-                            <StackPanel Visibility="{Binding IsAdvancedDrawerOpen, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,14,0,0">
-                                <Separator Margin="0,0,0,12"/>
-
-                                <!-- Retake Target & Kind (L06-05, L06-06) -->
-                                <Border Background="#f8fafc" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-                                    <StackPanel>
-                                        <TextBlock Text="تسجيل مقطع معاد / تكرار (F9) :" FontWeight="Bold" Foreground="#0f172a" Margin="0,0,0,8"/>
-                                        
-                                        <!-- Explicit Retake Target Label (L06-06) -->
-                                        <DockPanel Margin="0,0,0,8">
-                                            <TextBlock Text="هدف الإعادة المحدد صراحةً :" Foreground="#475569"/>
-                                            <TextBlock Text="{Binding RetakeTargetDescription}" FontWeight="Bold" Foreground="#b45309" HorizontalAlignment="Right"/>
-                                        </DockPanel>
-
-                                        <!-- Passage Kind (NO WAJH) -->
-                                        <Grid Margin="0,0,0,10">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="نوع المقطع :" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <ComboBox Grid.Column="1" SelectedItem="{Binding SelectedPassageKind}" SelectedIndex="0">
-                                                <ComboBoxItem Content="إعادة كاملة (Full Retake)"/>
-                                                <ComboBoxItem Content="إعادة جزئية (Partial Retake)"/>
-                                                <ComboBoxItem Content="مقطع جزئي (Portion)"/>
-                                                <ComboBoxItem Content="متابعة / وصل (Continuation)"/>
-                                            </ComboBox>
-                                        </Grid>
-
-                                        <!-- F9 Save Retake Button -->
-                                        <Button Command="{Binding SaveRetakeCommand}" Background="#d97706" Foreground="White"
-                                                FontWeight="Bold" Padding="14,8" BorderThickness="0" Cursor="Hand">
-                                            <Button.Resources>
-                                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                            </Button.Resources>
-                                            <TextBlock Text="حفظ المقطع المُعاد (F9)"/>
-                                        </Button>
-                                    </StackPanel>
+                <!-- Wizard Stepper Indicator -->
+                <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="8" Margin="0,0,0,16">
+                    <UniformGrid Columns="4">
+                        <!-- Step 1 Tab -->
+                        <Button Command="{Binding GoToWizardStepCommand}" CommandParameter="1" Cursor="Hand" Padding="12,10" BorderThickness="0" Margin="4,0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#f8fafc"/>
+                                    <Setter Property="Foreground" Value="#64748b"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsStep1}" Value="True">
+                                            <Setter Property="Background" Value="#ecfdf5"/>
+                                            <Setter Property="Foreground" Value="#15803d"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Border Background="#15803d" CornerRadius="12" Width="22" Height="22" Margin="0,0,8,0">
+                                    <TextBlock Text="1" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-
-                                <!-- Export & Import Annotations Buttons (L06-09) -->
-                                <DockPanel Margin="0,4,0,0">
-                                    <Button Command="{Binding ExportAnnotationsCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
-                                            Padding="12,6" Cursor="Hand" Margin="0,0,8,0">
-                                        <Button.Resources>
-                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                        </Button.Resources>
-                                        <TextBlock Text="📤 تصدير التوقيتات (JSON)"/>
-                                    </Button>
-
-                                    <Button Command="{Binding ValidateCurrentPassageCommand}" Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1"
-                                            Padding="12,6" Cursor="Hand">
-                                        <Button.Resources>
-                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                        </Button.Resources>
-                                        <TextBlock Text="✔ اعتماد / إلغاء اعتماد المقطع" Foreground="#15803d"/>
-                                    </Button>
-                                </DockPanel>
+                                <TextBlock Text="اختيار الآيات والتدقيق" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        </Button>
 
-                    <!-- 3. Recorded Ayah Passages Card (قائمة مقاطع السورة المسجلة) -->
-                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
-                        <StackPanel>
-                            <DockPanel Margin="0,0,0,10">
-                                <TextBlock Text="📋 المقاطع المسجلة للسورة" FontWeight="Bold" FontSize="15" Foreground="#0f172a" VerticalAlignment="Center"/>
-                                <Border Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right">
-                                    <TextBlock Text="{Binding RecordedPassagesCountDescription}" FontSize="12" Foreground="#166534" FontWeight="Bold"/>
+                        <!-- Step 2 Tab -->
+                        <Button Command="{Binding GoToWizardStepCommand}" CommandParameter="2" Cursor="Hand" Padding="12,10" BorderThickness="0" Margin="4,0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#f8fafc"/>
+                                    <Setter Property="Foreground" Value="#64748b"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsStep2}" Value="True">
+                                            <Setter Property="Background" Value="#ecfdf5"/>
+                                            <Setter Property="Foreground" Value="#15803d"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Border Background="#15803d" CornerRadius="12" Width="22" Height="22" Margin="0,0,8,0">
+                                    <TextBlock Text="2" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                            </DockPanel>
+                                <TextBlock Text="المظهر والتخصيص" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
-                            <!-- Empty placeholder if no passages recorded yet -->
-                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,4"
-                                    Visibility="{Binding HasNoRecordedPassages, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <TextBlock Text="لم يتم حفظ أي مقطع لهذه السورة بعد. شغّل التلاوة، اضغط (F7) عند بداية الآية ثم (F8 / Enter) عند نهايتها لحفظ المقطع والانتقال للآية التالية."
-                                           Foreground="#64748b" FontSize="13" TextAlignment="Center" TextWrapping="Wrap"/>
+                        <!-- Step 3 Tab -->
+                        <Button Command="{Binding GoToWizardStepCommand}" CommandParameter="3" Cursor="Hand" Padding="12,10" BorderThickness="0" Margin="4,0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#f8fafc"/>
+                                    <Setter Property="Foreground" Value="#64748b"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsStep3}" Value="True">
+                                            <Setter Property="Background" Value="#ecfdf5"/>
+                                            <Setter Property="Foreground" Value="#15803d"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Border Background="#15803d" CornerRadius="12" Width="22" Height="22" Margin="0,0,8,0">
+                                    <TextBlock Text="3" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="المعاينة" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Step 4 Tab -->
+                        <Button Command="{Binding GoToWizardStepCommand}" CommandParameter="4" Cursor="Hand" Padding="12,10" BorderThickness="0" Margin="4,0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#f8fafc"/>
+                                    <Setter Property="Foreground" Value="#64748b"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsStep4}" Value="True">
+                                            <Setter Property="Background" Value="#ecfdf5"/>
+                                            <Setter Property="Foreground" Value="#15803d"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Border Background="#15803d" CornerRadius="12" Width="22" Height="22" Margin="0,0,8,0">
+                                    <TextBlock Text="4" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="التصدير والحفظ" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </UniformGrid>
+                </Border>
+
+                <!-- STEP 1: اختيار الآيات والتدقيق -->
+                <StackPanel Visibility="{Binding IsStep1, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="1️⃣ تحديد السورة ومجال الآيات المتتالية" FontWeight="Bold" FontSize="16" Foreground="#0f172a" Margin="0,0,0,14"/>
+
+                            <WrapPanel VerticalAlignment="Center" Margin="0,0,0,16">
+                                <!-- Surah Selector -->
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,8">
+                                    <TextBlock Text="📖 السورة الكريمة :" FontSize="13" FontWeight="SemiBold" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <ComboBox ItemsSource="{Binding AllSurahs}" SelectedItem="{Binding CurrentSurah}" DisplayMemberPath="NameArabic"
+                                              MinWidth="180" Height="36" FontSize="13" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Start Ayah -->
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,8">
+                                    <TextBlock Text="من الآية :" FontSize="13" FontWeight="SemiBold" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBox Text="{Binding WizardStartAyah, UpdateSourceTrigger=PropertyChanged}" 
+                                             Width="65" Height="36" FontSize="14" FontWeight="Bold" TextAlignment="Center" FlowDirection="LeftToRight" VerticalContentAlignment="Center" BorderBrush="#cbd5e1"/>
+                                </StackPanel>
+
+                                <!-- End Ayah -->
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,8">
+                                    <TextBlock Text="إلى الآية :" FontSize="13" FontWeight="SemiBold" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBox Text="{Binding WizardEndAyah, UpdateSourceTrigger=PropertyChanged}" 
+                                             Width="65" Height="36" FontSize="14" FontWeight="Bold" TextAlignment="Center" FlowDirection="LeftToRight" VerticalContentAlignment="Center" BorderBrush="#cbd5e1"/>
+                                </StackPanel>
+
+                                <!-- Refresh / Validate Button -->
+                                <Button Command="{Binding RefreshWizardSequenceCommand}" Background="#15803d" Foreground="White"
+                                        FontWeight="Bold" Padding="16,8" Height="36" BorderThickness="0" Cursor="Hand" Margin="0,0,0,8">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="🔄 تطبيق والتحقق من السلسلة" Margin="0,0,6,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </WrapPanel>
+
+                            <!-- Validation Banner -->
+                            <Border BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,16">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#fef2f2"/>
+                                        <Setter Property="BorderBrush" Value="#fca5a5"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsWizardSequenceValid}" Value="True">
+                                                <Setter Property="Background" Value="#f0fdf4"/>
+                                                <Setter Property="BorderBrush" Value="#86efac"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <DockPanel>
+                                    <TextBlock Text="ℹ️" FontSize="16" DockPanel.Dock="Left" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding WizardValidationSummary}" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#b91c1c"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsWizardSequenceValid}" Value="True">
+                                                        <Setter Property="Foreground" Value="#15803d"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DockPanel>
                             </Border>
 
-                            <!-- Passages Items List -->
-                            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto" Margin="0,4,0,0"
-                                          Visibility="{Binding HasRecordedPassages, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <ItemsControl ItemsSource="{Binding RecordedPassages}">
+                            <!-- Ayat Checklist Table -->
+                            <TextBlock Text="قائمة الآيات المشمولة والتسجيلات الصوتية :" FontWeight="Bold" FontSize="14" Foreground="#1e293b" Margin="0,0,0,10"/>
+                            <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding WizardAyatItems}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,6">
+                                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,8">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
 
-                                                    <!-- Ayah Number Badge -->
-                                                    <Border Grid.Column="0" Background="#15803d" CornerRadius="4" Padding="8,4" Margin="0,0,10,0" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding AyahNumber, StringFormat='الآية {0}'}" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                                    <!-- Ayah Badge -->
+                                                    <Border Grid.Column="0" Background="#15803d" CornerRadius="4" Padding="10,4" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Description}" Foreground="White" FontWeight="Bold" FontSize="13"/>
                                                     </Border>
 
-                                                    <!-- Range & Duration -->
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
-                                                        <TextBlock Text="{Binding FormattedRange}" FontWeight="SemiBold" FontSize="12" Foreground="#0f172a" FlowDirection="LeftToRight" HorizontalAlignment="Left"/>
-                                                        <TextBlock Text="{Binding FormattedDuration}" FontSize="11" Foreground="#64748b"/>
+                                                    <!-- Take selection -->
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                        <TextBlock Text="المقطع المختار :" FontSize="12" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                        <ComboBox ItemsSource="{Binding AvailableTakes}" SelectedItem="{Binding SelectedTake}" MinWidth="180" Height="30" FontSize="12">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding FormattedRange, StringFormat='المقطع: {0}'}"/>
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+
+                                                        <!-- Junction Gap confirmation -->
+                                                        <CheckBox IsChecked="{Binding JunctionReviewed, Mode=TwoWay}"
+                                                                  Visibility="{Binding HasGapWithPrevious, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                  VerticalAlignment="Center" Margin="12,0,0,0">
+                                                            <TextBlock Text="{Binding GapDescription}" FontSize="11" Foreground="#c2410c" FontWeight="SemiBold"/>
+                                                        </CheckBox>
+
+                                                        <!-- Unconfirmed Modification approval -->
+                                                        <Button Command="{Binding DataContext.ConfirmAyahModificationCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Visibility="{Binding HasUnconfirmedModification, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                Background="#ea580c" Foreground="White" BorderThickness="0" Padding="8,3" Margin="12,0,0,0" Cursor="Hand">
+                                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                            <TextBlock Text="⚠️ تم تعديل التسجيل - اضغط للاعتماد" FontSize="11" FontWeight="Bold"/>
+                                                        </Button>
                                                     </StackPanel>
 
-                                                    <!-- Preview Button -->
-                                                    <Button Grid.Column="2" 
-                                                            Command="{Binding DataContext.PreviewPassageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Background="#eff6ff" BorderBrush="#bfdbfe" BorderThickness="1"
-                                                            Padding="8,5" Cursor="Hand" Margin="0,0,6,0" ToolTip="استماع لهذا المقطع">
-                                                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                                        <TextBlock Text="🎧 استماع" FontSize="11" Foreground="#1d4ed8" FontWeight="Bold"/>
-                                                    </Button>
+                                                    <!-- Image Status Badge -->
+                                                    <Border Grid.Column="2" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="🖼️ صورة الآية معتمدة" FontSize="12" FontWeight="SemiBold" Foreground="#334155"/>
+                                                    </Border>
 
-                                                    <!-- Select / Go to Ayah Button -->
-                                                    <Button Grid.Column="3" 
-                                                            Command="{Binding DataContext.SelectPassageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
-                                                            Padding="8,5" Cursor="Hand" Margin="0,0,6,0" ToolTip="تحديد الآية وتعديلها">
-                                                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                                        <TextBlock Text="الانتقال ➔" FontSize="11" Foreground="#334155" FontWeight="Bold"/>
-                                                    </Button>
-
-                                                    <!-- Delete Passage Button -->
-                                                    <Button Grid.Column="4" 
-                                                            Command="{Binding DataContext.DeletePassageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1"
-                                                            Padding="8,5" Cursor="Hand" ToolTip="حذف هذا المقطع نهائياً">
-                                                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                                        <TextBlock Text="🗑️ حذف" FontSize="11" Foreground="#b91c1c" FontWeight="Bold"/>
-                                                    </Button>
+                                                    <!-- Full Readiness Status Badge -->
+                                                    <Border Grid.Column="3" CornerRadius="4" Padding="10,4" VerticalAlignment="Center" Background="#f1f5f9">
+                                                        <TextBlock Text="{Binding StatusBadge}" Foreground="{Binding StatusColor}" FontWeight="Bold" FontSize="12"/>
+                                                    </Border>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </ScrollViewer>
+
+                            <!-- Step 1 Navigation Bar -->
+                            <DockPanel Margin="0,20,0,0">
+                                <Button DockPanel.Dock="Right" Command="{Binding NextWizardStepCommand}" IsEnabled="{Binding IsWizardSequenceValid}"
+                                        Cursor="Hand" Padding="20,10" BorderThickness="1">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#15803d"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="BorderBrush" Value="#15803d"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Background" Value="#f1f5f9"/>
+                                                    <Setter Property="Foreground" Value="#94a3b8"/>
+                                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="التالي: اختيار المظهر والتخصيص ⬅"/>
+                                </Button>
+                                <TextBlock VerticalAlignment="Center" Foreground="#64748b" FontSize="12"
+                                           Text="يجب أن تكون جميع الآيات معتمدة وجاهزة بالكامل للانتقال إلى الخطوة التالية."/>
+                            </DockPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <!-- Right Column: Extracted Ayah Image, Video Creation, and Mushaf Page Reference -->
-                <StackPanel Grid.Column="1">
-                    <!-- 1. Extracted Ayah Image Card (L07-02) -->
-                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+                <!-- STEP 2: المظهر والتخصيص -->
+                <StackPanel Visibility="{Binding IsStep2, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="20" Margin="0,0,0,16">
                         <StackPanel>
-                            <DockPanel Margin="0,0,0,10">
-                                <TextBlock Text="صورة الآية المستخرجة" FontWeight="Bold" FontSize="15" Foreground="#0f172a"/>
-                                <Border Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right">
-                                    <TextBlock Text="استخراج بكسلات أصلي" FontSize="11" Foreground="#166534" FontWeight="Bold"/>
-                                </Border>
-                            </DockPanel>
+                            <TextBlock Text="2️⃣ المظهر، أبعاد الفيديو والعلامة المائية" FontWeight="Bold" FontSize="16" Foreground="#0f172a" Margin="0,0,0,16"/>
 
-                            <!-- Isolated Ayah image display -->
-                            <Border Background="White" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="6" Height="140" Padding="10" Margin="0,0,0,12">
-                                <Image Source="{Binding CurrentIsolatedImagePath}" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            <!-- 1. Video Orientation -->
+                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="📐 تنسيق وأبعاد الفيديو :" FontWeight="Bold" FontSize="14" Foreground="#1e293b" Margin="0,0,0,10"/>
+                                    <WrapPanel>
+                                        <Button Command="{Binding SetOrientationCommand}" CommandParameter="Horizontal" Padding="16,10" Margin="0,0,12,0" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/>
+                                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                                    <Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardOrientation}" Value="Horizontal">
+                                                            <Setter Property="Background" Value="#eff6ff"/>
+                                                            <Setter Property="BorderBrush" Value="#3b82f6"/>
+                                                            <Setter Property="Foreground" Value="#1d4ed8"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="📺 أفقي 16:9 (يوتيوب وشاشات العرض)" FontSize="13"/>
+                                        </Button>
+
+                                        <Button Command="{Binding SetOrientationCommand}" CommandParameter="Vertical" Padding="16,10" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/>
+                                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                                    <Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardOrientation}" Value="Vertical">
+                                                            <Setter Property="Background" Value="#eff6ff"/>
+                                                            <Setter Property="BorderBrush" Value="#3b82f6"/>
+                                                            <Setter Property="Foreground" Value="#1d4ed8"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="📱 عمودي 9:16 (ريلز، تيك توك، شورتس)" FontSize="13"/>
+                                        </Button>
+                                    </WrapPanel>
+                                </StackPanel>
                             </Border>
 
-                            <!-- L07-02: Action Buttons: الصورة صحيحة / تصحيح الصورة -->
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <Button Grid.Column="0" Command="{Binding ApproveImageCommand}" Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1"
-                                        Padding="10,8" Cursor="Hand">
-                                    <Button.Resources>
-                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                    </Button.Resources>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <TextBlock Text="✔ الصورة صحيحة" Foreground="#166534" FontWeight="Bold" FontSize="13"/>
-                                    </StackPanel>
-                                </Button>
-
-                                <Button Grid.Column="2" Command="{Binding ToggleImageEditorCommand}" Background="#fffbeb" BorderBrush="#fde68a" BorderThickness="1"
-                                        Padding="10,8" Cursor="Hand">
-                                    <Button.Resources>
-                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                    </Button.Resources>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <TextBlock Text="✏ تصحيح الصورة" Foreground="#b45309" FontWeight="Bold" FontSize="13"/>
-                                    </StackPanel>
-                                </Button>
-                            </Grid>
-
-                            <!-- Collapsible Image Correction & Edge Nudge Panel (L07-02 & L07-04) -->
-                            <Border Background="#f8fafc" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,4,0,0"
-                                    Visibility="{Binding IsImageEditorOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <!-- 2. Video Background -->
+                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
                                 <StackPanel>
-                                    <TextBlock Text="ضبط هوامش وحدود الآية (بالبكسل) :" FontWeight="Bold" Foreground="#1e293b" Margin="0,0,0,8"/>
+                                    <TextBlock Text="🎨 خلفية الفيديو :" FontWeight="Bold" FontSize="14" Foreground="#1e293b" Margin="0,0,0,10"/>
+                                    <WrapPanel Margin="0,0,0,12">
+                                        <!-- Light Background -->
+                                        <Button Command="{Binding SetBackgroundCommand}" CommandParameter="Light" Padding="16,10" Margin="0,0,12,8" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/>
+                                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                                    <Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardBackground}" Value="Light">
+                                                            <Setter Property="Background" Value="#f0fdf4"/>
+                                                            <Setter Property="BorderBrush" Value="#15803d"/>
+                                                            <Setter Property="Foreground" Value="#15803d"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="⚪ خلفية بيضاء نقية (افتراضي)"/>
+                                        </Button>
 
-                                    <!-- Nudge Controls Grid -->
-                                    <Grid Margin="0,0,0,10">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
+                                        <!-- Dark Background -->
+                                        <Button Command="{Binding SetBackgroundCommand}" CommandParameter="Dark" Padding="16,10" Margin="0,0,12,8" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/>
+                                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                                    <Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardBackground}" Value="Dark">
+                                                            <Setter Property="Background" Value="#0f172a"/>
+                                                            <Setter Property="BorderBrush" Value="#38bdf8"/>
+                                                            <Setter Property="Foreground" Value="#ffffff"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="🌑 أسود ملكي داكن (#0F172A)"/>
+                                        </Button>
 
-                                        <!-- Top margin -->
-                                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,4,6">
-                                            <TextBlock Text="الهامش العلوي :" FontSize="11" Foreground="#475569" Margin="0,0,0,2"/>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Button Command="{Binding NudgeMarginCommand}" CommandParameter="top-5" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand"><TextBlock Text="-5px" FontSize="10"/></Button>
-                                                <Button Command="{Binding NudgeMarginCommand}" CommandParameter="top+5" Background="#e2e8f0" Padding="6,2" Cursor="Hand"><TextBlock Text="+5px" FontSize="10"/></Button>
-                                            </StackPanel>
-                                        </StackPanel>
+                                        <!-- Custom Image Background -->
+                                        <Button Command="{Binding ImportCustomBackgroundCommand}" Padding="16,10" Margin="0,0,0,8" Cursor="Hand" BorderThickness="1"
+                                                Background="#ffffff" BorderBrush="#cbd5e1" Foreground="#334155">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="🖼️ استيراد صورة مخصصة من الجهاز..."/>
+                                        </Button>
+                                    </WrapPanel>
 
-                                        <!-- Bottom margin -->
-                                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,0,6">
-                                            <TextBlock Text="الهامش السفلي :" FontSize="11" Foreground="#475569" Margin="0,0,0,2"/>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Button Command="{Binding NudgeMarginCommand}" CommandParameter="bottom-5" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand"><TextBlock Text="-5px" FontSize="10"/></Button>
-                                                <Button Command="{Binding NudgeMarginCommand}" CommandParameter="bottom+5" Background="#e2e8f0" Padding="6,2" Cursor="Hand"><TextBlock Text="+5px" FontSize="10"/></Button>
-                                            </StackPanel>
-                                        </StackPanel>
-
-                                        <!-- Right margin -->
-                                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,4,0">
-                                            <TextBlock Text="الهامش الأيمن :" FontSize="11" Foreground="#475569" Margin="0,0,0,2"/>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Button Command="{Binding NudgeMarginCommand}" CommandParameter="right-5" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand"><TextBlock Text="-5px" FontSize="10"/></Button>
-                                                <Button Command="{Binding NudgeMarginCommand}" CommandParameter="right+5" Background="#e2e8f0" Padding="6,2" Cursor="Hand"><TextBlock Text="+5px" FontSize="10"/></Button>
-                                            </StackPanel>
-                                        </StackPanel>
-
-                                        <!-- Left margin -->
-                                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="4,0,0,0">
-                                            <TextBlock Text="الهامش الأيسر :" FontSize="11" Foreground="#475569" Margin="0,0,0,2"/>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Button Command="{Binding NudgeMarginCommand}" CommandParameter="left-5" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand"><TextBlock Text="-5px" FontSize="10"/></Button>
-                                                <Button Command="{Binding NudgeMarginCommand}" CommandParameter="left+5" Background="#e2e8f0" Padding="6,2" Cursor="Hand"><TextBlock Text="+5px" FontSize="10"/></Button>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <!-- Comparison Preview -->
-                                    <Border Background="White" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="4" Height="120" Margin="0,0,0,8" ClipToBounds="True">
-                                        <Image Source="{Binding ComparisonImagePath}" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    <!-- Sacred Integrity Notice -->
+                                    <Border Background="#eff6ff" BorderBrush="#bfdbfe" BorderThickness="1" CornerRadius="6" Padding="12,8">
+                                        <DockPanel>
+                                            <TextBlock Text="🛡️" FontSize="16" DockPanel.Dock="Left" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="ضمانة قدسية المصحف: يتم حفظ خط المصحف الشريف وضبطه الأصلي 100% داخل بطاقة بيضاء نقية مع ظل ناعم، لمنع أي تلاعب أو تلوين للبكسلات." 
+                                                       Foreground="#1e40af" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                        </DockPanel>
                                     </Border>
+                                </StackPanel>
+                            </Border>
 
-                                    <!-- Reset & Close -->
-                                    <DockPanel>
-                                        <Button DockPanel.Dock="Left" Command="{Binding ResetImageCorrectionCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
-                                                Padding="8,4" Cursor="Hand">
-                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                            <TextBlock Text="🔄 إعادة الضبط" FontSize="11"/>
+                            <!-- 3. Watermark / Signature -->
+                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="🏷️ الشعار أو التوقيع الشخصي (العلامة المائية) :" FontWeight="Bold" FontSize="14" Foreground="#1e293b" Margin="0,0,0,10"/>
+                                    <WrapPanel Margin="0,0,0,12">
+                                        <!-- None -->
+                                        <Button Command="{Binding SetWatermarkTypeCommand}" CommandParameter="None" Padding="14,8" Margin="0,0,10,6" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/>
+                                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                                    <Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardWatermark}" Value="None">
+                                                            <Setter Property="Background" Value="#f0fdf4"/>
+                                                            <Setter Property="BorderBrush" Value="#15803d"/>
+                                                            <Setter Property="Foreground" Value="#15803d"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="🚫 بدون شعار"/>
                                         </Button>
-                                        <Button DockPanel.Dock="Right" Command="{Binding ToggleImageEditorCommand}" Background="#e2e8f0" Padding="8,4" Cursor="Hand" HorizontalAlignment="Right">
-                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                            <TextBlock Text="إغلاق ✖" FontSize="11"/>
+
+                                        <!-- Logo PNG -->
+                                        <Button Command="{Binding ImportWatermarkLogoCommand}" Padding="14,8" Margin="0,0,10,6" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/>
+                                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                                    <Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardWatermark}" Value="Logo">
+                                                            <Setter Property="Background" Value="#f0fdf4"/>
+                                                            <Setter Property="BorderBrush" Value="#15803d"/>
+                                                            <Setter Property="Foreground" Value="#15803d"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="📂 استيراد شعار PNG شفاف..."/>
                                         </Button>
+
+                                        <!-- Text Watermark -->
+                                        <Button Command="{Binding SetWatermarkTypeCommand}" CommandParameter="Text" Padding="14,8" Margin="0,0,10,6" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/>
+                                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                                    <Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardWatermark}" Value="Text">
+                                                            <Setter Property="Background" Value="#f0fdf4"/>
+                                                            <Setter Property="BorderBrush" Value="#15803d"/>
+                                                            <Setter Property="Foreground" Value="#15803d"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="✍️ كتابة نص / اسم القناة"/>
+                                        </Button>
+                                    </WrapPanel>
+
+                                    <!-- Text watermark input (visible if Text selected) -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                        <TextBlock Text="نص الشعار :" FontSize="12" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBox Text="{Binding WizardWatermarkText, UpdateSourceTrigger=PropertyChanged}" MinWidth="220" Height="32" VerticalContentAlignment="Center" FontSize="12"/>
+                                    </StackPanel>
+
+                                    <!-- Position Buttons (4 corners) with active indicator -->
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,12">
+                                        <TextBlock Text="موضع الشعار :" FontSize="12" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                        
+                                        <Button Command="{Binding SetWatermarkPositionCommand}" CommandParameter="BottomLeft" Content="أسفل يسار" Padding="10,6" Margin="0,0,6,0" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/><Setter Property="BorderBrush" Value="#cbd5e1"/><Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardWatermarkPosition}" Value="BottomLeft">
+                                                            <Setter Property="Background" Value="#f0fdf4"/><Setter Property="BorderBrush" Value="#15803d"/><Setter Property="Foreground" Value="#15803d"/><Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                        </Button>
+
+                                        <Button Command="{Binding SetWatermarkPositionCommand}" CommandParameter="BottomRight" Content="أسفل يمين" Padding="10,6" Margin="0,0,6,0" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/><Setter Property="BorderBrush" Value="#cbd5e1"/><Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardWatermarkPosition}" Value="BottomRight">
+                                                            <Setter Property="Background" Value="#f0fdf4"/><Setter Property="BorderBrush" Value="#15803d"/><Setter Property="Foreground" Value="#15803d"/><Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                        </Button>
+
+                                        <Button Command="{Binding SetWatermarkPositionCommand}" CommandParameter="TopLeft" Content="أعلى يسار" Padding="10,6" Margin="0,0,6,0" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/><Setter Property="BorderBrush" Value="#cbd5e1"/><Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardWatermarkPosition}" Value="TopLeft">
+                                                            <Setter Property="Background" Value="#f0fdf4"/><Setter Property="BorderBrush" Value="#15803d"/><Setter Property="Foreground" Value="#15803d"/><Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                        </Button>
+
+                                        <Button Command="{Binding SetWatermarkPositionCommand}" CommandParameter="TopRight" Content="أعلى يمين" Padding="10,6" Margin="0,0,6,0" Cursor="Hand" BorderThickness="1">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="#ffffff"/><Setter Property="BorderBrush" Value="#cbd5e1"/><Setter Property="Foreground" Value="#334155"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WizardWatermarkPosition}" Value="TopRight">
+                                                            <Setter Property="Background" Value="#f0fdf4"/><Setter Property="BorderBrush" Value="#15803d"/><Setter Property="Foreground" Value="#15803d"/><Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <!-- Opacity Slider -->
+                                    <DockPanel LastChildFill="True">
+                                        <TextBlock Text="شفافية الشعار :" FontSize="12" Foreground="#475569" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                        <TextBlock Text="{Binding WizardWatermarkOpacity, StringFormat='{}{0:P0}'}" FontSize="12" FontWeight="Bold" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        <Slider Minimum="0.2" Maximum="1.0" Value="{Binding WizardWatermarkOpacity}" SmallChange="0.05" LargeChange="0.1" VerticalAlignment="Center"/>
                                     </DockPanel>
                                 </StackPanel>
                             </Border>
-                        </StackPanel>
-                    </Border>
 
-                    <!-- 2. Video Export & Orientation Box (MOVED HERE: Always visible without scrolling!) -->
-                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
-                        <StackPanel>
-                            <TextBlock Text="تنسيق الفيديو والإنشاء" FontWeight="Bold" FontSize="15" Foreground="#0f172a" Margin="0,0,0,10"/>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                <RadioButton IsChecked="{Binding IsHorizontal}" GroupName="Orientation" Content="أفقي 16:9 (يوتيوب)" 
-                                             FontWeight="SemiBold" FontSize="13" Margin="0,0,16,0"/>
-                                <RadioButton IsChecked="{Binding IsVertical}" GroupName="Orientation" Content="عمودي 9:16 (ريلز)" 
-                                             FontWeight="SemiBold" FontSize="13"/>
-                            </StackPanel>
-
-                            <!-- Status message & progress -->
-                            <TextBlock Text="{Binding StatusMessage}" FontSize="13" FontWeight="SemiBold" Foreground="#334155" Margin="0,0,0,8" TextWrapping="Wrap"/>
-                            <ProgressBar Value="{Binding GenerationProgress}" Height="6" Maximum="100" Margin="0,0,0,12"
-                                         Visibility="{Binding IsGenerating, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
-
-                            <!-- Action Buttons: Create Video & Extract MP3 Audio -->
-                            <Grid Margin="0,0,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Create Video Button -->
-                                <Button Grid.Column="0" Command="{Binding GenerateVideoCommand}" Background="#15803d" Foreground="White"
-                                        FontWeight="Bold" FontSize="14" Padding="10,10" BorderThickness="0" Cursor="Hand"
-                                        IsEnabled="{Binding IsNotGenerating}"
-                                        ToolTip="توليد فيديو الآية كاملاً بصيغة MP4 مع صورة المصحف الشريف">
-                                    <Button.Resources>
-                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                    </Button.Resources>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <TextBlock Text="إنشاء فيديو" Margin="0,0,6,0"/>
-                                        <TextBlock Text="🎬"/>
-                                    </StackPanel>
+                            <!-- Step 2 Navigation Bar -->
+                            <DockPanel Margin="0,10,0,0">
+                                <Button DockPanel.Dock="Left" Command="{Binding PreviousWizardStepCommand}"
+                                        Background="#f1f5f9" Foreground="#334155" FontWeight="Bold" FontSize="14" Padding="16,10" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="➡ السابق: اختيار الآيات"/>
                                 </Button>
 
-                                <!-- Extract Audio Only Button -->
-                                <Button Grid.Column="2" Command="{Binding ExtractAudioOnlyCommand}" Background="#0284c7" Foreground="White"
-                                        FontWeight="Bold" FontSize="14" Padding="10,10" BorderThickness="0" Cursor="Hand"
-                                        IsEnabled="{Binding IsNotGenerating}"
-                                        ToolTip="استخراج مقطع الصوت المحدد فقط كملف MP3 بدون توليد فيديو">
-                                    <Button.Resources>
-                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                    </Button.Resources>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <TextBlock Text="استخراج صوت" Margin="0,0,6,0"/>
-                                        <TextBlock Text="🎵"/>
-                                    </StackPanel>
+                                <Button DockPanel.Dock="Right" Command="{Binding NextWizardStepCommand}"
+                                        Background="#15803d" Foreground="White" FontWeight="Bold" FontSize="14" Padding="20,10" BorderThickness="0" Cursor="Hand">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="التالي: معاينة الفيديو ⬅"/>
                                 </Button>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- 3. Original Mushaf Page Reference Card -->
-                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="14">
-                        <StackPanel>
-                            <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="صفحة المصحف الكاملة" FontWeight="Bold" FontSize="13" Foreground="#0f172a"/>
-                                <TextBlock Text="{Binding CurrentPageNumber, StringFormat='صفحة {0}'}" FontSize="11" Foreground="#64748b" HorizontalAlignment="Right"/>
                             </DockPanel>
-
-                            <Border Background="#f8fafc" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="6" Height="140" ClipToBounds="True">
-                                <Image Source="{Binding CurrentPageImagePath}" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                            </Border>
                         </StackPanel>
                     </Border>
                 </StackPanel>
-            </Grid>
-        </Grid>
+
+                <!-- STEP 3: المعاينة الديناميكية والتأكد -->
+                <StackPanel Visibility="{Binding IsStep3, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="3️⃣ المعاينة والتأكد من توافق البطاقات والصوت" FontWeight="Bold" FontSize="16" Foreground="#0f172a" Margin="0,0,0,16"/>
+
+                            <!-- Preview Image Frame -->
+                            <Border Background="#0f172a" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Height="420" Margin="0,0,0,16" ClipToBounds="True">
+                                <Image Source="{Binding WizardPreviewImage}" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Inspection & Playback Bar -->
+                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,16">
+                                <DockPanel LastChildFill="True">
+                                    <!-- Ayah Navigation in Preview -->
+                                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Command="{Binding PreviewPreviousAyahCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
+                                                Padding="12,6" Cursor="Hand" Margin="0,0,8,0">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                            <TextBlock Text="الآية السابقة ➡" FontSize="12" FontWeight="SemiBold"/>
+                                        </Button>
+
+                                        <TextBlock Text="{Binding CurrentPreviewAyahDescription}" FontWeight="Bold" FontSize="14" Foreground="#15803d" VerticalAlignment="Center" Margin="0,0,8,0"/>
+
+                                        <Button Command="{Binding PreviewNextAyahCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
+                                                Padding="12,6" Cursor="Hand">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                            <TextBlock Text="⬅ الآية التالية" FontSize="12" FontWeight="SemiBold"/>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <!-- Audio Audition -->
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                        <Button Command="{Binding PlayCurrentPreviewAyahAudioCommand}" Background="#15803d" Foreground="White"
+                                                Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                            <TextBlock Text="▶ استماع لتلاوة هذه الآية" FontSize="12" FontWeight="Bold"/>
+                                        </Button>
+
+                                        <Button Command="{Binding StopPreviewAudioCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
+                                                Padding="10,6" Cursor="Hand">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                            <TextBlock Text="⏹ إيقاف" FontSize="12"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+
+                            <!-- Step 3 Navigation Bar -->
+                            <DockPanel Margin="0,10,0,0">
+                                <Button DockPanel.Dock="Left" Command="{Binding PreviousWizardStepCommand}"
+                                        Background="#f1f5f9" Foreground="#334155" FontWeight="Bold" FontSize="14" Padding="16,10" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="➡ السابق: تعديل المظهر"/>
+                                </Button>
+
+                                <Button DockPanel.Dock="Right" Command="{Binding NextWizardStepCommand}"
+                                        Background="#15803d" Foreground="White" FontWeight="Bold" FontSize="14" Padding="20,10" BorderThickness="0" Cursor="Hand">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="التالي: التصدير والحفظ ⬅"/>
+                                </Button>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- STEP 4: التصدير وحفظ المشاريع -->
+                <StackPanel Visibility="{Binding IsStep4, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="4️⃣ تسمية المشروع، الحفظ وتصدير الفيديو" FontWeight="Bold" FontSize="16" Foreground="#0f172a" Margin="0,0,0,16"/>
+
+                            <!-- Project Title Box -->
+                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="🏷️ عنوان المشروع التعريفي :" FontWeight="Bold" FontSize="13" Foreground="#475569" Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding ProjectTitle, UpdateSourceTrigger=PropertyChanged}" FontSize="15" FontWeight="Bold" Height="38" VerticalContentAlignment="Center" BorderBrush="#cbd5e1"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Export Actions & Progress -->
+                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="12"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Save Project Only -->
+                                        <Button Grid.Column="0" Command="{Binding SaveProjectCommand}" Background="#0284c7" Foreground="White"
+                                                FontWeight="Bold" FontSize="14" Padding="16,12" BorderThickness="0" Cursor="Hand">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="💾 حفظ المشروع للرجوع إليه لاحقاً"/>
+                                        </Button>
+
+                                        <!-- Start Multi-Ayah Export -->
+                                        <Button Grid.Column="2" Command="{Binding ExportProjectCommand}" IsEnabled="{Binding IsWizardSequenceValid}"
+                                                Background="#15803d" Foreground="White" FontWeight="Bold" FontSize="14" Padding="16,12" BorderThickness="0" Cursor="Hand">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="🚀 بدء تصدير الفيديو المجمع (MP4)"/>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- Progress bar -->
+                                    <StackPanel Visibility="{Binding IsProjectExporting, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,14,0,0">
+                                        <DockPanel Margin="0,0,0,6">
+                                            <TextBlock Text="جاري توليد الفيديو المجمع ودمج الصوت المتصل..." FontSize="12" Foreground="#475569" VerticalAlignment="Center"/>
+                                            <Button Command="{Binding CancelProjectExportCommand}" Background="#fee2e2" Foreground="#dc2626" BorderBrush="#fca5a5" BorderThickness="1"
+                                                    FontSize="12" FontWeight="Bold" Padding="10,3" Cursor="Hand" HorizontalAlignment="Right" DockPanel.Dock="Left">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                <TextBlock Text="إلغاء التصدير ✖"/>
+                                            </Button>
+                                        </DockPanel>
+                                        <ProgressBar Value="{Binding ProjectExportProgress}" Maximum="100" Height="8"/>
+                                    </StackPanel>
+
+                                    <!-- Error Alert -->
+                                    <Border Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0"
+                                            Visibility="{Binding HasProjectExportError, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <TextBlock Text="{Binding ProjectExportError}" Foreground="#b91c1c" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Saved Projects Drawer -->
+                            <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="📂 المشاريع المحفوظة مسبقاً :" FontWeight="Bold" FontSize="14" Foreground="#1e293b" Margin="0,0,0,12"/>
+
+                                    <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding SavedProjects}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                                                        <DockPanel LastChildFill="True">
+                                                            <!-- Action Buttons -->
+                                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Button Command="{Binding DataContext.OpenSavedProjectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Background="#eff6ff" BorderBrush="#bfdbfe" BorderThickness="1" Foreground="#1d4ed8"
+                                                                        FontWeight="Bold" Padding="12,6" Margin="0,0,6,0" Cursor="Hand">
+                                                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                                    <TextBlock Text="📂 فتح المشروع"/>
+                                                                </Button>
+
+                                                                <Button Command="{Binding DataContext.DeleteSavedProjectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1" Foreground="#b91c1c"
+                                                                        FontWeight="Bold" Padding="10,6" Cursor="Hand">
+                                                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                                    <TextBlock Text="🗑️ حذف"/>
+                                                                </Button>
+                                                            </StackPanel>
+
+                                                            <!-- Project Details -->
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="13" Foreground="#0f172a"/>
+                                                                <TextBlock FontSize="11" Foreground="#64748b" Margin="0,2,0,0">
+                                                                    <Run Text="الآيات: "/><Run Text="{Binding StartAyahNumber}"/><Run Text=" ➔ "/><Run Text="{Binding EndAyahNumber}"/>
+                                                                    <Run Text=" • الأبعاد: "/><Run Text="{Binding Orientation}"/>
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                        </DockPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Step 4 Navigation Bar -->
+                            <DockPanel Margin="0,10,0,0">
+                                <Button DockPanel.Dock="Left" Command="{Binding PreviousWizardStepCommand}"
+                                        Background="#f1f5f9" Foreground="#334155" FontWeight="Bold" FontSize="14" Padding="16,10" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="➡ السابق: الرجوع للمعاينة"/>
+                                </Button>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- ============================================================ -->
+            <!-- SECTION B: SINGLE AYAH STUDIO (Visible when IsFineTuningMode) -->
+            <!-- ============================================================ -->
+            <StackPanel Visibility="{Binding IsFineTuningMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                <!-- 1. Header: Navigation between Ayat & Current Target Label -->
+                <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,16">
+                    <DockPanel LastChildFill="True">
+                        <!-- Navigation buttons -->
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                            <Button Command="{Binding PreviousAyahCommand}" Background="#f1f5f9" Foreground="#334155"
+                                    FontWeight="Bold" Padding="16,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="0,0,8,0">
+                                <Button.Resources>
+                                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                </Button.Resources>
+                                <TextBlock Text="الآية السابقة ➡"/>
+                            </Button>
+                            <Button Command="{Binding NextAyahCommand}" Background="#f1f5f9" Foreground="#334155"
+                                    FontWeight="Bold" Padding="16,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand">
+                                <Button.Resources>
+                                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                </Button.Resources>
+                                <TextBlock Text="⬅ الآية التالية"/>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Ayah target description & validation badge -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <Border Background="#dcfce7" CornerRadius="6" Padding="10,4" Margin="0,0,12,0"
+                                    Visibility="{Binding IsCurrentPassageValidated, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="✔ معتمد" Foreground="#15803d" FontWeight="Bold" FontSize="13"/>
+                            </Border>
+                            <TextBlock Text="{Binding TargetDescription}" FontSize="20" FontWeight="Bold" Foreground="#15803d" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- 2. Main Studio Grid: Left (Audio & Controls), Right (Mushaf Page & Export) -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Column: Audio Studio, Waveform, Timings, Advanced Drawer -->
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+
+                        <!-- Audio Player & Waveform Scrubber Card -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="18" Margin="0,0,0,16">
+                            <StackPanel>
+                                <!-- Card Header: Title & Time display -->
+                                <DockPanel Margin="0,0,0,10">
+                                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="مشغل التلاوة ومخطط الصوت" FontWeight="Bold" FontSize="15" Foreground="#0f172a" Margin="0,0,8,0"/>
+                                        <TextBlock Text="🔊" FontSize="15"/>
+                                    </StackPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" FlowDirection="LeftToRight">
+                                        <TextBlock Text="{Binding FormattedPlaybackTime}" FontSize="16" FontWeight="Bold" Foreground="#15803d"/>
+                                        <TextBlock Text=" / " FontSize="14" Foreground="#94a3b8" Margin="4,0"/>
+                                        <TextBlock Text="{Binding FormattedTotalDuration}" FontSize="14" Foreground="#64748b"/>
+                                    </StackPanel>
+                                </DockPanel>
+
+                                <!-- Audio Source & Reciter Action Bar (Responsive multi-row for narrow & normal windows) -->
+                                <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <!-- Row 1: Reciter selection & Links config -->
+                                        <WrapPanel VerticalAlignment="Center" Margin="0,0,0,6">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,4">
+                                                <TextBlock Text="🎙️ القارئ :" Foreground="#475569" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <ComboBox ItemsSource="{Binding Reciters}" SelectedItem="{Binding SelectedRecitation}" DisplayMemberPath="Name" 
+                                                          MinWidth="180" Height="32" FontSize="12" VerticalContentAlignment="Center"/>
+                                            </StackPanel>
+                                            <Button Command="{Binding ConfigureAudioSourcesCommand}" Background="#ecfdf5" Foreground="#047857" 
+                                                    BorderBrush="#a7f3d0" BorderThickness="1" FontSize="11" FontWeight="Bold" Padding="10,4" Height="32" 
+                                                    Margin="0,0,0,4" Cursor="Hand" ToolTip="عرض وتعديل روابط السور الـ114 لكل قارئ">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                                <TextBlock Text="⚙️ روابط السور (114)"/>
+                                            </Button>
+                                        </WrapPanel>
+
+                                        <!-- Row 2: Audio Actions (Download, Local Import, Cancel) -->
+                                        <WrapPanel VerticalAlignment="Center">
+                                            <Button Command="{Binding DownloadSurahAudioCommand}" Background="#eff6ff" Foreground="#1d4ed8" BorderBrush="#bfdbfe" BorderThickness="1"
+                                                    FontSize="11" FontWeight="Bold" Padding="10,4" Height="30" Cursor="Hand" Margin="0,0,8,4" ToolTip="تنزيل التلاوة تلقائياً عبر الإنترنت">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                                <TextBlock Text="📥 تنزيل التلاوة"/>
+                                            </Button>
+
+                                            <Button Command="{Binding ImportLocalAudioCommand}" Background="#f0fdf4" Foreground="#15803d" BorderBrush="#86efac" BorderThickness="1"
+                                                    FontSize="11" FontWeight="Bold" Padding="10,4" Height="30" Cursor="Hand" Margin="0,0,8,4" ToolTip="اختر ملف MP3 من حاسوبك لهذه السورة">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                                <TextBlock Text="📂 استيراد MP3 محلي..."/>
+                                            </Button>
+
+                                            <Button Content="⏹ إلغاء التنزيل" Command="{Binding CancelAudioDownloadCommand}" IsEnabled="{Binding IsAudioDownloading}" 
+                                                    Background="#fef2f2" Foreground="#b91c1c" BorderBrush="#fecaca" BorderThickness="1"
+                                                    FontSize="11" FontWeight="Bold" Padding="8,4" Height="30" Margin="0,0,8,4" Cursor="Hand"
+                                                    Visibility="{Binding IsAudioDownloading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            </Button>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Waveform Scrubber & Position Slider -->
+                                <Border Background="#0f172a" CornerRadius="8" Height="90" Padding="8" Margin="0,0,0,12">
+                                    <Grid>
+                                        <!-- Waveform Bars Representation -->
+                                        <ItemsControl ItemsSource="{Binding WaveformPeaks}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Rows="1"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#38bdf8" Width="2" Height="50" Margin="1,0" VerticalAlignment="Center"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- Interactive Seek Slider overlay -->
+                                        <Slider Minimum="0" Maximum="{Binding AudioDurationSec, FallbackValue=100}" 
+                                                Value="{Binding CurrentPlaybackTimeSec}"
+                                                ValueChanged="OnWaveformSliderValueChanged"
+                                                IsMoveToPointEnabled="True"
+                                                VerticalAlignment="Center" Opacity="0.8" Cursor="Hand"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Audio Playback Controls -->
+                                <Grid Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Play / Pause / Steps -->
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                        <Button Command="{Binding TogglePlayPauseCommand}" Background="#15803d" Foreground="White"
+                                                FontWeight="Bold" Padding="16,8" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
+                                            <Button.Resources>
+                                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                            </Button.Resources>
+                                            <TextBlock Text="▶ تشغيل / إيقاف (مسافة)"/>
+                                        </Button>
+
+                                        <Button Command="{Binding StepBackwardCommand}" Background="#f1f5f9" Foreground="#334155"
+                                                FontWeight="Bold" Padding="10,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="0,0,6,0" ToolTip="رجوع ثانية">
+                                            <Button.Resources>
+                                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                            </Button.Resources>
+                                            <TextBlock Text="⏪ 1s"/>
+                                        </Button>
+
+                                        <Button Command="{Binding StepForwardCommand}" Background="#f1f5f9" Foreground="#334155"
+                                                FontWeight="Bold" Padding="10,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" ToolTip="تقديم ثانية">
+                                            <Button.Resources>
+                                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                            </Button.Resources>
+                                            <TextBlock Text="1s ⏩"/>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <!-- Preview & Undo -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <Button Command="{Binding PreviewSegmentCommand}" Background="#eff6ff" Foreground="#1d4ed8"
+                                                FontWeight="Bold" Padding="14,8" BorderThickness="1" BorderBrush="#bfdbfe" Cursor="Hand" Margin="0,0,8,0">
+                                            <Button.Resources>
+                                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                            </Button.Resources>
+                                            <TextBlock Text="🎧 معاينة المقطع"/>
+                                        </Button>
+
+                                        <Button Command="{Binding UndoLastSaveCommand}" Background="#fef2f2" Foreground="#b91c1c"
+                                                FontWeight="Bold" Padding="12,8" BorderThickness="1" BorderBrush="#fecaca" Cursor="Hand" ToolTip="تراجع (Ctrl+Z)">
+                                            <Button.Resources>
+                                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                            </Button.Resources>
+                                            <TextBlock Text="↩ تراجع"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Primary Annotation Timing Actions (L06-02 & L06-03) -->
+                                <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="14">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="16"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Start time box & F7 button -->
+                                            <StackPanel Grid.Column="0">
+                                                <DockPanel Margin="0,0,0,6">
+                                                    <TextBlock Text="بداية الآية :" FontWeight="SemiBold" Foreground="#475569"/>
+                                                    <TextBlock Text="{Binding FormattedStartTime}" FlowDirection="LeftToRight" FontWeight="Bold" 
+                                                               FontSize="15" Foreground="#0f172a" HorizontalAlignment="Right"/>
+                                                </DockPanel>
+
+                                                <Button Command="{Binding SetStartFromCursorCommand}" Background="#16a34a" Foreground="White"
+                                                        FontWeight="Bold" Padding="12,10" BorderThickness="0" Cursor="Hand" Margin="0,0,0,8">
+                                                    <Button.Resources>
+                                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                                    </Button.Resources>
+                                                    <TextBlock Text="🚩 تحديد البداية عند المؤشر (F7)"/>
+                                                </Button>
+
+                                                <!-- Fine adjustment for Start -->
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <Button Command="{Binding AdjustStartCommand}" CommandParameter="-0.1" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand">
+                                                        <TextBlock Text="-0.1s" FontSize="11"/>
+                                                    </Button>
+                                                    <Button Command="{Binding AdjustStartCommand}" CommandParameter="0.1" Background="#e2e8f0" Padding="6,2" Cursor="Hand">
+                                                        <TextBlock Text="+0.1s" FontSize="11"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- End time box & F8/Enter button -->
+                                            <StackPanel Grid.Column="2">
+                                                <DockPanel Margin="0,0,0,6">
+                                                    <TextBlock Text="نهاية الآية والحفظ :" FontWeight="SemiBold" Foreground="#475569"/>
+                                                    <TextBlock Text="{Binding FormattedEndTime}" FlowDirection="LeftToRight" FontWeight="Bold" 
+                                                               FontSize="15" Foreground="#0f172a" HorizontalAlignment="Right"/>
+                                                </DockPanel>
+
+                                                <Button Command="{Binding SaveEndAndAdvanceCommand}" Background="#0284c7" Foreground="White"
+                                                        FontWeight="Bold" Padding="12,10" BorderThickness="0" Cursor="Hand" Margin="0,0,0,8">
+                                                    <Button.Resources>
+                                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                                    </Button.Resources>
+                                                    <TextBlock Text="💾 حفظ والانتقال للتالية (F8 / Enter)"/>
+                                                </Button>
+
+                                                <!-- Fine adjustment for End -->
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <Button Command="{Binding AdjustEndCommand}" CommandParameter="-0.1" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand">
+                                                        <TextBlock Text="-0.1s" FontSize="11"/>
+                                                    </Button>
+                                                    <Button Command="{Binding AdjustEndCommand}" CommandParameter="0.1" Background="#e2e8f0" Padding="6,2" Cursor="Hand">
+                                                        <TextBlock Text="+0.1s" FontSize="11"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Ayah Specific CRUD Operations Bar -->
+                                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,14,0,0">
+                                            <DockPanel LastChildFill="True">
+                                                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                                    <!-- Save changes without advancing -->
+                                                    <Button Command="{Binding SaveCurrentPassageCommand}" Background="#0284c7" Foreground="White"
+                                                            FontWeight="Bold" Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0"
+                                                            ToolTip="حفظ أو تحديث توقيت هذه الآية دون الانتقال للآية التالية">
+                                                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                                        <TextBlock Text="💾 حفظ التعديل للآية الحالية"/>
+                                                    </Button>
+
+                                                    <!-- Reset timing -->
+                                                    <Button Command="{Binding ResetCurrentAyahTimingsCommand}" Background="#f1f5f9" Foreground="#475569"
+                                                            FontWeight="SemiBold" Padding="12,6" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="0,0,8,0"
+                                                            ToolTip="إعادة تعيين مؤشرات البداية والنهاية">
+                                                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                                        <TextBlock Text="🔄 إعادة ضبط"/>
+                                                    </Button>
+                                                </StackPanel>
+
+                                                <!-- Delete current passage button -->
+                                                <Button DockPanel.Dock="Right" Command="{Binding DeleteCurrentPassageCommand}" Background="#fef2f2" Foreground="#dc2626"
+                                                        BorderBrush="#fecaca" BorderThickness="1" FontWeight="Bold" Padding="14,6" Cursor="Hand" HorizontalAlignment="Right"
+                                                        ToolTip="حذف التسجيل الصوتي المخصص لهذه الآية نهائياً">
+                                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                                    <TextBlock Text="🗑️ حذف مقطع هذه الآية"/>
+                                                </Button>
+                                            </DockPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Advanced Drawer Toggle & Panel (L06-05 & L06-06) -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <DockPanel Cursor="Hand" MouseLeftButtonUp="OnToggleAdvancedDrawerClicked">
+                                    <TextBlock Text="⚙ خيارات إضافية وإدارة المقاطع المعادة (التحكم المتقدم)" FontWeight="Bold" FontSize="14" Foreground="#1e293b"/>
+                                    <TextBlock Text="▼" HorizontalAlignment="Right" Foreground="#64748b"/>
+                                </DockPanel>
+
+                                <!-- Collapsible Content -->
+                                <StackPanel Visibility="{Binding IsAdvancedDrawerOpen, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,14,0,0">
+                                    <Separator Margin="0,0,0,12"/>
+
+                                    <!-- Retake Target & Kind (L06-05, L06-06) -->
+                                    <Border Background="#f8fafc" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                        <StackPanel>
+                                            <TextBlock Text="تسجيل مقطع معاد / تكرار (F9) :" FontWeight="Bold" Foreground="#0f172a" Margin="0,0,0,8"/>
+                                            
+                                            <!-- Explicit Retake Target Label (L06-06) -->
+                                            <DockPanel Margin="0,0,0,8">
+                                                <TextBlock Text="هدف الإعادة المحدد صراحةً :" Foreground="#475569"/>
+                                                <TextBlock Text="{Binding RetakeTargetDescription}" FontWeight="Bold" Foreground="#b45309" HorizontalAlignment="Right"/>
+                                            </DockPanel>
+
+                                            <!-- Passage Kind (NO WAJH) -->
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="نوع المقطع :" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                <ComboBox Grid.Column="1" SelectedItem="{Binding SelectedPassageKind}" SelectedIndex="0">
+                                                    <ComboBoxItem Content="إعادة كاملة (Full Retake)"/>
+                                                    <ComboBoxItem Content="إعادة جزئية (Partial Retake)"/>
+                                                    <ComboBoxItem Content="مقطع جزئي (Portion)"/>
+                                                    <ComboBoxItem Content="متابعة / وصل (Continuation)"/>
+                                                </ComboBox>
+                                            </Grid>
+
+                                            <!-- F9 Save Retake Button -->
+                                            <Button Command="{Binding SaveRetakeCommand}" Background="#d97706" Foreground="White"
+                                                    FontWeight="Bold" Padding="14,8" BorderThickness="0" Cursor="Hand">
+                                                <Button.Resources>
+                                                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                                </Button.Resources>
+                                                <TextBlock Text="حفظ المقطع المُعاد (F9)"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Export & Import Annotations Buttons (L06-09) -->
+                                    <DockPanel Margin="0,4,0,0">
+                                        <Button Command="{Binding ExportAnnotationsCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
+                                                Padding="12,6" Cursor="Hand" Margin="0,0,8,0">
+                                            <Button.Resources>
+                                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                            </Button.Resources>
+                                            <TextBlock Text="📤 تصدير التوقيتات (JSON)"/>
+                                        </Button>
+
+                                        <Button Command="{Binding ValidateCurrentPassageCommand}" Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1"
+                                                Padding="12,6" Cursor="Hand">
+                                            <Button.Resources>
+                                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                            </Button.Resources>
+                                            <TextBlock Text="✔ اعتماد / إلغاء اعتماد المقطع" Foreground="#15803d"/>
+                                        </Button>
+                                    </DockPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 3. Recorded Ayah Passages Card (قائمة مقاطع السورة المسجلة) -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <TextBlock Text="📋 المقاطع المسجلة للسورة" FontWeight="Bold" FontSize="15" Foreground="#0f172a" VerticalAlignment="Center"/>
+                                    <Border Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right">
+                                        <TextBlock Text="{Binding RecordedPassagesCountDescription}" FontSize="12" Foreground="#166534" FontWeight="Bold"/>
+                                    </Border>
+                                </DockPanel>
+
+                                <!-- Empty placeholder if no passages recorded yet -->
+                                <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,4"
+                                        Visibility="{Binding HasNoRecordedPassages, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <TextBlock Text="لم يتم حفظ أي مقطع لهذه السورة بعد. شغّل التلاوة، اضغط (F7) عند بداية الآية ثم (F8 / Enter) عند نهايتها لحفظ المقطع والانتقال للآية التالية."
+                                               Foreground="#64748b" FontSize="13" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </Border>
+
+                                <!-- Passages Items List -->
+                                <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto" Margin="0,4,0,0"
+                                              Visibility="{Binding HasRecordedPassages, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <ItemsControl ItemsSource="{Binding RecordedPassages}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,6">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Ayah Number Badge -->
+                                                        <Border Grid.Column="0" Background="#15803d" CornerRadius="4" Padding="8,4" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding AyahNumber, StringFormat='الآية {0}'}" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                                        </Border>
+
+                                                        <!-- Range & Duration -->
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                            <TextBlock Text="{Binding FormattedRange}" FontWeight="SemiBold" FontSize="12" Foreground="#0f172a" FlowDirection="LeftToRight" HorizontalAlignment="Left"/>
+                                                            <TextBlock Text="{Binding FormattedDuration}" FontSize="11" Foreground="#64748b"/>
+                                                        </StackPanel>
+
+                                                        <!-- Preview Button -->
+                                                        <Button Grid.Column="2" 
+                                                                Command="{Binding DataContext.PreviewPassageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Background="#eff6ff" BorderBrush="#bfdbfe" BorderThickness="1"
+                                                                Padding="8,5" Cursor="Hand" Margin="0,0,6,0" ToolTip="استماع لهذا المقطع">
+                                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                            <TextBlock Text="🎧 استماع" FontSize="11" Foreground="#1d4ed8" FontWeight="Bold"/>
+                                                        </Button>
+
+                                                        <!-- Select / Go to Ayah Button -->
+                                                        <Button Grid.Column="3" 
+                                                                Command="{Binding DataContext.SelectPassageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
+                                                                Padding="8,5" Cursor="Hand" Margin="0,0,6,0" ToolTip="تحديد الآية وتعديلها">
+                                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                            <TextBlock Text="الانتقال ➔" FontSize="11" Foreground="#334155" FontWeight="Bold"/>
+                                                        </Button>
+
+                                                        <!-- Delete Passage Button -->
+                                                        <Button Grid.Column="4" 
+                                                                Command="{Binding DataContext.DeletePassageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1"
+                                                                Padding="8,5" Cursor="Hand" ToolTip="حذف هذا المقطع نهائياً">
+                                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                            <TextBlock Text="🗑️ حذف" FontSize="11" Foreground="#b91c1c" FontWeight="Bold"/>
+                                                        </Button>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Right Column: Extracted Ayah Image, Video Creation, and Mushaf Page Reference -->
+                    <StackPanel Grid.Column="1">
+                        <!-- 1. Extracted Ayah Image Card (L07-02) -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <TextBlock Text="صورة الآية المستخرجة" FontWeight="Bold" FontSize="15" Foreground="#0f172a"/>
+                                    <Border Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right">
+                                        <TextBlock Text="استخراج بكسلات أصلي" FontSize="11" Foreground="#166534" FontWeight="Bold"/>
+                                    </Border>
+                                </DockPanel>
+
+                                <!-- Isolated Ayah image display -->
+                                <Border Background="White" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="6" Height="140" Padding="10" Margin="0,0,0,12">
+                                    <Image Source="{Binding CurrentIsolatedImagePath}" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Border>
+
+                                <!-- L07-02: Action Buttons: الصورة صحيحة / تصحيح الصورة -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button Grid.Column="0" Command="{Binding ApproveImageCommand}" Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1"
+                                            Padding="10,8" Cursor="Hand">
+                                        <Button.Resources>
+                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                        </Button.Resources>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="✔ الصورة صحيحة" Foreground="#166534" FontWeight="Bold" FontSize="13"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Grid.Column="2" Command="{Binding ToggleImageEditorCommand}" Background="#fffbeb" BorderBrush="#fde68a" BorderThickness="1"
+                                            Padding="10,8" Cursor="Hand">
+                                        <Button.Resources>
+                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                        </Button.Resources>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="✏ تصحيح الصورة" Foreground="#b45309" FontWeight="Bold" FontSize="13"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Collapsible Image Correction & Edge Nudge Panel (L07-02 & L07-04) -->
+                                <Border Background="#f8fafc" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,4,0,0"
+                                        Visibility="{Binding IsImageEditorOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="ضبط هوامش وحدود الآية (بالبكسل) :" FontWeight="Bold" Foreground="#1e293b" Margin="0,0,0,8"/>
+
+                                        <!-- Nudge Controls Grid -->
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Top margin -->
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,4,6">
+                                                <TextBlock Text="الهامش العلوي :" FontSize="11" Foreground="#475569" Margin="0,0,0,2"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Command="{Binding NudgeMarginCommand}" CommandParameter="top-5" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand"><TextBlock Text="-5px" FontSize="10"/></Button>
+                                                    <Button Command="{Binding NudgeMarginCommand}" CommandParameter="top+5" Background="#e2e8f0" Padding="6,2" Cursor="Hand"><TextBlock Text="+5px" FontSize="10"/></Button>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Bottom margin -->
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,0,6">
+                                                <TextBlock Text="الهامش السفلي :" FontSize="11" Foreground="#475569" Margin="0,0,0,2"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Command="{Binding NudgeMarginCommand}" CommandParameter="bottom-5" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand"><TextBlock Text="-5px" FontSize="10"/></Button>
+                                                    <Button Command="{Binding NudgeMarginCommand}" CommandParameter="bottom+5" Background="#e2e8f0" Padding="6,2" Cursor="Hand"><TextBlock Text="+5px" FontSize="10"/></Button>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Right margin -->
+                                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,4,0">
+                                                <TextBlock Text="الهامش الأيمن :" FontSize="11" Foreground="#475569" Margin="0,0,0,2"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Command="{Binding NudgeMarginCommand}" CommandParameter="right-5" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand"><TextBlock Text="-5px" FontSize="10"/></Button>
+                                                    <Button Command="{Binding NudgeMarginCommand}" CommandParameter="right+5" Background="#e2e8f0" Padding="6,2" Cursor="Hand"><TextBlock Text="+5px" FontSize="10"/></Button>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Left margin -->
+                                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="4,0,0,0">
+                                                <TextBlock Text="الهامش الأيسر :" FontSize="11" Foreground="#475569" Margin="0,0,0,2"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Command="{Binding NudgeMarginCommand}" CommandParameter="left-5" Background="#e2e8f0" Padding="6,2" Margin="0,0,4,0" Cursor="Hand"><TextBlock Text="-5px" FontSize="10"/></Button>
+                                                    <Button Command="{Binding NudgeMarginCommand}" CommandParameter="left+5" Background="#e2e8f0" Padding="6,2" Cursor="Hand"><TextBlock Text="+5px" FontSize="10"/></Button>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Comparison Preview -->
+                                        <Border Background="White" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="4" Height="120" Margin="0,0,0,8" ClipToBounds="True">
+                                            <Image Source="{Binding ComparisonImagePath}" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                        </Border>
+
+                                        <!-- Reset & Close -->
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Left" Command="{Binding ResetImageCorrectionCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
+                                                    Padding="8,4" Cursor="Hand">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                <TextBlock Text="🔄 إعادة الضبط" FontSize="11"/>
+                                            </Button>
+                                            <Button DockPanel.Dock="Right" Command="{Binding ToggleImageEditorCommand}" Background="#e2e8f0" Padding="8,4" Cursor="Hand" HorizontalAlignment="Right">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                                <TextBlock Text="إغلاق ✖" FontSize="11"/>
+                                            </Button>
+                                        </DockPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 2. Video Export & Orientation Box -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="تنسيق الفيديو والإنشاء" FontWeight="Bold" FontSize="15" Foreground="#0f172a" Margin="0,0,0,10"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <RadioButton IsChecked="{Binding IsHorizontal}" GroupName="StudioOrientation" Content="أفقي 16:9 (يوتيوب)" 
+                                                 FontWeight="SemiBold" FontSize="13" Margin="0,0,16,0"/>
+                                    <RadioButton IsChecked="{Binding IsVertical}" GroupName="StudioOrientation" Content="عمودي 9:16 (ريلز)" 
+                                                 FontWeight="SemiBold" FontSize="13"/>
+                                </StackPanel>
+
+                                <!-- Status message & progress -->
+                                <TextBlock Text="{Binding StatusMessage}" FontSize="13" FontWeight="SemiBold" Foreground="#334155" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                                <ProgressBar Value="{Binding GenerationProgress}" Height="6" Maximum="100" Margin="0,0,0,12"
+                                             Visibility="{Binding IsGenerating, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
+
+                                <!-- Action Buttons: Create Video & Extract MP3 Audio -->
+                                <Grid Margin="0,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Create Video Button -->
+                                    <Button Grid.Column="0" Command="{Binding GenerateVideoCommand}" Background="#15803d" Foreground="White"
+                                            FontWeight="Bold" FontSize="14" Padding="10,10" BorderThickness="0" Cursor="Hand"
+                                            IsEnabled="{Binding IsNotGenerating}"
+                                            ToolTip="توليد فيديو الآية كاملاً بصيغة MP4 مع صورة المصحف الشريف">
+                                        <Button.Resources>
+                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                        </Button.Resources>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="إنشاء فيديو" Margin="0,0,6,0"/>
+                                            <TextBlock Text="🎬"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <!-- Extract Audio Only Button -->
+                                    <Button Grid.Column="2" Command="{Binding ExtractAudioOnlyCommand}" Background="#0284c7" Foreground="White"
+                                            FontWeight="Bold" FontSize="14" Padding="10,10" BorderThickness="0" Cursor="Hand"
+                                            IsEnabled="{Binding IsNotGenerating}"
+                                            ToolTip="استخراج مقطع الصوت المحدد فقط كملف MP3 بدون توليد فيديو">
+                                        <Button.Resources>
+                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                        </Button.Resources>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="استخراج صوت" Margin="0,0,6,0"/>
+                                            <TextBlock Text="🎵"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 3. Original Mushaf Page Reference Card -->
+                        <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="14">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <TextBlock Text="صفحة المصحف الكاملة" FontWeight="Bold" FontSize="13" Foreground="#0f172a"/>
+                                    <TextBlock Text="{Binding CurrentPageNumber, StringFormat='صفحة {0}'}" FontSize="11" Foreground="#64748b" HorizontalAlignment="Right"/>
+                                </DockPanel>
+
+                                <Border Background="#f8fafc" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="6" Height="140" ClipToBounds="True">
+                                    <Image Source="{Binding CurrentPageImagePath}" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+
+        </StackPanel>
     </ScrollViewer>
 </UserControl>

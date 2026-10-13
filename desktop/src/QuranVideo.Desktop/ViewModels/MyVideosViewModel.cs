@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using QuranVideo.Desktop.Data;
 using QuranVideo.Desktop.Services;
 
 namespace QuranVideo.Desktop.ViewModels;
@@ -21,8 +22,91 @@ public sealed partial class MyVideosViewModel : ViewModelBase
 {
     private readonly WorkspaceService _workspaceService;
 
+    public event Action? ClosePlayerRequested;
+    public event Action? PlayRequested;
+    public event Action? PauseRequested;
+    public event Action? StopRequested;
+    public event Action<double>? SeekRequested;
+
     [ObservableProperty]
     private VideoFileInfo? _selectedVideo;
+
+    partial void OnSelectedVideoChanged(VideoFileInfo? value)
+    {
+        ClosePlayerRequested?.Invoke();
+        IsPlaying = false;
+        PlaybackPositionSec = 0;
+        TotalDurationSec = 0;
+        HasPlayerError = false;
+        PlayerStatusMessage = string.Empty;
+
+        if (value != null && File.Exists(value.FullPath))
+        {
+            IsPlayerActive = true;
+            CurrentMediaUri = new Uri(value.FullPath);
+        }
+        else
+        {
+            IsPlayerActive = false;
+            CurrentMediaUri = null;
+            if (value != null && !File.Exists(value.FullPath))
+            {
+                HasPlayerError = true;
+                PlayerStatusMessage = "الملف المحدد غير موجود على القرص.";
+            }
+        }
+    }
+
+    [ObservableProperty]
+    private Uri? _currentMediaUri;
+
+    [ObservableProperty]
+    private bool _isPlayerActive;
+
+    [ObservableProperty]
+    private bool _isPlaying;
+
+    [ObservableProperty]
+    private double _playbackPositionSec;
+
+    [ObservableProperty]
+    private double _totalDurationSec;
+
+    [ObservableProperty]
+    private double _volume = 0.85;
+
+    [ObservableProperty]
+    private bool _isMuted;
+
+    [ObservableProperty]
+    private bool _isFullscreen;
+
+    [ObservableProperty]
+    private bool _hasPlayerError;
+
+    [ObservableProperty]
+    private string _playerStatusMessage = string.Empty;
+
+    public string FormattedPlaybackPosition => FormatTime(PlaybackPositionSec);
+    public string FormattedTotalDuration => FormatTime(TotalDurationSec);
+
+    private static string FormatTime(double seconds)
+    {
+        var ts = TimeSpan.FromSeconds(Math.Max(0, seconds));
+        return ts.TotalHours >= 1
+            ? ts.ToString(@"hh\:mm\:ss")
+            : ts.ToString(@"mm\:ss");
+    }
+
+    partial void OnPlaybackPositionSecChanged(double value)
+    {
+        OnPropertyChanged(nameof(FormattedPlaybackPosition));
+    }
+
+    partial void OnTotalDurationSecChanged(double value)
+    {
+        OnPropertyChanged(nameof(FormattedTotalDuration));
+    }
 
     public ObservableCollection<VideoFileInfo> Videos { get; } = new();
 
@@ -67,13 +151,87 @@ public sealed partial class MyVideosViewModel : ViewModelBase
             Videos.Add(new VideoFileInfo(fi.Name, fi.FullName, fi.Length, fi.CreationTime));
         }
 
-        SelectedVideo = Videos.FirstOrDefault();
+        if (SelectedVideo == null || !Videos.Any(v => v.FullPath == SelectedVideo.FullPath))
+        {
+            SelectedVideo = Videos.FirstOrDefault();
+        }
+
         OnPropertyChanged(nameof(HasVideos));
         OnPropertyChanged(nameof(HasNoVideos));
     }
 
     [RelayCommand]
-    private void PlaySelectedVideo()
+    public void TogglePlayPause()
+    {
+        if (SelectedVideo == null || !File.Exists(SelectedVideo.FullPath)) return;
+
+        if (IsPlaying)
+        {
+            IsPlaying = false;
+            PauseRequested?.Invoke();
+        }
+        else
+        {
+            IsPlaying = true;
+            PlayRequested?.Invoke();
+        }
+    }
+
+    [RelayCommand]
+    public void Stop()
+    {
+        IsPlaying = false;
+        PlaybackPositionSec = 0;
+        StopRequested?.Invoke();
+    }
+
+    [RelayCommand]
+    public void ToggleMute()
+    {
+        IsMuted = !IsMuted;
+    }
+
+    public event Action<bool>? FullscreenRequested;
+
+    [RelayCommand]
+    public void ToggleFullscreen()
+    {
+        IsFullscreen = !IsFullscreen;
+        FullscreenRequested?.Invoke(IsFullscreen);
+    }
+
+    [RelayCommand]
+    public void Seek(double posSec)
+    {
+        PlaybackPositionSec = posSec;
+        SeekRequested?.Invoke(posSec);
+    }
+
+    [RelayCommand]
+    public void ClosePlayer()
+    {
+        ClosePlayerRequested?.Invoke();
+        IsPlayerActive = false;
+        IsPlaying = false;
+        CurrentMediaUri = null;
+        PlaybackPositionSec = 0;
+        TotalDurationSec = 0;
+    }
+
+    [RelayCommand]
+    public void PlaySelectedVideo()
+    {
+        if (SelectedVideo != null && File.Exists(SelectedVideo.FullPath))
+        {
+            IsPlayerActive = true;
+            CurrentMediaUri = new Uri(SelectedVideo.FullPath);
+            IsPlaying = true;
+            PlayRequested?.Invoke();
+        }
+    }
+
+    [RelayCommand]
+    public void PlayInExternalPlayer()
     {
         if (SelectedVideo != null && File.Exists(SelectedVideo.FullPath))
         {
@@ -83,7 +241,7 @@ public sealed partial class MyVideosViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                LoggingService.Instance.LogError($"Impossible de lire la vidéo : {SelectedVideo.FullPath}", ex);
+                LoggingService.Instance.LogError($"Impossible de lire la vidéo en externe : {SelectedVideo.FullPath}", ex);
             }
         }
     }
@@ -112,6 +270,8 @@ public sealed partial class MyVideosViewModel : ViewModelBase
         }
 
         if (!isConfirmed) return;
+
+        ClosePlayer();
 
         try
         {
@@ -177,9 +337,37 @@ public sealed partial class MyVideosViewModel : ViewModelBase
             return;
         }
 
+        ClosePlayer();
+
         try
         {
+            var oldRelPath = Path.GetRelativePath(_workspaceService.WorkspacePath, VideoToRename.FullPath);
+            var newRelPath = Path.GetRelativePath(_workspaceService.WorkspacePath, newFullPath);
+
             File.Move(VideoToRename.FullPath, newFullPath);
+
+            // Update database records pointing to this video file
+            try
+            {
+                var dbPath = _workspaceService.GetDatabasePath();
+                using var db = new AppDbContext(dbPath);
+                var matched = db.Projects
+                    .Where(p => p.OutputVideoPath == oldRelPath || p.OutputVideoPath == VideoToRename.FullPath)
+                    .ToList();
+                foreach (var p in matched)
+                {
+                    p.OutputVideoPath = newRelPath;
+                }
+                if (matched.Count > 0)
+                {
+                    db.SaveChanges();
+                }
+            }
+            catch (Exception dbEx)
+            {
+                LoggingService.Instance.LogError("Erreur mise a jour chemin projet en base apres renommage", dbEx);
+            }
+
             StatusMessage = $"تم تغيير اسم الملف إلى: {cleanName + ext}";
             CancelRename();
             RefreshVideos();

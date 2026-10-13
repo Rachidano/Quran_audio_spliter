@@ -30,6 +30,7 @@ public sealed partial class MainViewModel : ViewModelBase
     public LibraryViewModel LibraryVM { get; }
     public StudioViewModel StudioVM { get; }
     public BatchExportViewModel BatchExportVM { get; }
+    public CollectionsViewModel CollectionsVM { get; }
     public MyVideosViewModel MyVideosVM { get; }
     public SettingsViewModel SettingsVM { get; }
     public QuranSearchService SearchService { get; } = new();
@@ -42,6 +43,7 @@ public sealed partial class MainViewModel : ViewModelBase
         LibraryVM = new LibraryViewModel(NavigateToStudioWithTarget, SearchService);
         StudioVM = new StudioViewModel(_workspaceService);
         BatchExportVM = new BatchExportViewModel(_workspaceService);
+        CollectionsVM = new CollectionsViewModel(_workspaceService);
         MyVideosVM = new MyVideosViewModel(_workspaceService);
         SettingsVM = new SettingsViewModel(_workspaceService, () => { IsSettingsOpen = false; _ = StudioVM.RefreshRecitersAsync(selectDefault: true); });
 
@@ -51,6 +53,10 @@ public sealed partial class MainViewModel : ViewModelBase
     public async Task InitializeSessionAsync()
     {
         var dbPath = _workspaceService.GetDatabasePath();
+
+        // 0. Ensure database schema is migrated and up to date (V3)
+        var migrationService = new DatabaseMigrationService();
+        await migrationService.MigrateDatabaseAsync(dbPath);
 
         // 1. Initialize reciter collections (Saber Abdelhakam default, Al-Husary)
         var reciterService = new RecitationLibraryService(_workspaceService);
@@ -106,18 +112,8 @@ public sealed partial class MainViewModel : ViewModelBase
         StudioVM.IsHorizontal = session.LastOrientation == "Horizontal";
         await StudioVM.LoadAyahImageAsync();
 
-        if (session.ActiveView == "Studio")
-        {
-            SelectStudio();
-        }
-        else if (session.ActiveView == "MyVideos")
-        {
-            SelectMyVideos();
-        }
-        else
-        {
-            SelectLibrary();
-        }
+        // Par défaut au lancement, le premier écran doit toujours être la bibliothèque
+        SelectLibrary();
     }
 
     private void NavigateToStudioWithTarget(int surahNumber, int ayahNumber)
@@ -143,6 +139,16 @@ public sealed partial class MainViewModel : ViewModelBase
         _ = StudioVM.RefreshRecitersAsync();
         StatusText = $"إعداد الفيديو — {StudioVM.TargetDescription}";
         _ = StudioVM.LoadAyahImageAsync();
+        SaveSession();
+    }
+
+    [RelayCommand]
+    public void SelectCollections()
+    {
+        ActiveTab = "Collections";
+        _ = CollectionsVM.LoadCollectionsAsync();
+        CurrentContentViewModel = CollectionsVM;
+        StatusText = "مجموعاتي — تنظيم وتصدير السلاسل الموضوعية";
         SaveSession();
     }
 

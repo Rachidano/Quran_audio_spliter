@@ -80,7 +80,13 @@ public sealed class BackupService
                 File.Copy(sessionSource, Path.Combine(tempDir, "session.json"), overwrite: true);
             }
 
-            // 3. Copier les dossiers médias pertinents (L10-01)
+            var audioSettingsSource = Path.Combine(workspacePath, "data", "audio_settings.json");
+            if (File.Exists(audioSettingsSource))
+            {
+                File.Copy(audioSettingsSource, Path.Combine(tempDbDir, "audio_settings.json"), overwrite: true);
+            }
+
+            // 3. Copier les dossiers médias pertinents (L10-01) incluant media/assets/ V3
             var mediaSource = Path.Combine(workspacePath, "media");
             if (Directory.Exists(mediaSource))
             {

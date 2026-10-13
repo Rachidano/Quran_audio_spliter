@@ -21,6 +21,12 @@ public partial class StudioView : UserControl
         {
             window.PreviewKeyDown += OnWindowPreviewKeyDown;
         }
+
+        if (DataContext is StudioViewModel vm)
+        {
+            _ = vm.LoadSavedProjectsAsync();
+            _ = vm.RefreshWizardSequenceAsync();
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
