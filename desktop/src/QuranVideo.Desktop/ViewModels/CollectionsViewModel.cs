@@ -81,6 +81,10 @@ public sealed partial class CollectionsViewModel : ViewModelBase
     public bool HasItems => CurrentCollectionItems.Count > 0;
     public bool HasNoItems => CurrentCollectionItems.Count == 0;
 
+    public string CollectionCountDescription => $"{CurrentCollectionItems.Count} فيديو";
+    public string ReadyCountDescription => $"{CurrentCollectionItems.Count(i => i.IsReady)} من {CurrentCollectionItems.Count} جاهز";
+    public bool IsAllItemsReady => CurrentCollectionItems.Count > 0 && CurrentCollectionItems.All(i => i.IsReady);
+
     public CollectionsViewModel(
         WorkspaceService workspaceService,
         CompositionService? compositionService = null,
@@ -180,6 +184,9 @@ public sealed partial class CollectionsViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(HasItems));
         OnPropertyChanged(nameof(HasNoItems));
+        OnPropertyChanged(nameof(CollectionCountDescription));
+        OnPropertyChanged(nameof(ReadyCountDescription));
+        OnPropertyChanged(nameof(IsAllItemsReady));
 
         // Load available projects to add
         var existingProjectIds = items.Select(i => i.ProjectId).ToHashSet();

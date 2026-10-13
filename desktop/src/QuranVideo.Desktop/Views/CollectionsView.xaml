@@ -10,10 +10,28 @@
              d:DesignHeight="850" d:DesignWidth="1100">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <Style x:Key="ModernCard" TargetType="Border">
+            <Setter Property="Background" Value="#ffffff"/>
+            <Setter Property="BorderBrush" Value="#e2e8f0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="18"/>
+        </Style>
+
+        <Style x:Key="SubtleCard" TargetType="Border">
+            <Setter Property="Background" Value="#f8fafc"/>
+            <Setter Property="BorderBrush" Value="#e2e8f0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14"/>
+        </Style>
     </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="24">
+        <Grid Margin="28,24">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -21,37 +39,55 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
+            <!-- Page Title Header -->
+            <DockPanel Grid.Row="0" Margin="0,0,0,18">
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock Text="🗂️ مجموعاتي وسلاسل الفيديوهات" FontSize="22" FontWeight="Bold" Foreground="#0f172a"/>
+                    <TextBlock Text="نظّم مشاريعك القرآنية في مجموعات موضوعية أو سلاسل وقم بتصديرها دفعة واحدة بجودة عالية." FontSize="13" Foreground="#64748b" Margin="0,4,0,0"/>
+                </StackPanel>
+            </DockPanel>
+
             <!-- 1. Collections Toolbar -->
-            <Border Grid.Row="0" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+            <Border Grid.Row="1" Style="{StaticResource ModernCard}" Margin="0,0,0,16">
                 <DockPanel LastChildFill="True">
                     <!-- Left: Collection selector & CRUD buttons -->
                     <WrapPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,6">
-                            <TextBlock Text="🗂️ المجموعة الحالية :" FontWeight="Bold" FontSize="14" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,18,6">
+                            <TextBlock Text="المجموعة الحالية :" FontWeight="Bold" FontSize="14" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <ComboBox ItemsSource="{Binding Collections}" SelectedItem="{Binding SelectedCollection}" DisplayMemberPath="Name"
-                                      MinWidth="190" Height="36" FontSize="13" VerticalContentAlignment="Center"/>
+                                      MinWidth="210" Height="38" FontSize="13" VerticalContentAlignment="Center"/>
                         </StackPanel>
+
+                        <!-- Summary badges (Count and Ready) -->
+                        <Border Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,12,6" VerticalAlignment="Center"
+                                Visibility="{Binding HasItems, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding CollectionCountDescription}" FontWeight="Bold" FontSize="12" Foreground="#334155" Margin="0,0,6,0"/>
+                                <TextBlock Text="•" Foreground="#94a3b8" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding ReadyCountDescription}" FontWeight="Bold" FontSize="12" Foreground="#15803d"/>
+                            </StackPanel>
+                        </Border>
 
                         <!-- Create new collection button -->
                         <Button Command="{Binding StartCreateCollectionCommand}" Background="#15803d" Foreground="White"
-                                FontWeight="Bold" FontSize="13" Padding="14,8" BorderThickness="0" Cursor="Hand" Margin="0,0,8,6">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                FontWeight="Bold" FontSize="13" Padding="16,8" Height="38" BorderThickness="0" Cursor="Hand" Margin="0,0,8,6">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                             <TextBlock Text="➕ مجموعة جديدة"/>
                         </Button>
 
                         <!-- Rename collection button -->
                         <Button Command="{Binding StartRenameCollectionCommand}" Background="#f8fafc" Foreground="#0284c7"
-                                FontWeight="Bold" FontSize="13" Padding="12,8" BorderThickness="1" BorderBrush="#bae6fd" Cursor="Hand" Margin="0,0,8,6"
+                                FontWeight="Bold" FontSize="13" Padding="14,8" Height="38" BorderThickness="1" BorderBrush="#bae6fd" Cursor="Hand" Margin="0,0,8,6"
                                 IsEnabled="{Binding HasCollections}">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                             <TextBlock Text="✏️ تعديل الاسم"/>
                         </Button>
 
                         <!-- Delete collection button -->
                         <Button Command="{Binding DeleteCollectionCommand}" Background="#fef2f2" Foreground="#dc2626"
-                                FontWeight="Bold" FontSize="13" Padding="12,8" BorderThickness="1" BorderBrush="#fecaca" Cursor="Hand" Margin="0,0,8,6"
+                                FontWeight="Bold" FontSize="13" Padding="14,8" Height="38" BorderThickness="1" BorderBrush="#fecaca" Cursor="Hand" Margin="0,0,8,6"
                                 IsEnabled="{Binding HasCollections}" ToolTip="حذف هذه المجموعة فقط دون المساس بالمشاريع أو المقاطع الصوتية">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                             <TextBlock Text="🗑️ حذف المجموعة"/>
                         </Button>
                     </WrapPanel>
@@ -59,11 +95,11 @@
                     <!-- Right: Batch Export Button -->
                     <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button Command="{Binding ExportCollectionBatchCommand}" Background="#1e40af" Foreground="White"
-                                FontWeight="Bold" FontSize="14" Padding="18,10" BorderThickness="0" Cursor="Hand"
+                                FontWeight="Bold" FontSize="14" Padding="20,10" Height="42" BorderThickness="0" Cursor="Hand"
                                 IsEnabled="{Binding HasItems}" ToolTip="تصدير كل عناصر هذه المجموعة كملفات فيديو MP4 منفصلة ومستقلة">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🚀 تصدير عناصر المجموعة (فيديوهات مستقلة)" Margin="0,0,8,0"/>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="🚀 تصدير عناصر المجموعة (فيديوهات مستقلة)" Margin="0,0,4,0"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -71,29 +107,29 @@
             </Border>
 
             <!-- 2. Inline Create Collection Dialog -->
-            <Border Grid.Row="1" Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16"
+            <Border Grid.Row="2" Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1" CornerRadius="10" Padding="18" Margin="0,0,0,16"
                     Visibility="{Binding IsCreatingCollection, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel>
-                    <TextBlock Text="إنشاء مجموعة موضوعية جديدة :" FontWeight="Bold" FontSize="14" Foreground="#15803d" Margin="0,0,0,10"/>
-                    <WrapPanel Margin="0,0,0,10">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,16,6">
-                            <TextBlock Text="اسم المجموعة :" FontSize="12" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBox Text="{Binding NewCollectionName, UpdateSourceTrigger=PropertyChanged}" Width="240" Height="32" FontSize="13" VerticalContentAlignment="Center"/>
+                    <TextBlock Text="إنشاء مجموعة موضوعية جديدة :" FontWeight="Bold" FontSize="15" Foreground="#15803d" Margin="0,0,0,12"/>
+                    <WrapPanel Margin="0,0,0,6">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                            <TextBlock Text="اسم المجموعة :" FontSize="13" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Text="{Binding NewCollectionName, UpdateSourceTrigger=PropertyChanged}" Width="260" Height="36" FontSize="13" VerticalContentAlignment="Center" BorderBrush="#86efac"/>
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,16,6">
-                            <TextBlock Text="الوصف (اختياري) :" FontSize="12" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBox Text="{Binding NewCollectionDescription, UpdateSourceTrigger=PropertyChanged}" Width="280" Height="32" FontSize="13" VerticalContentAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                            <TextBlock Text="الوصف (اختياري) :" FontSize="13" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Text="{Binding NewCollectionDescription, UpdateSourceTrigger=PropertyChanged}" Width="300" Height="36" FontSize="13" VerticalContentAlignment="Center" BorderBrush="#86efac"/>
                         </StackPanel>
 
                         <Button Command="{Binding ConfirmCreateCollectionCommand}" Background="#15803d" Foreground="White"
-                                FontWeight="Bold" Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,8,6">
+                                FontWeight="Bold" Padding="16,8" Height="36" BorderThickness="0" Cursor="Hand" Margin="0,0,8,8">
                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                             <TextBlock Text="حفظ المجموعة ✔"/>
                         </Button>
 
                         <Button Command="{Binding CancelCreateCollectionCommand}" Background="#e2e8f0" Foreground="#475569"
-                                FontWeight="Bold" Padding="12,6" BorderThickness="0" Cursor="Hand" Margin="0,0,0,6">
+                                FontWeight="Bold" Padding="14,8" Height="36" BorderThickness="0" Cursor="Hand" Margin="0,0,0,8">
                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                             <TextBlock Text="إلغاء ✖"/>
                         </Button>
@@ -102,24 +138,24 @@
             </Border>
 
             <!-- 2. Inline Rename Collection Dialog -->
-            <Border Grid.Row="1" Background="#f0f9ff" BorderBrush="#bae6fd" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16"
+            <Border Grid.Row="2" Background="#f0f9ff" BorderBrush="#bae6fd" BorderThickness="1" CornerRadius="10" Padding="18" Margin="0,0,0,16"
                     Visibility="{Binding IsRenamingCollection, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel>
-                    <TextBlock Text="تعديل اسم المجموعة :" FontWeight="Bold" FontSize="14" Foreground="#0284c7" Margin="0,0,0,10"/>
-                    <WrapPanel Margin="0,0,0,10">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,16,6">
-                            <TextBlock Text="الاسم الجديد :" FontSize="12" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBox Text="{Binding RenamedCollectionName, UpdateSourceTrigger=PropertyChanged}" Width="280" Height="32" FontSize="13" VerticalContentAlignment="Center"/>
+                    <TextBlock Text="تعديل اسم المجموعة :" FontWeight="Bold" FontSize="15" Foreground="#0284c7" Margin="0,0,0,12"/>
+                    <WrapPanel Margin="0,0,0,6">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                            <TextBlock Text="الاسم الجديد :" FontSize="13" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Text="{Binding RenamedCollectionName, UpdateSourceTrigger=PropertyChanged}" Width="300" Height="36" FontSize="13" VerticalContentAlignment="Center" BorderBrush="#bae6fd"/>
                         </StackPanel>
 
                         <Button Command="{Binding ConfirmRenameCollectionCommand}" Background="#0284c7" Foreground="White"
-                                FontWeight="Bold" Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,8,6">
+                                FontWeight="Bold" Padding="16,8" Height="36" BorderThickness="0" Cursor="Hand" Margin="0,0,8,8">
                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                             <TextBlock Text="تأكيد التعديل ✔"/>
                         </Button>
 
                         <Button Command="{Binding CancelRenameCollectionCommand}" Background="#e2e8f0" Foreground="#475569"
-                                FontWeight="Bold" Padding="12,6" BorderThickness="0" Cursor="Hand" Margin="0,0,0,6">
+                                FontWeight="Bold" Padding="14,8" Height="36" BorderThickness="0" Cursor="Hand" Margin="0,0,0,8">
                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                             <TextBlock Text="إلغاء ✖"/>
                         </Button>
@@ -128,14 +164,14 @@
             </Border>
 
             <!-- 3. Batch Export Progress & Error Alert -->
-            <Border Grid.Row="2" Background="#f8fafc" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,16"
+            <Border Grid.Row="3" Background="#f8fafc" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="10" Padding="18" Margin="0,0,0,16"
                     Visibility="{Binding IsExportingBatch, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel>
-                    <DockPanel LastChildFill="True" Margin="0,0,0,8">
-                        <TextBlock Text="{Binding BatchStatusMessage}" FontWeight="Bold" FontSize="13" Foreground="#1e40af" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                    <DockPanel LastChildFill="True" Margin="0,0,0,10">
+                        <TextBlock Text="{Binding BatchStatusMessage}" FontWeight="Bold" FontSize="14" Foreground="#1e40af" DockPanel.Dock="Left" VerticalAlignment="Center"/>
                         <Button DockPanel.Dock="Right" Command="{Binding CancelBatchExportCommand}" Background="#fee2e2" Foreground="#b91c1c"
-                                FontWeight="Bold" Padding="12,4" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Right">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                FontWeight="Bold" Padding="14,6" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Right">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                             <TextBlock Text="⏹ إلغاء التصدير"/>
                         </Button>
                     </DockPanel>
@@ -144,26 +180,26 @@
             </Border>
 
             <!-- Error Banner (V3-07-05 & V3-07-06) -->
-            <Border Grid.Row="2" Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,16"
+            <Border Grid.Row="3" Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16"
                     Visibility="{Binding BatchErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
                 <DockPanel>
-                    <TextBlock Text="🚫 " FontSize="16" DockPanel.Dock="Left" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="🚫 " FontSize="18" DockPanel.Dock="Left" Margin="0,0,8,0" VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding BatchErrorMessage}" Foreground="#b91c1c" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"/>
                 </DockPanel>
             </Border>
 
             <!-- 4. Add Project to Collection Card -->
-            <Border Grid.Row="3" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16"
+            <Border Grid.Row="4" Style="{StaticResource ModernCard}" Margin="0,0,0,16"
                     Visibility="{Binding HasCollections, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel>
-                    <TextBlock Text="➕ إضافة مشروع فيديو محفوظ إلى هذه المجموعة :" FontWeight="Bold" FontSize="14" Foreground="#1e293b" Margin="0,0,0,10"/>
+                    <TextBlock Text="➕ إضافة مشروع فيديو محفوظ إلى هذه المجموعة :" FontWeight="Bold" FontSize="15" Foreground="#1e293b" Margin="0,0,0,12"/>
                     <WrapPanel VerticalAlignment="Center">
                         <ComboBox ItemsSource="{Binding AvailableProjectsToAdd}" SelectedItem="{Binding SelectedProjectToAdd}" DisplayMemberPath="Title"
-                                  MinWidth="320" Height="34" FontSize="13" VerticalContentAlignment="Center" Margin="0,0,12,6"/>
+                                  MinWidth="340" Height="38" FontSize="13" VerticalContentAlignment="Center" Margin="0,0,14,6"/>
 
                         <Button Command="{Binding AddProjectToCollectionCommand}" Background="#15803d" Foreground="White"
-                                FontWeight="Bold" Padding="16,6" BorderThickness="0" Cursor="Hand" Margin="0,0,0,6">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                FontWeight="Bold" Padding="18,8" Height="38" BorderThickness="0" Cursor="Hand" Margin="0,0,0,6">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                             <TextBlock Text="إضافة للمجموعة ➕"/>
                         </Button>
                     </WrapPanel>
@@ -171,21 +207,21 @@
             </Border>
 
             <!-- 5. Collection Items Table -->
-            <Border Grid.Row="4" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16">
+            <Border Grid.Row="5" Style="{StaticResource ModernCard}">
                 <Grid>
                     <!-- Empty state: No collections -->
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,32"
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,48"
                                 Visibility="{Binding HasNoCollections, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <TextBlock Text="🗂️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                        <TextBlock Text="لا توجد أي مجموعات منشأة بعد" FontSize="18" FontWeight="Bold" Foreground="#64748b" HorizontalAlignment="Center"/>
+                        <TextBlock Text="🗂️" FontSize="54" HorizontalAlignment="Center" Margin="0,0,0,14"/>
+                        <TextBlock Text="لا توجد أي مجموعات منشأة بعد" FontSize="19" FontWeight="Bold" Foreground="#64748b" HorizontalAlignment="Center"/>
                         <TextBlock Text="اضغط على زر « ➕ مجموعة جديدة » بالأعلى لإنشاء مجموعتك الأولى وتنظيم المقاطع المرئية." FontSize="14" Foreground="#94a3b8" HorizontalAlignment="Center" Margin="0,6,0,0"/>
                     </StackPanel>
 
                     <!-- Empty state: Collection has no items -->
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,32"
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,48"
                                 Visibility="{Binding HasNoItems, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <TextBlock Text="📋" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                        <TextBlock Text="هذه المجموعة فارغة حالياً" FontSize="18" FontWeight="Bold" Foreground="#64748b" HorizontalAlignment="Center"/>
+                        <TextBlock Text="📋" FontSize="54" HorizontalAlignment="Center" Margin="0,0,0,14"/>
+                        <TextBlock Text="هذه المجموعة فارغة حالياً" FontSize="19" FontWeight="Bold" Foreground="#64748b" HorizontalAlignment="Center"/>
                         <TextBlock Text="اختر مشروعاً محفوظاً من القائمة المنسدلة أعلاه واضغط على « إضافة للمجموعة »." FontSize="14" Foreground="#94a3b8" HorizontalAlignment="Center" Margin="0,6,0,0"/>
                     </StackPanel>
 
@@ -194,7 +230,7 @@
                              Visibility="{Binding HasItems, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="12,10" BorderBrush="#f1f5f9" BorderThickness="0,0,0,1">
+                                <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,0,0,8">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
@@ -205,18 +241,18 @@
 
                                         <!-- Order Index Badge -->
                                         <Border Grid.Column="0" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
-                                                Width="36" Height="36" CornerRadius="18" Margin="0,0,14,0" VerticalAlignment="Center">
+                                                Width="38" Height="38" CornerRadius="19" Margin="0,0,16,0" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding OrderIndex, StringFormat='#{0}'}" FontWeight="Bold" FontSize="13" Foreground="#475569" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
 
                                         <!-- Project Title & Details -->
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14" Foreground="#0f172a"/>
-                                            <TextBlock Text="{Binding Details}" FontSize="12" Foreground="#64748b" Margin="0,2,0,0"/>
+                                            <TextBlock Text="{Binding Details}" FontSize="12" Foreground="#64748b" Margin="0,3,0,0"/>
                                         </StackPanel>
 
                                         <!-- Readiness Badge -->
-                                        <Border Grid.Column="2" Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="4" Padding="10,4" Margin="16,0" VerticalAlignment="Center">
+                                        <Border Grid.Column="2" Background="#ffffff" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="6" Padding="12,5" Margin="16,0" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding StatusBadge}" Foreground="{Binding StatusColor}" FontWeight="Bold" FontSize="12"/>
                                         </Border>
 
@@ -224,23 +260,23 @@
                                         <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                                             <Button Command="{Binding DataContext.MoveItemUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
-                                                    Padding="8,4" Margin="0,0,4,0" Cursor="Hand" ToolTip="تقديم الترتيب">
-                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                                <TextBlock Text="▲" FontSize="11"/>
+                                                    Padding="10,6" Margin="0,0,6,0" Cursor="Hand" ToolTip="تقديم الترتيب">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                                <TextBlock Text="▲" FontSize="12"/>
                                             </Button>
 
                                             <Button Command="{Binding DataContext.MoveItemDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
-                                                    Padding="8,4" Margin="0,0,8,0" Cursor="Hand" ToolTip="تأخير الترتيب">
-                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                                <TextBlock Text="▼" FontSize="11"/>
+                                                    Padding="10,6" Margin="0,0,10,0" Cursor="Hand" ToolTip="تأخير الترتيب">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                                <TextBlock Text="▼" FontSize="12"/>
                                             </Button>
 
                                             <Button Command="{Binding DataContext.RemoveItemFromCollectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}" Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1"
-                                                    Padding="10,5" Cursor="Hand" ToolTip="إزالة هذا المشروع من المجموعة دون حذفه من البرنامج">
-                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                                <TextBlock Text="🗑️ إزالة" FontSize="11" Foreground="#b91c1c" FontWeight="Bold"/>
+                                                    Padding="12,6" Cursor="Hand" ToolTip="إزالة هذا المشروع من المجموعة دون حذفه من البرنامج">
+                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                                <TextBlock Text="🗑️ إزالة" FontSize="12" Foreground="#b91c1c" FontWeight="Bold"/>
                                             </Button>
                                         </StackPanel>
                                     </Grid>
