@@ -80,6 +80,7 @@ public sealed partial class CollectionsViewModel : ViewModelBase
     public bool HasNoCollections => Collections.Count == 0;
     public bool HasItems => CurrentCollectionItems.Count > 0;
     public bool HasNoItems => CurrentCollectionItems.Count == 0;
+    public bool HasCollectionsAndNoItems => HasCollections && HasNoItems;
 
     public string CollectionCountDescription => $"{CurrentCollectionItems.Count} فيديو";
     public string ReadyCountDescription => $"{CurrentCollectionItems.Count(i => i.IsReady)} من {CurrentCollectionItems.Count} جاهز";
@@ -140,6 +141,7 @@ public sealed partial class CollectionsViewModel : ViewModelBase
         {
             OnPropertyChanged(nameof(HasItems));
             OnPropertyChanged(nameof(HasNoItems));
+            OnPropertyChanged(nameof(HasCollectionsAndNoItems));
             return;
         }
 
@@ -184,6 +186,7 @@ public sealed partial class CollectionsViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(HasItems));
         OnPropertyChanged(nameof(HasNoItems));
+        OnPropertyChanged(nameof(HasCollectionsAndNoItems));
         OnPropertyChanged(nameof(CollectionCountDescription));
         OnPropertyChanged(nameof(ReadyCountDescription));
         OnPropertyChanged(nameof(IsAllItemsReady));

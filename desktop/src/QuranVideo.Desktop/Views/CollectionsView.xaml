@@ -94,12 +94,27 @@
 
                     <!-- Right: Batch Export Button -->
                     <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Button Command="{Binding ExportCollectionBatchCommand}" Background="#1e40af" Foreground="White"
-                                FontWeight="Bold" FontSize="14" Padding="20,10" Height="42" BorderThickness="0" Cursor="Hand"
+                        <Button Command="{Binding ExportCollectionBatchCommand}" 
+                                FontWeight="Bold" FontSize="13" Padding="18,10" Height="40" Cursor="Hand"
                                 IsEnabled="{Binding HasItems}" ToolTip="تصدير كل عناصر هذه المجموعة كملفات فيديو MP4 منفصلة ومستقلة">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#1e40af"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Background" Value="#f1f5f9"/>
+                                            <Setter Property="Foreground" Value="#94a3b8"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="🚀 تصدير عناصر المجموعة (فيديوهات مستقلة)" Margin="0,0,4,0"/>
+                                <TextBlock Text="🚀 تصدير المجموعة (MP4)"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -217,9 +232,9 @@
                         <TextBlock Text="اضغط على زر « ➕ مجموعة جديدة » بالأعلى لإنشاء مجموعتك الأولى وتنظيم المقاطع المرئية." FontSize="14" Foreground="#94a3b8" HorizontalAlignment="Center" Margin="0,6,0,0"/>
                     </StackPanel>
 
-                    <!-- Empty state: Collection has no items -->
+                    <!-- Empty state: Collection has no items (only visible if a collection exists and is empty) -->
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,48"
-                                Visibility="{Binding HasNoItems, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                Visibility="{Binding HasCollectionsAndNoItems, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <TextBlock Text="📋" FontSize="54" HorizontalAlignment="Center" Margin="0,0,0,14"/>
                         <TextBlock Text="هذه المجموعة فارغة حالياً" FontSize="19" FontWeight="Bold" Foreground="#64748b" HorizontalAlignment="Center"/>
                         <TextBlock Text="اختر مشروعاً محفوظاً من القائمة المنسدلة أعلاه واضغط على « إضافة للمجموعة »." FontSize="14" Foreground="#94a3b8" HorizontalAlignment="Center" Margin="0,6,0,0"/>

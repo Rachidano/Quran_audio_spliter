@@ -30,6 +30,12 @@ public partial class MyVideosView : UserControl
         vm.SeekRequested += OnSeekRequested;
         vm.ClosePlayerRequested += OnClosePlayerRequested;
         vm.FullscreenRequested += OnFullscreenRequested;
+        vm.PropertyChanged += OnViewModelPropertyChanged;
+
+        if (vm.CurrentMediaUri != null)
+        {
+            LoadMediaSource(vm.CurrentMediaUri, autoPlay: vm.IsPlaying);
+        }
 
         _positionTimer = new DispatcherTimer
         {
@@ -63,6 +69,7 @@ public partial class MyVideosView : UserControl
             vm.SeekRequested -= OnSeekRequested;
             vm.ClosePlayerRequested -= OnClosePlayerRequested;
             vm.FullscreenRequested -= OnFullscreenRequested;
+            vm.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
         CloseMedia();
@@ -95,6 +102,46 @@ public partial class MyVideosView : UserControl
             {
                 vm.PlaybackPositionSec = PlayerMediaElement.Position.TotalSeconds;
             }
+        }
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MyVideosViewModel.CurrentMediaUri) && DataContext is MyVideosViewModel vm)
+        {
+            if (vm.CurrentMediaUri != null)
+            {
+                LoadMediaSource(vm.CurrentMediaUri, autoPlay: vm.IsPlaying);
+            }
+            else
+            {
+                CloseMedia();
+            }
+        }
+    }
+
+    private void LoadMediaSource(Uri uri, bool autoPlay)
+    {
+        try
+        {
+            if (PlayerMediaElement.Source != uri)
+            {
+                PlayerMediaElement.Source = uri;
+            }
+
+            if (autoPlay)
+            {
+                PlayerMediaElement.Play();
+            }
+            else
+            {
+                PlayerMediaElement.Play();
+                PlayerMediaElement.Pause();
+            }
+        }
+        catch
+        {
+            // Ignore format/preview exceptions gracefully
         }
     }
 

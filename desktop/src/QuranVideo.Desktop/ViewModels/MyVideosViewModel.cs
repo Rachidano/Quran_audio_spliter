@@ -142,6 +142,19 @@ public sealed partial class MyVideosViewModel : ViewModelBase
 
     public ObservableCollection<VideoFileInfo> Videos { get; } = new();
     public ObservableCollection<VideoFileInfo> FilteredVideos { get; } = new();
+    public ObservableCollection<VideoFileInfo> PagedVideos { get; } = new();
+
+    [ObservableProperty]
+    private int _pageSize = 8;
+
+    [ObservableProperty]
+    private int _currentPage = 1;
+
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredVideos.Count / (double)Math.Max(1, PageSize)));
+    public bool HasMultiplePages => TotalPages > 1;
+    public bool CanGoToPreviousPage => CurrentPage > 1;
+    public bool CanGoToNextPage => CurrentPage < TotalPages;
+    public string PageInfoDescription => $"صفحة {CurrentPage} من {TotalPages} ({FilteredVideos.Count} مقطع)";
 
     public MyVideosViewModel(WorkspaceService workspaceService)
     {
@@ -164,6 +177,89 @@ public sealed partial class MyVideosViewModel : ViewModelBase
     public bool HasVideos => Videos.Count > 0;
     public bool HasNoVideos => Videos.Count == 0;
 
+    private void UpdatePagedVideos()
+    {
+        PagedVideos.Clear();
+        if (FilteredVideos.Count == 0)
+        {
+            CurrentPage = 1;
+            NotifyPagination();
+            return;
+        }
+
+        int total = TotalPages;
+        if (CurrentPage > total) CurrentPage = total;
+        if (CurrentPage < 1) CurrentPage = 1;
+
+        var items = FilteredVideos
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize);
+
+        foreach (var item in items)
+        {
+            PagedVideos.Add(item);
+        }
+
+        NotifyPagination();
+    }
+
+    private void NotifyPagination()
+    {
+        OnPropertyChanged(nameof(TotalPages));
+        OnPropertyChanged(nameof(HasMultiplePages));
+        OnPropertyChanged(nameof(CanGoToPreviousPage));
+        OnPropertyChanged(nameof(CanGoToNextPage));
+        OnPropertyChanged(nameof(PageInfoDescription));
+    }
+
+    [RelayCommand]
+    public void NextPage()
+    {
+        if (CanGoToNextPage)
+        {
+            CurrentPage++;
+            UpdatePagedVideos();
+        }
+    }
+
+    [RelayCommand]
+    public void PreviousPage()
+    {
+        if (CanGoToPreviousPage)
+        {
+            CurrentPage--;
+            UpdatePagedVideos();
+        }
+    }
+
+    [RelayCommand]
+    public void FirstPage()
+    {
+        if (CurrentPage != 1)
+        {
+            CurrentPage = 1;
+            UpdatePagedVideos();
+        }
+    }
+
+    [RelayCommand]
+    public void LastPage()
+    {
+        if (CurrentPage != TotalPages)
+        {
+            CurrentPage = TotalPages;
+            UpdatePagedVideos();
+        }
+    }
+
+    [RelayCommand]
+    public void PlayVideoDirectly(VideoFileInfo? video)
+    {
+        if (video == null) return;
+        SelectedVideo = video;
+        PlaySelectedVideo();
+    }
+
     private void ApplyFilter()
     {
         FilteredVideos.Clear();
@@ -178,6 +274,9 @@ public sealed partial class MyVideosViewModel : ViewModelBase
 
             FilteredVideos.Add(v);
         }
+
+        CurrentPage = 1;
+        UpdatePagedVideos();
     }
 
     [RelayCommand]
@@ -204,7 +303,7 @@ public sealed partial class MyVideosViewModel : ViewModelBase
 
         if (SelectedVideo == null || !Videos.Any(v => v.FullPath == SelectedVideo.FullPath))
         {
-            SelectedVideo = FilteredVideos.FirstOrDefault() ?? Videos.FirstOrDefault();
+            SelectedVideo = PagedVideos.FirstOrDefault() ?? FilteredVideos.FirstOrDefault() ?? Videos.FirstOrDefault();
         }
 
         OnPropertyChanged(nameof(HasVideos));

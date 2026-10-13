@@ -101,10 +101,11 @@
                         <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="18"/></Style></Button.Resources>
                         <TextBlock Text="▶" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
-                    <Border Background="#f1f5f9" CornerRadius="6" Padding="10,6" Margin="0,0,16,0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text=" ılılıllı|l|llı|lı " FontFamily="Consolas" FontSize="14" Foreground="#15803d" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding LastWorkedAudioTime}" FontSize="12" Foreground="#64748b" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    <Border Background="#f0fdf4" BorderBrush="#bbf7d0" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,16,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="🔊" FontSize="13" Foreground="#15803d" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="التوقيت :" FontSize="11" Foreground="#475569" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBlock Text="{Binding LastWorkedAudioTime}" FontSize="12" FontWeight="Bold" Foreground="#15803d" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

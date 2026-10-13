@@ -37,6 +37,6 @@
   {
     "scenario": "corrupt-existing-backup",
     "blocked": true,
-    "error": "Le fichier de sauvegarde pr\u00E9-migration existant (D:\\Projets\\ITComp\\Quran\\desktop\\doc\\validation\\v3\\codex-reaudit\\reproduction\\backup-case-fdab5860a59246d998705366dd9db7cb\\data\\quran.db.pre_v3.bak) est corrompu ou n\u0027est pas une base SQLite valide. La migration ne peut pas continuer."
+    "error": "Le fichier de sauvegarde pr\u00E9-migration existant (D:\\Projets\\ITComp\\Quran\\desktop\\doc\\validation\\v3\\codex-reaudit\\reproduction\\backup-case-2becba7f438c498482371a3ca3497c14\\data\\quran.db.pre_v3.bak) est corrompu ou n\u0027est pas une base SQLite valide. La migration ne peut pas continuer."
   }
 ]
