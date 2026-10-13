@@ -98,10 +98,23 @@ public partial class MyVideosView : UserControl
     {
         if (DataContext is MyVideosViewModel vm && vm.IsPlaying && !_isUserSeeking)
         {
-            if (PlayerMediaElement.NaturalDuration.HasTimeSpan)
+            try
             {
-                vm.PlaybackPositionSec = PlayerMediaElement.Position.TotalSeconds;
+                if (PlayerMediaElement.NaturalDuration.HasTimeSpan)
+                {
+                    var totalSec = PlayerMediaElement.NaturalDuration.TimeSpan.TotalSeconds;
+                    if (totalSec > 0 && (vm.TotalDurationSec <= 0 || Math.Abs(vm.TotalDurationSec - totalSec) > 0.5))
+                    {
+                        vm.TotalDurationSec = totalSec;
+                    }
+                    vm.PlaybackPositionSec = PlayerMediaElement.Position.TotalSeconds;
+                }
+                else
+                {
+                    vm.PlaybackPositionSec = PlayerMediaElement.Position.TotalSeconds;
+                }
             }
+            catch { }
         }
     }
 
@@ -205,11 +218,17 @@ public partial class MyVideosView : UserControl
 
     private void OnMediaEnded(object sender, RoutedEventArgs e)
     {
+        try
+        {
+            PlayerMediaElement.Stop();
+            PlayerMediaElement.Position = TimeSpan.Zero;
+        }
+        catch { }
+
         if (DataContext is MyVideosViewModel vm)
         {
             vm.IsPlaying = false;
             vm.PlaybackPositionSec = 0;
-            PlayerMediaElement.Position = TimeSpan.Zero;
         }
     }
 

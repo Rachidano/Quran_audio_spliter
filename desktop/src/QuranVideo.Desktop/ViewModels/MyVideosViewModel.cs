@@ -285,6 +285,12 @@ public sealed partial class MyVideosViewModel : ViewModelBase
     public void PlayVideoDirectly(VideoFileInfo? video)
     {
         if (video == null) return;
+        if (SelectedVideo?.FullPath == video.FullPath && IsPlaying)
+        {
+            TogglePlayPause();
+            return;
+        }
+
         SelectedVideo = video;
         PlaySelectedVideo();
     }

@@ -382,25 +382,35 @@
                             <ColumnDefinition Width="Auto"/> <!-- Volume & Plein écran -->
                         </Grid.ColumnDefinitions>
 
-                        <!-- Bouton Lecture / Pause (Styles triggers purs sans binding texte) -->
-                        <Button Grid.Column="0" Command="{Binding TogglePlayPauseCommand}" 
-                                Background="#15803d" Foreground="White" Width="38" Height="38" 
-                                BorderThickness="0" Cursor="Hand" ToolTip="تشغيل / إيقاف مؤقت">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="19"/></Style></Button.Resources>
-                            <TextBlock FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="▶"/>
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                <Setter Property="Text" Value="⏸"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Button>
+                        <!-- Boutons Lecture / Pause et Stop -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Command="{Binding TogglePlayPauseCommand}" 
+                                    Background="#15803d" Foreground="White" Width="38" Height="38" 
+                                    BorderThickness="0" Cursor="Hand" ToolTip="تشغيل / إيقاف مؤقت">
+                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="19"/></Style></Button.Resources>
+                                <TextBlock FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="▶"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                    <Setter Property="Text" Value="⏸"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Button>
+
+                            <!-- Bouton Stop -->
+                            <Button Command="{Binding StopCommand}" 
+                                    Background="#f1f5f9" Foreground="#dc2626" Width="34" Height="34" 
+                                    BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="6,0,0,0" ToolTip="إيقاف كلي للتشغيل">
+                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="17"/></Style></Button.Resources>
+                                <TextBlock Text="⏹" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                        </StackPanel>
 
                         <!-- Affichage du temps : 00:00 / 01:24 -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">

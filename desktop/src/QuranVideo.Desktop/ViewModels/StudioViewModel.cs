@@ -54,6 +54,70 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
     }
 
     [ObservableProperty]
+    private BackgroundType _studioBackground = BackgroundType.Light;
+
+    [ObservableProperty]
+    private string? _studioCustomBackgroundPath;
+
+    public bool IsStudioBackgroundLight => StudioBackground == BackgroundType.Light;
+    public bool IsStudioBackgroundDark => StudioBackground == BackgroundType.Dark;
+    public bool IsStudioBackgroundCustom => StudioBackground == BackgroundType.CustomImage;
+    public string StudioCustomBackgroundFileName => !string.IsNullOrWhiteSpace(StudioCustomBackgroundPath) 
+        ? Path.GetFileName(StudioCustomBackgroundPath) 
+        : string.Empty;
+
+    partial void OnStudioBackgroundChanged(BackgroundType value)
+    {
+        OnPropertyChanged(nameof(IsStudioBackgroundLight));
+        OnPropertyChanged(nameof(IsStudioBackgroundDark));
+        OnPropertyChanged(nameof(IsStudioBackgroundCustom));
+    }
+
+    partial void OnStudioCustomBackgroundPathChanged(string? value)
+    {
+        OnPropertyChanged(nameof(StudioCustomBackgroundFileName));
+    }
+
+    [RelayCommand]
+    public void SetStudioBackground(string bg)
+    {
+        StudioBackground = bg switch
+        {
+            "Dark" => BackgroundType.Dark,
+            "Custom" or "CustomImage" => BackgroundType.CustomImage,
+            _ => BackgroundType.Light
+        };
+    }
+
+    [RelayCommand]
+    public async Task ImportStudioCustomBackgroundAsync()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "اختر صورة الخلفية للفيديو",
+            Filter = "صور (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp"
+        };
+
+        if (dlg.ShowDialog() == true)
+        {
+            var assetService = new AssetManagementService(_workspaceService);
+            var asset = await assetService.ImportAssetAsync(dlg.FileName, UserAssetType.Background);
+            if (asset != null)
+            {
+                StudioBackground = BackgroundType.CustomImage;
+                StudioCustomBackgroundPath = asset.RelativePath;
+            }
+        }
+    }
+
+    [RelayCommand]
+    public void ClearStudioCustomBackground()
+    {
+        StudioCustomBackgroundPath = null;
+        StudioBackground = BackgroundType.Light;
+    }
+
+    [ObservableProperty]
     private double _startTimeSec = 0.0;
 
     [ObservableProperty]
@@ -945,8 +1009,20 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
             StatusMessage = "جارٍ معالجة الفيديو وإنشاء ملف MP4 بواسطة FFmpeg...";
             var progress = new Progress<int>(p => GenerationProgress = p);
 
+            var (targetW, targetH) = IsHorizontal ? (1920, 1080) : (1080, 1920);
+            string? customBg = !string.IsNullOrWhiteSpace(StudioCustomBackgroundPath)
+                ? _workspaceService.ToAbsolutePath(StudioCustomBackgroundPath)
+                : null;
+
+            var settings = new CardCompositionSettings(
+                TargetWidth: targetW,
+                TargetHeight: targetH,
+                BackgroundType: StudioBackground,
+                CustomBackgroundPath: customBg);
+
             var (renderOk, renderError, completedComp) = await _compositionService.RenderCompositionAsync(
                 comp.Id,
+                settings,
                 progress,
                 _videoCts.Token);
 
