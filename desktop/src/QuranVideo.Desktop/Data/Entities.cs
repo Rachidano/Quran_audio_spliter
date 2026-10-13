@@ -381,6 +381,7 @@ public class VideoProjectEntity
     public string? WatermarkImagePath { get; set; }
     public WatermarkPosition WatermarkPosition { get; set; } = WatermarkPosition.BottomLeft;
     public double WatermarkOpacity { get; set; } = 0.85;
+    public double WatermarkScale { get; set; } = 1.0;
     public bool IsWatermarkEnabled { get; set; } = true;
 
     public int Revision { get; set; } = 1;

@@ -232,6 +232,24 @@ public sealed partial class StudioViewModel
     private double _wizardWatermarkOpacity = 0.85;
 
     [ObservableProperty]
+    private double _wizardWatermarkScale = 1.0;
+
+    partial void OnWizardWatermarkScaleChanged(double value)
+    {
+        UpdateWizardPreview();
+    }
+
+    partial void OnWizardWatermarkOpacityChanged(double value)
+    {
+        UpdateWizardPreview();
+    }
+
+    partial void OnWizardWatermarkTextChanged(string value)
+    {
+        UpdateWizardPreview();
+    }
+
+    [ObservableProperty]
     private BitmapSource? _wizardPreviewImage;
 
     [ObservableProperty]
@@ -281,6 +299,17 @@ public sealed partial class StudioViewModel
     public void SelectFineTuningMode()
     {
         IsWizardMode = false;
+    }
+
+    [RelayCommand]
+    public async Task OpenWizardForCurrentAyahAsync()
+    {
+        WizardStartAyah = CurrentAyahNumber;
+        WizardEndAyah = CurrentAyahNumber;
+        IsWizardMode = true;
+        await RefreshWizardSequenceAsync();
+        WizardStep = 2; // Transition directly to Step 2 (Appearance & Watermark Customization)
+        UpdateWizardPreview();
     }
 
     [RelayCommand]
@@ -584,7 +613,8 @@ public sealed partial class StudioViewModel
             WatermarkImagePath: watermarkLogo,
             WatermarkText: WizardWatermarkText,
             WatermarkPosition: WizardWatermarkPosition,
-            WatermarkOpacity: WizardWatermarkOpacity);
+            WatermarkOpacity: WizardWatermarkOpacity,
+            WatermarkScale: WizardWatermarkScale);
 
         try
         {
@@ -678,6 +708,7 @@ public sealed partial class StudioViewModel
         project.WatermarkImagePath = WizardWatermarkImagePath;
         project.WatermarkPosition = WizardWatermarkPosition;
         project.WatermarkOpacity = WizardWatermarkOpacity;
+        project.WatermarkScale = WizardWatermarkScale;
         project.UpdatedAtUtc = DateTime.UtcNow;
 
         project.SelectedAyahs.Clear();
@@ -831,6 +862,7 @@ public sealed partial class StudioViewModel
         WizardWatermarkImagePath = fullProject.WatermarkImagePath;
         WizardWatermarkPosition = fullProject.WatermarkPosition;
         WizardWatermarkOpacity = fullProject.WatermarkOpacity;
+        WizardWatermarkScale = fullProject.WatermarkScale > 0 ? fullProject.WatermarkScale : 1.0;
 
         // Restore Reciter and AudioSource
         if (!string.IsNullOrEmpty(fullProject.ReciterId))

@@ -1014,11 +1014,21 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
                 ? _workspaceService.ToAbsolutePath(StudioCustomBackgroundPath)
                 : null;
 
+            string? watermarkLogo = !string.IsNullOrWhiteSpace(WizardWatermarkImagePath)
+                ? _workspaceService.ToAbsolutePath(WizardWatermarkImagePath)
+                : null;
+
             var settings = new CardCompositionSettings(
                 TargetWidth: targetW,
                 TargetHeight: targetH,
                 BackgroundType: StudioBackground,
-                CustomBackgroundPath: customBg);
+                CustomBackgroundPath: customBg,
+                WatermarkType: WizardWatermark,
+                WatermarkImagePath: watermarkLogo,
+                WatermarkText: WizardWatermarkText,
+                WatermarkPosition: WizardWatermarkPosition,
+                WatermarkOpacity: WizardWatermarkOpacity,
+                WatermarkScale: WizardWatermarkScale);
 
             var (renderOk, renderError, completedComp) = await _compositionService.RenderCompositionAsync(
                 comp.Id,

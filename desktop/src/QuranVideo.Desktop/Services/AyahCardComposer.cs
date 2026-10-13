@@ -16,7 +16,8 @@ public sealed record CardCompositionSettings(
     string? WatermarkImagePath = null,
     string? WatermarkText = null,
     WatermarkPosition WatermarkPosition = WatermarkPosition.BottomRight,
-    double WatermarkOpacity = 0.8)
+    double WatermarkOpacity = 0.8,
+    double WatermarkScale = 1.0)
 {
     public static CardCompositionSettings CreateDefault(VideoOrientation orientation)
     {
@@ -30,7 +31,8 @@ public sealed record CardCompositionSettings(
             BackgroundType: BackgroundType.Light,
             WatermarkType: WatermarkType.None,
             WatermarkPosition: WatermarkPosition.BottomRight,
-            WatermarkOpacity: 0.8);
+            WatermarkOpacity: 0.8,
+            WatermarkScale: 1.0);
     }
 }
 
@@ -204,6 +206,7 @@ public static class AyahCardComposer
     private static void DrawWatermark(Graphics g, int targetW, int targetH, Rectangle cardRect, CardCompositionSettings settings)
     {
         float opacity = (float)Math.Clamp(settings.WatermarkOpacity, 0.05, 1.0);
+        float scaleMultiplier = (float)Math.Clamp(settings.WatermarkScale > 0 ? settings.WatermarkScale : 1.0, 0.3, 3.0);
         const int margin = 48;
 
         if (settings.WatermarkType == WatermarkType.Logo && !string.IsNullOrWhiteSpace(settings.WatermarkImagePath) && File.Exists(settings.WatermarkImagePath))
@@ -211,22 +214,18 @@ public static class AyahCardComposer
             try
             {
                 using var wmImg = Image.FromFile(settings.WatermarkImagePath);
-                const int maxWmW = 240;
-                const int maxWmH = 90;
+                int maxWmW = (int)(240 * scaleMultiplier);
+                int maxWmH = (int)(90 * scaleMultiplier);
 
                 double scale = Math.Min((double)maxWmW / wmImg.Width, (double)maxWmH / wmImg.Height);
-                if (scale > 1.0) scale = 1.0;
+                if (scale > scaleMultiplier) scale = scaleMultiplier;
 
-                int wmW = (int)(wmImg.Width * scale);
-                int wmH = (int)(wmImg.Height * scale);
+                int wmW = Math.Max(1, (int)(wmImg.Width * scale));
+                int wmH = Math.Max(1, (int)(wmImg.Height * scale));
 
                 var wmRect = CalculateCornerPosition(settings.WatermarkPosition, targetW, targetH, wmW, wmH, margin);
-
-                // Anti-collision: if by any chance it touches cardRect, do not draw or push away
-                if (wmRect.IntersectsWith(cardRect))
-                {
-                    return;
-                }
+                wmRect.X = Math.Clamp(wmRect.X, 0, Math.Max(0, targetW - wmW));
+                wmRect.Y = Math.Clamp(wmRect.Y, 0, Math.Max(0, targetH - wmH));
 
                 using var attributes = new ImageAttributes();
                 var matrix = new ColorMatrix
@@ -244,17 +243,15 @@ public static class AyahCardComposer
         }
         else if (settings.WatermarkType == WatermarkType.Text && !string.IsNullOrWhiteSpace(settings.WatermarkText))
         {
-            using var font = new Font("Segoe UI", 24, FontStyle.Bold, GraphicsUnit.Pixel);
+            float fontSize = (float)Math.Clamp(24f * scaleMultiplier, 10f, 96f);
+            using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
             var textSize = g.MeasureString(settings.WatermarkText, font);
             int textW = (int)Math.Ceiling(textSize.Width);
             int textH = (int)Math.Ceiling(textSize.Height);
 
             var textRect = CalculateCornerPosition(settings.WatermarkPosition, targetW, targetH, textW, textH, margin);
-
-            if (textRect.IntersectsWith(cardRect))
-            {
-                return;
-            }
+            textRect.X = Math.Clamp(textRect.X, 0, Math.Max(0, targetW - textW));
+            textRect.Y = Math.Clamp(textRect.Y, 0, Math.Max(0, targetH - textH));
 
             int alpha = (int)(opacity * 255);
             var textColor = settings.BackgroundType == BackgroundType.Light

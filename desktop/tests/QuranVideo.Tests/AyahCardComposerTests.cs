@@ -195,6 +195,34 @@ public class AyahCardComposerTests : IDisposable
         Assert.Equal(1080, bitmapSource.PixelHeight);
     }
 
+    [Fact]
+    public void ComposeCard_WithWatermarkScale_RendersScaledTextAndLogo()
+    {
+        var textSettings = new CardCompositionSettings(
+            TargetWidth: 1920,
+            TargetHeight: 1080,
+            WatermarkType: WatermarkType.Text,
+            WatermarkText: "قناة ورش",
+            WatermarkScale: 1.5,
+            WatermarkOpacity: 0.9);
+
+        using var textBitmap = AyahCardComposer.ComposeCardBitmap(_testAyahImagePath, textSettings);
+        Assert.Equal(1920, textBitmap.Width);
+        Assert.Equal(1080, textBitmap.Height);
+
+        var logoSettings = new CardCompositionSettings(
+            TargetWidth: 1920,
+            TargetHeight: 1080,
+            WatermarkType: WatermarkType.Logo,
+            WatermarkImagePath: _testLogoPath,
+            WatermarkScale: 0.75,
+            WatermarkOpacity: 0.6);
+
+        using var logoBitmap = AyahCardComposer.ComposeCardBitmap(_testAyahImagePath, logoSettings);
+        Assert.Equal(1920, logoBitmap.Width);
+        Assert.Equal(1080, logoBitmap.Height);
+    }
+
     public void Dispose()
     {
         try

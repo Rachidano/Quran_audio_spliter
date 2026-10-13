@@ -325,7 +325,8 @@ public sealed class CompositionService
             WatermarkImagePath: watermarkImgPath,
             WatermarkText: project.WatermarkText,
             WatermarkPosition: project.WatermarkPosition,
-            WatermarkOpacity: project.WatermarkOpacity);
+            WatermarkOpacity: project.WatermarkOpacity,
+            WatermarkScale: project.WatermarkScale);
 
         // 5. Build timeline entries
         var timeline = new List<MultiAyahTimelineEntry>();

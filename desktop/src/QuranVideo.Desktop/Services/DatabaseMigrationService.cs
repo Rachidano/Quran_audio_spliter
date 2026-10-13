@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS video_projects (
     WatermarkImagePath TEXT,
     WatermarkPosition INTEGER NOT NULL DEFAULT 3,
     WatermarkOpacity REAL NOT NULL DEFAULT 0.85,
+    WatermarkScale REAL NOT NULL DEFAULT 1.0,
     IsWatermarkEnabled INTEGER NOT NULL DEFAULT 1,
     Status TEXT NOT NULL DEFAULT 'Draft',
     OutputVideoPath TEXT,
@@ -169,6 +170,7 @@ PRAGMA user_version = 3;
                 await EnsureColumnExistsAsync(connection, transaction, "video_projects", "OutputVideoPath", "TEXT", cancellationToken);
                 await EnsureColumnExistsAsync(connection, transaction, "video_projects", "ErrorMessage", "TEXT", cancellationToken);
                 await EnsureColumnExistsAsync(connection, transaction, "video_projects", "LastRenderedAtUtc", "TEXT", cancellationToken);
+                await EnsureColumnExistsAsync(connection, transaction, "video_projects", "WatermarkScale", "REAL NOT NULL DEFAULT 1.0", cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
                 return true;

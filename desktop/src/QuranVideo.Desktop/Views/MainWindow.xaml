@@ -6,7 +6,7 @@
         xmlns:vm="clr-namespace:QuranVideo.Desktop.ViewModels"
         xmlns:views="clr-namespace:QuranVideo.Desktop.Views"
         mc:Ignorable="d"
-        Title="صanع مقاطع القرآن — لطريقة ورش عن نافع" 
+        Title="صانع مقاطع القرآن الكريم — برواية ورش عن نافع" 
         Icon="pack://application:,,,/Resources/app.ico"
         Height="800" Width="1240" MinHeight="680" MinWidth="1020"
         WindowStartupLocation="CenterScreen"
@@ -99,7 +99,7 @@
                     </Border>
                     <TextBlock Text="صانع مقاطع القرآن" FontSize="16" FontWeight="Bold" Foreground="#0f172a" 
                                HorizontalAlignment="Center" Margin="0,10,0,2"/>
-                    <TextBlock Text="لطريقة ورش عن نافع" FontSize="12" FontWeight="SemiBold" Foreground="#15803d" 
+                    <TextBlock Text="برواية ورش عن نافع" FontSize="12" FontWeight="SemiBold" Foreground="#15803d" 
                                HorizontalAlignment="Center"/>
                     <Separator Background="#f1f5f9" Margin="0,16,0,8"/>
                 </StackPanel>
