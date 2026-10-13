@@ -40,7 +40,7 @@ public sealed partial class MainViewModel : ViewModelBase
         _workspaceService = workspaceService;
         WorkspacePath = _workspaceService.WorkspacePath;
 
-        LibraryVM = new LibraryViewModel(NavigateToStudioWithTarget, SearchService);
+        LibraryVM = new LibraryViewModel(NavigateToStudioWithTarget, SearchService, _workspaceService);
         StudioVM = new StudioViewModel(_workspaceService);
         BatchExportVM = new BatchExportViewModel(_workspaceService);
         CollectionsVM = new CollectionsViewModel(_workspaceService);
@@ -117,10 +117,13 @@ public sealed partial class MainViewModel : ViewModelBase
 
         // 4. Restore session
         var session = await _workspaceService.LoadSessionStateAsync();
-        StudioVM.SetTarget(session.LastSurahNumber, session.LastAyahNumber);
-        StudioVM.IsHorizontal = session.LastOrientation == "Horizontal";
-        await StudioVM.LoadAyahImageAsync();
-        LibraryVM.SetLastWorkedAyah(session.LastSurahNumber, session.LastAyahNumber);
+        await LibraryVM.RefreshSurahStatusAsync();
+        if (session.LastSurahNumber > 0 && session.LastAyahNumber > 0)
+        {
+            StudioVM.SetTarget(session.LastSurahNumber, session.LastAyahNumber);
+            StudioVM.IsHorizontal = session.LastOrientation == "Horizontal";
+            await StudioVM.LoadAyahImageAsync();
+        }
 
         // Par défaut au lancement, le premier écran doit toujours être la bibliothèque
         SelectLibrary();
@@ -147,6 +150,7 @@ public sealed partial class MainViewModel : ViewModelBase
         ActiveTab = "Library";
         CurrentContentViewModel = LibraryVM;
         StatusText = "المكتبة — استعراض السور والآيات";
+        _ = LibraryVM.RefreshSurahStatusAsync();
         SaveSession();
     }
 

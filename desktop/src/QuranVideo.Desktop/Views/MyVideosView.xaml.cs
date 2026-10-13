@@ -135,8 +135,7 @@ public partial class MyVideosView : UserControl
             }
             else
             {
-                PlayerMediaElement.Play();
-                PlayerMediaElement.Pause();
+                PlayerMediaElement.Stop();
             }
         }
         catch

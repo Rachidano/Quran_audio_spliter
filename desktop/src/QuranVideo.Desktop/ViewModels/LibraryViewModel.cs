@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using QuranVideo.Desktop.Data;
 using QuranVideo.Desktop.Models;
 using QuranVideo.Desktop.Services;
 
@@ -10,6 +13,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
 {
     private readonly Action<int, int> _onNavigateToStudio;
     private readonly QuranSearchService _searchService;
+    private readonly WorkspaceService? _workspaceService;
+    private readonly Dictionary<int, (int PreparedCount, bool IsAudioDownloaded, string StatusText, string Duration)> _surahRealStatus = new();
 
     [ObservableProperty]
     private string _searchQuery = string.Empty;
@@ -45,13 +50,40 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty]
     private AyahSearchEntry? _selectedSearchResult;
 
+    [ObservableProperty]
+    private bool _hasLastWorkedAyah;
+
+    [ObservableProperty]
+    private int _lastWorkedSurahNumber;
+
+    [ObservableProperty]
+    private int _lastWorkedAyahNumber;
+
+    [ObservableProperty]
+    private string _lastWorkedDescription = string.Empty;
+
+    [ObservableProperty]
+    private string _lastWorkedAudioTime = string.Empty;
+
+    [ObservableProperty]
+    private string _currentReciterName = "الشيخ صابر عبد الحكم";
+
+    [ObservableProperty]
+    private SurahItemViewModel? _selectedSurahItem;
+
     public ObservableCollection<SurahInfo> FilteredSurahs { get; } = new();
     public ObservableCollection<AyahSearchEntry> SearchResults { get; } = new();
+    public ObservableCollection<SurahItemViewModel> SurahItems { get; } = new();
 
-    public LibraryViewModel(Action<int, int> onNavigateToStudio, QuranSearchService? searchService = null)
+    public LibraryViewModel(
+        Action<int, int> onNavigateToStudio,
+        QuranSearchService? searchService = null,
+        WorkspaceService? workspaceService = null)
     {
         _onNavigateToStudio = onNavigateToStudio;
         _searchService = searchService ?? new QuranSearchService();
+        _workspaceService = workspaceService;
+
         ApplyFilter();
         SelectedSurah = FilteredSurahs.FirstOrDefault();
     }
@@ -65,6 +97,15 @@ public sealed partial class LibraryViewModel : ViewModelBase
     partial void OnSelectedSurahChanged(SurahInfo? value)
     {
         SelectedAyahNumber = 1;
+    }
+
+    private SurahItemViewModel CreateSurahItem(SurahInfo info)
+    {
+        if (_surahRealStatus.TryGetValue(info.Number, out var st))
+        {
+            return new SurahItemViewModel(info, st.PreparedCount, st.Duration, st.IsAudioDownloaded, st.StatusText);
+        }
+        return new SurahItemViewModel(info, 0, "—", false, "غير متوفر");
     }
 
     private void ApplyFilter()
@@ -115,7 +156,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
                 s.NameLatin.Contains(query, StringComparison.OrdinalIgnoreCase))
             {
                 FilteredSurahs.Add(s);
-                SurahItems.Add(new SurahItemViewModel(s, GetDefaultPreparedCount(s.Number), GetDefaultDuration(s.Number)));
+                SurahItems.Add(CreateSurahItem(s));
             }
         }
 
@@ -133,7 +174,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         foreach (var s in SurahCatalogService.GetAllSurahs())
         {
             FilteredSurahs.Add(s);
-            SurahItems.Add(new SurahItemViewModel(s, GetDefaultPreparedCount(s.Number), GetDefaultDuration(s.Number)));
+            SurahItems.Add(CreateSurahItem(s));
         }
         if (SelectedSurah == null || !FilteredSurahs.Contains(SelectedSurah))
         {
@@ -142,19 +183,92 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
     }
 
-    private static int GetDefaultPreparedCount(int surahNumber) => surahNumber switch
+    public async Task RefreshSurahStatusAsync()
     {
-        1 => 7,
-        2 => 12,
-        _ => 0
-    };
+        if (_workspaceService == null) return;
+        var dbPath = _workspaceService.GetDatabasePath();
+        if (!File.Exists(dbPath)) return;
 
-    private static string GetDefaultDuration(int surahNumber) => surahNumber switch
-    {
-        1 => "00:00:49",
-        2 => "01:28:16",
-        _ => "—"
-    };
+        try
+        {
+            using var db = new AppDbContext(dbPath);
+
+            // 1. Reciter
+            var defaultCollection = await db.RecitationCollections.AsNoTracking().FirstOrDefaultAsync();
+            var collectionId = defaultCollection?.Id ?? "saber";
+            if (!string.IsNullOrWhiteSpace(defaultCollection?.TitleArabic))
+            {
+                CurrentReciterName = defaultCollection.TitleArabic;
+            }
+
+            // 2. Audio sources
+            var audioSources = await db.AudioSources.AsNoTracking()
+                .Where(a => a.CollectionId == collectionId)
+                .ToListAsync();
+            var audioDict = audioSources.ToDictionary(a => a.SurahNumber);
+
+            // 3. Prepared ayahs counts (distinct ayah passages)
+            var passagesGrouped = await db.Passages.AsNoTracking()
+                .GroupBy(p => p.SurahNumber)
+                .Select(g => new { SurahNumber = g.Key, Prepared = g.Select(p => p.AyahNumber).Distinct().Count() })
+                .ToListAsync();
+            var prepDict = passagesGrouped.ToDictionary(x => x.SurahNumber, x => x.Prepared);
+
+            // 4. Update dictionary cache
+            _surahRealStatus.Clear();
+            foreach (var s in SurahCatalogService.GetAllSurahs())
+            {
+                int prep = prepDict.GetValueOrDefault(s.Number, 0);
+                bool isAudio = false;
+                string statusText = "غير متوفر";
+                string duration = "—";
+
+                if (audioDict.TryGetValue(s.Number, out var audio))
+                {
+                    var audioFull = Path.Combine(_workspaceService.WorkspacePath, audio.RelativeFilePath);
+                    if (File.Exists(audioFull))
+                    {
+                        isAudio = true;
+                        statusText = "تم التنزيل";
+                        var ts = TimeSpan.FromSeconds(audio.DurationSeconds);
+                        duration = ts.TotalHours >= 1 ? ts.ToString(@"hh\:mm\:ss") : ts.ToString(@"mm\:ss");
+                    }
+                }
+
+                _surahRealStatus[s.Number] = (prep, isAudio, statusText, duration);
+            }
+
+            // 5. Apply to currently loaded items
+            foreach (var item in SurahItems)
+            {
+                if (_surahRealStatus.TryGetValue(item.Number, out var st))
+                {
+                    item.PreparedAyahsCount = st.PreparedCount;
+                    item.IsAudioDownloaded = st.IsAudioDownloaded;
+                    item.AudioStatusText = st.StatusText;
+                    item.AudioDurationText = st.Duration;
+                }
+            }
+
+            // 6. Real last worked passage
+            var lastPassage = await db.Passages.AsNoTracking()
+                .OrderByDescending(p => p.CreatedAtUtc)
+                .FirstOrDefaultAsync();
+
+            if (lastPassage != null)
+            {
+                SetLastWorkedAyah(lastPassage.SurahNumber, lastPassage.AyahNumber, lastPassage.StartTimeSec, lastPassage.EndTimeSec);
+            }
+            else
+            {
+                HasLastWorkedAyah = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Instance.LogError("Erreur actualisation statut bibliothèque", ex);
+        }
+    }
 
     private void ExecuteSearch()
     {
@@ -191,38 +305,34 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
     }
 
-    [ObservableProperty]
-    private bool _hasLastWorkedAyah = true;
-
-    [ObservableProperty]
-    private int _lastWorkedSurahNumber = 2;
-
-    [ObservableProperty]
-    private int _lastWorkedAyahNumber = 13;
-
-    [ObservableProperty]
-    private string _lastWorkedDescription = "البقرة — الآية 13";
-
-    [ObservableProperty]
-    private string _lastWorkedAudioTime = "00:00 / 00:35";
-
-    [ObservableProperty]
-    private string _currentReciterName = "الشيخ صابر عبد الحكم";
-
-    [ObservableProperty]
-    private SurahItemViewModel? _selectedSurahItem;
-
-    public ObservableCollection<SurahItemViewModel> SurahItems { get; } = new();
-
-    public void SetLastWorkedAyah(int surahNumber, int ayahNumber)
+    public void SetLastWorkedAyah(int surahNumber, int ayahNumber, double startSec = 0, double endSec = 0)
     {
-        if (surahNumber <= 0 || ayahNumber <= 0) return;
+        if (surahNumber <= 0 || ayahNumber <= 0)
+        {
+            HasLastWorkedAyah = false;
+            return;
+        }
+
         var surah = SurahCatalogService.GetSurah(surahNumber);
-        if (surah == null) return;
+        if (surah == null)
+        {
+            HasLastWorkedAyah = false;
+            return;
+        }
 
         LastWorkedSurahNumber = surahNumber;
         LastWorkedAyahNumber = ayahNumber;
         LastWorkedDescription = $"{surah.NameArabic} — الآية {ayahNumber}";
+        if (endSec > startSec)
+        {
+            var startTs = TimeSpan.FromSeconds(startSec);
+            var endTs = TimeSpan.FromSeconds(endSec);
+            LastWorkedAudioTime = $"{startTs:mm\\:ss\\.ff} / {endTs:mm\\:ss\\.ff}";
+        }
+        else
+        {
+            LastWorkedAudioTime = "00:00";
+        }
         HasLastWorkedAyah = true;
     }
 
@@ -284,6 +394,7 @@ public sealed partial class SurahItemViewModel : ObservableObject
     public string DisplayName => Info.DisplayName;
     public int StartPage => Info.StartPage;
     public int EndPage => Info.EndPage;
+    public string SubtitleText => $"{AyahCount} آية • صفحة {StartPage} • {NameLatin}";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ProgressPercentage))]
@@ -296,21 +407,28 @@ public sealed partial class SurahItemViewModel : ObservableObject
     public string ProgressText => $"{PreparedAyahsCount} / {AyahCount}";
 
     [ObservableProperty]
-    private bool _isAudioDownloaded = true;
+    private bool _isAudioDownloaded;
 
     [ObservableProperty]
-    private string _audioStatusText = "تم التنزيل";
+    private string _audioStatusText = "غير متوفر";
 
     [ObservableProperty]
     private string _audioDurationText = "—";
 
     public bool HasWorkStarted => PreparedAyahsCount > 0;
-    public string ActionButtonText => HasWorkStarted ? "متابعة التقطيع" : "فتح";
+    public string ActionButtonText => HasWorkStarted ? "متابعة التقطيع" : "فتح السورة";
 
-    public SurahItemViewModel(SurahInfo info, int preparedCount = 0, string duration = "—")
+    public SurahItemViewModel(
+        SurahInfo info,
+        int preparedCount = 0,
+        string duration = "—",
+        bool isAudioDownloaded = false,
+        string audioStatusText = "غير متوفر")
     {
         Info = info;
         PreparedAyahsCount = preparedCount;
         AudioDurationText = duration;
+        IsAudioDownloaded = isAudioDownloaded;
+        AudioStatusText = audioStatusText;
     }
 }

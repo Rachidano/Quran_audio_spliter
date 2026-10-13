@@ -14,17 +14,30 @@ public partial class App : Application
     {
         Resources.Add("BooleanToVisibilityConverter", new System.Windows.Controls.BooleanToVisibilityConverter());
 
+        bool isShowingError = false;
         DispatcherUnhandledException += (s, e) =>
         {
             LoggingService.Instance.LogError("Exception non gérée (Dispatcher)", e.Exception);
-            MessageBox.Show(
-                $"حدث خطأ غير متوقع:\n{e.Exception.Message}",
-                "صانع فيديو القرآن الكريم — تنبيه",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error,
-                MessageBoxResult.OK,
-                MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading);
             e.Handled = true;
+
+            if (!isShowingError)
+            {
+                isShowingError = true;
+                try
+                {
+                    MessageBox.Show(
+                        $"حدث خطأ غير متوقع:\n{e.Exception.Message}",
+                        "صانع فيديو القرآن الكريم — تنبيه",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error,
+                        MessageBoxResult.OK,
+                        MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading);
+                }
+                finally
+                {
+                    isShowingError = false;
+                }
+            }
         };
 
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>

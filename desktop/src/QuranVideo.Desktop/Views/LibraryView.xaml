@@ -274,17 +274,51 @@
                                             </Border>
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding NameArabic}" FontSize="15" FontWeight="Bold" Foreground="#0f172a"/>
-                                                <TextBlock Text="{Binding NameLatin}" FontSize="11" Foreground="#64748b" FlowDirection="LeftToRight"/>
+                                                <TextBlock Text="{Binding SubtitleText}" FontSize="11" Foreground="#64748b" Margin="0,2,0,0"/>
                                             </StackPanel>
                                         </StackPanel>
 
                                         <!-- 2. Colonne : التسجيل الصوتي -->
                                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Border Background="#f0fdf4" BorderBrush="#bbf7d0" BorderThickness="1" 
-                                                    CornerRadius="12" Padding="8,3" Margin="0,0,10,0">
+                                            <Border CornerRadius="12" Padding="8,3" Margin="0,0,10,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#f1f5f9"/>
+                                                        <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsAudioDownloaded}" Value="True">
+                                                                <Setter Property="Background" Value="#f0fdf4"/>
+                                                                <Setter Property="BorderBrush" Value="#bbf7d0"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="✓" Foreground="#15803d" FontWeight="Bold" Margin="0,0,4,0"/>
-                                                    <TextBlock Text="{Binding AudioStatusText}" FontSize="11" FontWeight="SemiBold" Foreground="#15803d"/>
+                                                    <TextBlock Text="✓" Foreground="#15803d" FontWeight="Bold" Margin="0,0,4,0">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsAudioDownloaded}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding AudioStatusText}" FontSize="11" FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#64748b"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsAudioDownloaded}" Value="True">
+                                                                        <Setter Property="Foreground" Value="#15803d"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </StackPanel>
                                             </Border>
                                             <TextBlock Text="{Binding AudioDurationText}" FontSize="12" Foreground="#64748b" VerticalAlignment="Center"/>

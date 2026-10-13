@@ -14,12 +14,41 @@ public sealed record VideoFileInfo(
     long SizeBytes,
     DateTime CreatedAt)
 {
-    public string FormattedSize => $"{SizeBytes / (1024.0 * 1024.0):F2} ميغابايت";
-    public string FormattedDate => CreatedAt.ToString("yyyy-MM-dd HH:mm");
-    public bool IsMp4 => FileName.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase);
-    public bool IsMp3 => FileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) || FileName.EndsWith(".m4a", StringComparison.OrdinalIgnoreCase);
-    public string FormatBadge => IsMp4 ? "MP4" : (IsMp3 ? "MP3" : "MEDIA");
-    public string CleanTitle => Path.GetFileNameWithoutExtension(FileName).Replace('_', ' ');
+    public string FormattedSize
+    {
+        get => $"{SizeBytes / (1024.0 * 1024.0):F2} ميغابايت";
+        set { }
+    }
+
+    public string FormattedDate
+    {
+        get => CreatedAt.ToString("yyyy-MM-dd HH:mm");
+        set { }
+    }
+
+    public bool IsMp4
+    {
+        get => FileName.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase);
+        set { }
+    }
+
+    public bool IsMp3
+    {
+        get => FileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) || FileName.EndsWith(".m4a", StringComparison.OrdinalIgnoreCase);
+        set { }
+    }
+
+    public string FormatBadge
+    {
+        get => IsMp4 ? "MP4" : (IsMp3 ? "MP3" : "MEDIA");
+        set { }
+    }
+
+    public string CleanTitle
+    {
+        get => Path.GetFileNameWithoutExtension(FileName).Replace('_', ' ');
+        set { }
+    }
 }
 
 public sealed partial class MyVideosViewModel : ViewModelBase

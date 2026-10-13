@@ -253,12 +253,12 @@
 
                                     <!-- 3. Titre et Date de création -->
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding CleanTitle}" FontSize="13" FontWeight="Bold" Foreground="#0f172a" 
+                                        <TextBlock Text="{Binding CleanTitle, Mode=OneWay}" FontSize="13" FontWeight="Bold" Foreground="#0f172a" 
                                                    TextTrimming="CharacterEllipsis"/>
                                         <TextBlock FontSize="11" Foreground="#64748b" Margin="0,2,0,0">
-                                            <Run Text="{Binding FormattedDate}"/>
+                                            <Run Text="{Binding FormattedDate, Mode=OneWay}"/>
                                             <Run Text=" • "/>
-                                            <Run Text="{Binding FileName}" Foreground="#94a3b8"/>
+                                            <Run Text="{Binding FileName, Mode=OneWay}" Foreground="#94a3b8"/>
                                         </TextBlock>
                                     </StackPanel>
 
@@ -464,15 +464,15 @@
                         <StackPanel Margin="0,0,0,16">
                             <TextBlock FontSize="12" Foreground="#475569" Margin="0,0,0,4">
                                 <Run Text="📁 اسم الملف: " FontWeight="SemiBold"/>
-                                <Run Text="{Binding SelectedVideo.FileName, FallbackValue='-'}" Foreground="#0f172a"/>
+                                <Run Text="{Binding SelectedVideo.FileName, Mode=OneWay, FallbackValue='-'}" Foreground="#0f172a"/>
                             </TextBlock>
                             <TextBlock FontSize="12" Foreground="#475569" Margin="0,0,0,4">
                                 <Run Text="📅 تاريخ الإنتاج: " FontWeight="SemiBold"/>
-                                <Run Text="{Binding SelectedVideo.FormattedDate, FallbackValue='-'}" Foreground="#0f172a"/>
+                                <Run Text="{Binding SelectedVideo.FormattedDate, Mode=OneWay, FallbackValue='-'}" Foreground="#0f172a"/>
                             </TextBlock>
                             <TextBlock FontSize="12" Foreground="#475569">
                                 <Run Text="💾 الحجم: " FontWeight="SemiBold"/>
-                                <Run Text="{Binding SelectedVideo.FormattedSize, FallbackValue='-'}" Foreground="#0f172a"/>
+                                <Run Text="{Binding SelectedVideo.FormattedSize, Mode=OneWay, FallbackValue='-'}" Foreground="#0f172a"/>
                             </TextBlock>
                         </StackPanel>
 
