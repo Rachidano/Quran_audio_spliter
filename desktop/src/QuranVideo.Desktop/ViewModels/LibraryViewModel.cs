@@ -107,6 +107,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
 
         var all = SurahCatalogService.GetAllSurahs();
+        SurahItems.Clear();
         foreach (var s in all)
         {
             if (s.Number.ToString().Contains(query) ||
@@ -114,27 +115,46 @@ public sealed partial class LibraryViewModel : ViewModelBase
                 s.NameLatin.Contains(query, StringComparison.OrdinalIgnoreCase))
             {
                 FilteredSurahs.Add(s);
+                SurahItems.Add(new SurahItemViewModel(s, GetDefaultPreparedCount(s.Number), GetDefaultDuration(s.Number)));
             }
         }
 
         if (SelectedSurah == null || !FilteredSurahs.Contains(SelectedSurah))
         {
             SelectedSurah = FilteredSurahs.FirstOrDefault();
+            SelectedSurahItem = SurahItems.FirstOrDefault();
         }
     }
 
     private void LoadAllSurahs()
     {
         FilteredSurahs.Clear();
+        SurahItems.Clear();
         foreach (var s in SurahCatalogService.GetAllSurahs())
         {
             FilteredSurahs.Add(s);
+            SurahItems.Add(new SurahItemViewModel(s, GetDefaultPreparedCount(s.Number), GetDefaultDuration(s.Number)));
         }
         if (SelectedSurah == null || !FilteredSurahs.Contains(SelectedSurah))
         {
             SelectedSurah = FilteredSurahs.FirstOrDefault();
+            SelectedSurahItem = SurahItems.FirstOrDefault();
         }
     }
+
+    private static int GetDefaultPreparedCount(int surahNumber) => surahNumber switch
+    {
+        1 => 7,
+        2 => 12,
+        _ => 0
+    };
+
+    private static string GetDefaultDuration(int surahNumber) => surahNumber switch
+    {
+        1 => "00:00:49",
+        2 => "01:28:16",
+        _ => "—"
+    };
 
     private void ExecuteSearch()
     {
@@ -171,12 +191,75 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
     }
 
+    [ObservableProperty]
+    private bool _hasLastWorkedAyah = true;
+
+    [ObservableProperty]
+    private int _lastWorkedSurahNumber = 2;
+
+    [ObservableProperty]
+    private int _lastWorkedAyahNumber = 13;
+
+    [ObservableProperty]
+    private string _lastWorkedDescription = "البقرة — الآية 13";
+
+    [ObservableProperty]
+    private string _lastWorkedAudioTime = "00:00 / 00:35";
+
+    [ObservableProperty]
+    private string _currentReciterName = "الشيخ صابر عبد الحكم";
+
+    [ObservableProperty]
+    private SurahItemViewModel? _selectedSurahItem;
+
+    public ObservableCollection<SurahItemViewModel> SurahItems { get; } = new();
+
+    public void SetLastWorkedAyah(int surahNumber, int ayahNumber)
+    {
+        if (surahNumber <= 0 || ayahNumber <= 0) return;
+        var surah = SurahCatalogService.GetSurah(surahNumber);
+        if (surah == null) return;
+
+        LastWorkedSurahNumber = surahNumber;
+        LastWorkedAyahNumber = ayahNumber;
+        LastWorkedDescription = $"{surah.NameArabic} — الآية {ayahNumber}";
+        HasLastWorkedAyah = true;
+    }
+
+    [RelayCommand]
+    private void ResumeLastWork()
+    {
+        if (HasLastWorkedAyah && LastWorkedSurahNumber > 0 && LastWorkedAyahNumber > 0)
+        {
+            _onNavigateToStudio(LastWorkedSurahNumber, LastWorkedAyahNumber);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenSurah(SurahItemViewModel? item)
+    {
+        if (item != null)
+        {
+            SelectedSurah = item.Info;
+            SelectedSurahItem = item;
+            _onNavigateToStudio(item.Number, item.HasWorkStarted ? item.PreparedAyahsCount : 1);
+        }
+        else if (SelectedSurah != null)
+        {
+            _onNavigateToStudio(SelectedSurah.Number, SelectedAyahNumber);
+        }
+    }
+
     [RelayCommand]
     private void OpenInStudio()
     {
         if (IsSearchMode && SelectedSearchResult != null)
         {
             _onNavigateToStudio(SelectedSearchResult.SurahNumber, SelectedSearchResult.AyahNumber);
+        }
+        else if (SelectedSurahItem != null)
+        {
+            _onNavigateToStudio(SelectedSurahItem.Number, SelectedSurahItem.HasWorkStarted ? SelectedSurahItem.PreparedAyahsCount : 1);
         }
         else if (SelectedSurah != null)
         {
@@ -188,5 +271,46 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private void OpenSearchResultInStudio(AyahSearchEntry entry)
     {
         _onNavigateToStudio(entry.SurahNumber, entry.AyahNumber);
+    }
+}
+
+public sealed partial class SurahItemViewModel : ObservableObject
+{
+    public SurahInfo Info { get; }
+    public int Number => Info.Number;
+    public string NameArabic => Info.NameArabic;
+    public string NameLatin => Info.NameLatin;
+    public int AyahCount => Info.AyahCount;
+    public string DisplayName => Info.DisplayName;
+    public int StartPage => Info.StartPage;
+    public int EndPage => Info.EndPage;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ProgressPercentage))]
+    [NotifyPropertyChangedFor(nameof(ProgressText))]
+    [NotifyPropertyChangedFor(nameof(HasWorkStarted))]
+    [NotifyPropertyChangedFor(nameof(ActionButtonText))]
+    private int _preparedAyahsCount;
+
+    public double ProgressPercentage => AyahCount > 0 ? (double)PreparedAyahsCount / AyahCount * 100.0 : 0.0;
+    public string ProgressText => $"{PreparedAyahsCount} / {AyahCount}";
+
+    [ObservableProperty]
+    private bool _isAudioDownloaded = true;
+
+    [ObservableProperty]
+    private string _audioStatusText = "تم التنزيل";
+
+    [ObservableProperty]
+    private string _audioDurationText = "—";
+
+    public bool HasWorkStarted => PreparedAyahsCount > 0;
+    public string ActionButtonText => HasWorkStarted ? "متابعة التقطيع" : "فتح";
+
+    public SurahItemViewModel(SurahInfo info, int preparedCount = 0, string duration = "—")
+    {
+        Info = info;
+        PreparedAyahsCount = preparedCount;
+        AudioDurationText = duration;
     }
 }

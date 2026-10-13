@@ -48,6 +48,15 @@ public sealed partial class MainViewModel : ViewModelBase
         SettingsVM = new SettingsViewModel(_workspaceService, () => { IsSettingsOpen = false; _ = StudioVM.RefreshRecitersAsync(selectDefault: true); });
 
         CurrentContentViewModel = LibraryVM;
+
+        StudioVM.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(StudioVM.IsFineTuningMode) or nameof(StudioVM.IsWizardMode))
+            {
+                OnPropertyChanged(nameof(IsAudioStudioTabActive));
+                OnPropertyChanged(nameof(IsVideoStudioTabActive));
+            }
+        };
     }
 
     public async Task InitializeSessionAsync()
@@ -111,6 +120,7 @@ public sealed partial class MainViewModel : ViewModelBase
         StudioVM.SetTarget(session.LastSurahNumber, session.LastAyahNumber);
         StudioVM.IsHorizontal = session.LastOrientation == "Horizontal";
         await StudioVM.LoadAyahImageAsync();
+        LibraryVM.SetLastWorkedAyah(session.LastSurahNumber, session.LastAyahNumber);
 
         // Par défaut au lancement, le premier écran doit toujours être la bibliothèque
         SelectLibrary();
@@ -120,6 +130,15 @@ public sealed partial class MainViewModel : ViewModelBase
     {
         StudioVM.SetTarget(surahNumber, ayahNumber);
         SelectStudio();
+    }
+
+    public bool IsAudioStudioTabActive => ActiveTab == "AudioStudio" || (ActiveTab == "Studio" && StudioVM.IsFineTuningMode);
+    public bool IsVideoStudioTabActive => ActiveTab == "VideoStudio" || (ActiveTab == "Studio" && !StudioVM.IsFineTuningMode);
+
+    partial void OnActiveTabChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsAudioStudioTabActive));
+        OnPropertyChanged(nameof(IsVideoStudioTabActive));
     }
 
     [RelayCommand]
@@ -132,12 +151,28 @@ public sealed partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    public void SelectAudioStudio()
+    {
+        StudioVM.IsFineTuningMode = true;
+        SelectStudio();
+    }
+
+    [RelayCommand]
+    public void SelectVideoStudio()
+    {
+        StudioVM.IsFineTuningMode = false;
+        SelectStudio();
+    }
+
+    [RelayCommand]
     public void SelectStudio()
     {
         ActiveTab = "Studio";
         CurrentContentViewModel = StudioVM;
         _ = StudioVM.RefreshRecitersAsync();
-        StatusText = $"إعداد الفيديو — {StudioVM.TargetDescription}";
+        StatusText = StudioVM.IsFineTuningMode 
+            ? $"استوديو التقطيع — {StudioVM.TargetDescription}" 
+            : $"إعداد الفيديو — {StudioVM.TargetDescription}";
         _ = StudioVM.LoadAyahImageAsync();
         SaveSession();
     }

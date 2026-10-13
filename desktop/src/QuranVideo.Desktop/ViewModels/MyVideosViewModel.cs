@@ -16,6 +16,10 @@ public sealed record VideoFileInfo(
 {
     public string FormattedSize => $"{SizeBytes / (1024.0 * 1024.0):F2} ميغابايت";
     public string FormattedDate => CreatedAt.ToString("yyyy-MM-dd HH:mm");
+    public bool IsMp4 => FileName.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase);
+    public bool IsMp3 => FileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) || FileName.EndsWith(".m4a", StringComparison.OrdinalIgnoreCase);
+    public string FormatBadge => IsMp4 ? "MP4" : (IsMp3 ? "MP3" : "MEDIA");
+    public string CleanTitle => Path.GetFileNameWithoutExtension(FileName).Replace('_', ' ');
 }
 
 public sealed partial class MyVideosViewModel : ViewModelBase
@@ -108,7 +112,36 @@ public sealed partial class MyVideosViewModel : ViewModelBase
         OnPropertyChanged(nameof(FormattedTotalDuration));
     }
 
+    [ObservableProperty]
+    private string _searchQuery = string.Empty;
+
+    [ObservableProperty]
+    private string _mediaTypeFilter = "All"; // "All", "Video", "Audio"
+
+    public bool IsFilterAll => MediaTypeFilter == "All";
+    public bool IsFilterVideo => MediaTypeFilter == "Video";
+    public bool IsFilterAudio => MediaTypeFilter == "Audio";
+
+    partial void OnSearchQueryChanged(string value) => ApplyFilter();
+    partial void OnMediaTypeFilterChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsFilterAll));
+        OnPropertyChanged(nameof(IsFilterVideo));
+        OnPropertyChanged(nameof(IsFilterAudio));
+        ApplyFilter();
+    }
+
+    [RelayCommand]
+    public void SetFilterAll() => MediaTypeFilter = "All";
+
+    [RelayCommand]
+    public void SetFilterVideo() => MediaTypeFilter = "Video";
+
+    [RelayCommand]
+    public void SetFilterAudio() => MediaTypeFilter = "Audio";
+
     public ObservableCollection<VideoFileInfo> Videos { get; } = new();
+    public ObservableCollection<VideoFileInfo> FilteredVideos { get; } = new();
 
     public MyVideosViewModel(WorkspaceService workspaceService)
     {
@@ -131,6 +164,22 @@ public sealed partial class MyVideosViewModel : ViewModelBase
     public bool HasVideos => Videos.Count > 0;
     public bool HasNoVideos => Videos.Count == 0;
 
+    private void ApplyFilter()
+    {
+        FilteredVideos.Clear();
+        var q = SearchQuery.Trim();
+        foreach (var v in Videos)
+        {
+            if (MediaTypeFilter == "Video" && !v.IsMp4) continue;
+            if (MediaTypeFilter == "Audio" && !v.IsMp3) continue;
+            if (!string.IsNullOrWhiteSpace(q) && 
+                !v.FileName.Contains(q, StringComparison.OrdinalIgnoreCase) && 
+                !v.CleanTitle.Contains(q, StringComparison.OrdinalIgnoreCase)) continue;
+
+            FilteredVideos.Add(v);
+        }
+    }
+
     [RelayCommand]
     public void RefreshVideos()
     {
@@ -151,9 +200,11 @@ public sealed partial class MyVideosViewModel : ViewModelBase
             Videos.Add(new VideoFileInfo(fi.Name, fi.FullName, fi.Length, fi.CreationTime));
         }
 
+        ApplyFilter();
+
         if (SelectedVideo == null || !Videos.Any(v => v.FullPath == SelectedVideo.FullPath))
         {
-            SelectedVideo = Videos.FirstOrDefault();
+            SelectedVideo = FilteredVideos.FirstOrDefault() ?? Videos.FirstOrDefault();
         }
 
         OnPropertyChanged(nameof(HasVideos));

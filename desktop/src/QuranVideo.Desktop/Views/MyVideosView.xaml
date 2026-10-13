@@ -7,308 +7,409 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=vm:MyVideosViewModel}"
              FlowDirection="RightToLeft"
-             d:DesignHeight="850" d:DesignWidth="1100">
+             d:DesignHeight="800" d:DesignWidth="1100">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="24">
+
+    <Grid Margin="24,20,24,20">
+        <!-- Layout 2 Colonnes : Colonne 0 = Galerie & Recherche, Colonne 1 = Lecteur multimédia -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>     <!-- Colonne 0 : Grille des vidéos (Droite en RTL) -->
+            <ColumnDefinition Width="460"/>   <!-- Colonne 1 : Lecteur & détails (Gauche en RTL) -->
+        </Grid.ColumnDefinitions>
+
+        <!-- ======================================================== -->
+        <!-- COLONNE 0 : GALERIE DES VIDÉOS & FILTRES (5.png)         -->
+        <!-- ======================================================== -->
+        <Grid Grid.Column="0" Margin="0,0,20,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/> <!-- En-tête : Titre + Recherche + Filtres -->
+                <RowDefinition Height="*"/>    <!-- Grille des cartes -->
             </Grid.RowDefinitions>
 
-            <!-- 1. Actions Toolbar -->
-            <Border Grid.Row="0" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
-                <DockPanel LastChildFill="True">
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                        <!-- Play in embedded player -->
-                        <Button Command="{Binding PlaySelectedVideoCommand}" Background="#15803d" Foreground="White"
-                                FontWeight="Bold" FontSize="14" Padding="18,8" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="تشغيل في المشغل الداخلي" Margin="0,0,6,0"/>
-                                <TextBlock Text="▶"/>
-                            </StackPanel>
-                        </Button>
+            <!-- En-tête avec titre, recherche et filtres de médias -->
+            <Grid Grid.Row="0" Margin="0,0,0,16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                        <!-- Rename -->
-                        <Button Command="{Binding StartRenameVideoCommand}" Background="#f8fafc" Foreground="#0284c7"
-                                FontWeight="Bold" FontSize="14" Padding="16,8" BorderThickness="1" BorderBrush="#bae6fd" Cursor="Hand" Margin="0,0,8,0"
-                                ToolTip="تغيير اسم الملف المحدد">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="إعادة التسمية" Margin="0,0,6,0"/>
-                                <TextBlock Text="✏️"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Delete -->
-                        <Button Command="{Binding DeleteVideoCommand}" Background="#fef2f2" Foreground="#dc2626"
-                                FontWeight="Bold" FontSize="14" Padding="16,8" BorderThickness="1" BorderBrush="#fecaca" Cursor="Hand" Margin="0,0,8,0"
-                                ToolTip="حذف الملف المحدد نهائياً بعد إيقاف تشغيله وتحريره">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="حذف الملف" Margin="0,0,6,0"/>
-                                <TextBlock Text="🗑️"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Open in explorer -->
-                        <Button Command="{Binding OpenVideosFolderCommand}" Background="#f1f5f9" Foreground="#334155"
-                                FontWeight="Bold" FontSize="14" Padding="16,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" Margin="0,0,8,0">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="فتح المجلد" Margin="0,0,6,0"/>
-                                <TextBlock Text="📁"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Refresh -->
-                        <Button Command="{Binding RefreshVideosCommand}" Background="#f8fafc" Foreground="#475569"
-                                Padding="12,8" BorderThickness="1" BorderBrush="#e2e8f0" Cursor="Hand">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                            <TextBlock Text="تحديث 🔄"/>
-                        </Button>
+                <DockPanel Grid.Row="0" Margin="0,0,0,12">
+                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                        <TextBlock Text="فيديوهاتي" FontSize="22" FontWeight="Bold" Foreground="#0f172a"/>
                     </StackPanel>
-
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <TextBlock Text="سجل المقاطع المنتجة في مساحة العمل" FontSize="16" FontWeight="Bold" Foreground="#0f172a" HorizontalAlignment="Right"/>
-                        <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#059669" FontWeight="SemiBold" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+                    
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Button Command="{Binding RefreshVideosCommand}" Background="#f8fafc" Foreground="#475569"
+                                Padding="12,6" BorderThickness="1" BorderBrush="#e2e8f0" Cursor="Hand" ToolTip="تحديث القائمة">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                            <TextBlock Text="تحديث 🔄" FontSize="12"/>
+                        </Button>
                     </StackPanel>
                 </DockPanel>
-            </Border>
 
-            <!-- 2. Embedded Video / Audio Player Card -->
-            <Border Grid.Row="1" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="18" Margin="0,0,0,16"
-                    Visibility="{Binding IsPlayerActive, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <StackPanel>
-                    <!-- Player Header with filename & close button -->
-                    <DockPanel Margin="0,0,0,12">
-                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="🎬 مشغل الفيديو والصوت المدمج :" FontWeight="Bold" FontSize="15" Foreground="#0f172a" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding SelectedVideo.FileName}" FontWeight="Bold" FontSize="15" Foreground="#15803d" FlowDirection="LeftToRight"/>
-                        </StackPanel>
+                <!-- Barre d'outils : Recherche à droite, Pilules de filtre à gauche -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Command="{Binding PlayInExternalPlayerCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
-                                    Foreground="#475569" FontSize="12" Padding="10,4" Cursor="Hand" Margin="0,0,8,0" ToolTip="فتح بواسطة مشغل النظام الخارجي">
-                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                <TextBlock Text="↗ مشغل خارجي"/>
-                            </Button>
-
-                            <Button Command="{Binding ClosePlayerCommand}" Background="#fef2f2" BorderBrush="#fecaca" BorderThickness="1"
-                                    Foreground="#b91c1c" FontSize="12" Padding="10,4" Cursor="Hand" ToolTip="إغلاق المشغل وتحرير الملف">
-                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                <TextBlock Text="إغلاق المشغل ✖"/>
-                            </Button>
-                        </StackPanel>
-                    </DockPanel>
-
-                    <!-- Player Screen Container -->
-                    <Border Background="#090d16" BorderBrush="#1e293b" BorderThickness="1" CornerRadius="8" Height="360" ClipToBounds="True">
+                    <!-- Champ de recherche stylisé -->
+                    <Border Grid.Column="0" Background="White" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="8" Padding="6,4" Margin="0,0,12,0">
                         <Grid>
-                            <MediaElement x:Name="PlayerMediaElement"
-                                          LoadedBehavior="Manual"
-                                          UnloadedBehavior="Close"
-                                          ScrubbingEnabled="True"
-                                          Stretch="Uniform"
-                                          Volume="{Binding Volume}"
-                                          IsMuted="{Binding IsMuted}"
-                                          MediaOpened="OnMediaOpened"
-                                          MediaEnded="OnMediaEnded"
-                                          MediaFailed="OnMediaFailed"
-                                          VerticalAlignment="Center" HorizontalAlignment="Center"/>
-
-                            <!-- Error Banner Overlay -->
-                            <Border Background="#fef2f2" BorderBrush="#fca5a5" BorderThickness="1" CornerRadius="6" Padding="16"
-                                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    Visibility="{Binding HasPlayerError, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="⚠ " FontSize="18" Foreground="#b91c1c"/>
-                                    <TextBlock Text="{Binding PlayerStatusMessage}" FontSize="14" FontWeight="SemiBold" Foreground="#b91c1c"/>
-                                </StackPanel>
-                            </Border>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="26"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="🔍" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#94a3b8"/>
+                            <TextBox Grid.Column="1" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
+                                     FontSize="13" Padding="4,2" BorderThickness="0" Background="Transparent"
+                                     VerticalContentAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="البحث في الملفات..." IsHitTestVisible="False" Foreground="#94a3b8" 
+                                       FontSize="13" Margin="6,0,0,0" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </Grid>
                     </Border>
 
-                    <!-- Player Controls Bar -->
-                    <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,10,0,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                    <!-- Filtres par type : الكل, فيديو, صوت -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <!-- 1. الكل -->
+                        <Button Command="{Binding SetFilterAllCommand}" Padding="14,6" Margin="0,0,6,0" Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="Foreground" Value="#475569"/>
+                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFilterAll}" Value="True">
+                                            <Setter Property="Background" Value="#15803d"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="16"/></Style></Button.Resources>
+                            <TextBlock Text="الكل" FontSize="12"/>
+                        </Button>
 
-                            <!-- Play / Pause & Stop -->
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                                <Button Command="{Binding TogglePlayPauseCommand}" Background="#15803d" Foreground="White"
-                                        FontWeight="Bold" Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,6,0">
-                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                    <Button.Style>
-                                        <Style TargetType="Button">
-                                            <Setter Property="Content" Value="▶ تشغيل"/>
+                        <!-- 2. فيديو -->
+                        <Button Command="{Binding SetFilterVideoCommand}" Padding="14,6" Margin="0,0,6,0" Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="Foreground" Value="#475569"/>
+                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFilterVideo}" Value="True">
+                                            <Setter Property="Background" Value="#15803d"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="16"/></Style></Button.Resources>
+                            <TextBlock Text="فيديو" FontSize="12"/>
+                        </Button>
+
+                        <!-- 3. صوت -->
+                        <Button Command="{Binding SetFilterAudioCommand}" Padding="14,6" Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="Foreground" Value="#475569"/>
+                                    <Setter Property="BorderBrush" Value="#cbd5e1"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFilterAudio}" Value="True">
+                                            <Setter Property="Background" Value="#15803d"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="16"/></Style></Button.Resources>
+                            <TextBlock Text="صوت" FontSize="12"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+
+            <!-- Grille des cartes des vidéos produites -->
+            <Border Grid.Row="1" Background="Transparent">
+                <ListBox ItemsSource="{Binding FilteredVideos}" SelectedItem="{Binding SelectedVideo}"
+                         BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="12" 
+                                    Width="240" Margin="0,0,14,14" Padding="12" Cursor="Hand">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="120"/> <!-- Miniature / Aperçu -->
+                                        <RowDefinition Height="Auto"/> <!-- Titre & Date -->
+                                        <RowDefinition Height="Auto"/> <!-- Badges & Menu -->
+                                    </Grid.RowDefinitions>
+
+                                    <!-- 1. Miniature avec cadre foncé & badge durée -->
+                                    <Border Grid.Row="0" Background="#0f172a" CornerRadius="8" Margin="0,0,0,10">
+                                        <Grid>
+                                            <TextBlock Text="🎬" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.4"/>
+                                            <!-- Badge durée en bas à droite -->
+                                            <Border Background="#cc000000" CornerRadius="4" Padding="6,2" 
+                                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8">
+                                                <TextBlock Text="{Binding FormattedSize}" FontSize="10" Foreground="White" FlowDirection="LeftToRight"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- 2. Titre et Date -->
+                                    <StackPanel Grid.Row="1" Margin="0,0,0,8">
+                                        <TextBlock Text="{Binding CleanTitle}" FontSize="14" FontWeight="Bold" Foreground="#0f172a" 
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding FormattedDate}" FontSize="11" Foreground="#64748b" Margin="0,2,0,0"/>
+                                    </StackPanel>
+
+                                    <!-- 3. Badges de format & Menu d'actions -->
+                                    <DockPanel Grid.Row="2">
+                                        <!-- Badge MP4 / MP3 -->
+                                        <Border DockPanel.Dock="Right" Background="#f0fdf4" BorderBrush="#bbf7d0" BorderThickness="1" 
+                                                CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="{Binding FormatBadge}" FontSize="10" FontWeight="Bold" Foreground="#15803d"/>
+                                        </Border>
+
+                                        <!-- Boutons d'actions rapides (Renommer, Supprimer) -->
+                                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" HorizontalAlignment="Left">
+                                            <Button Command="{Binding DataContext.StartRenameVideoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand" ToolTip="إعادة تسمية">
+                                                <TextBlock Text="✏️" FontSize="12"/>
+                                            </Button>
+                                            <Button Command="{Binding DataContext.DeleteVideoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand" ToolTip="حذف">
+                                                <TextBlock Text="🗑️" FontSize="12"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </Grid>
+
+        <!-- ======================================================== -->
+        <!-- COLONNE 1 : LECTEUR MULTIMÉDIA & DÉTAILS DU FICHIER       -->
+        <!-- ======================================================== -->
+        <Border Grid.Column="1" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="14" Padding="18">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Écran de lecture MediaElement -->
+                    <RowDefinition Height="Auto"/> <!-- Contrôles du lecteur (Timeline, Play, Volume) -->
+                    <RowDefinition Height="*"/>    <!-- Métadonnées & actions -->
+                </Grid.RowDefinitions>
+
+                <!-- 1. Écran de visualisation (MediaElement) -->
+                <Border Grid.Row="0" Background="#000000" CornerRadius="10" Height="250" ClipToBounds="True">
+                    <Grid>
+                        <MediaElement x:Name="PlayerMediaElement"
+                                      LoadedBehavior="Manual"
+                                      UnloadedBehavior="Stop"
+                                      MediaOpened="OnMediaOpened"
+                                      MediaEnded="OnMediaEnded"
+                                      MediaFailed="OnMediaFailed"
+                                      Volume="{Binding Volume}"
+                                      IsMuted="{Binding IsMuted}"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+
+                        <!-- Message d'erreur éventuel -->
+                        <Border Background="#ccdc2626" CornerRadius="6" Padding="12,6"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Visibility="{Binding HasPlayerError, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="{Binding PlayerStatusMessage}" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- 2. Barre de contrôle du lecteur -->
+                <StackPanel Grid.Row="1" Margin="0,12,0,16">
+                    <!-- Barre de progression temporelle (Slider) -->
+                    <Slider x:Name="PlayerProgressBar"
+                            Minimum="0"
+                            Maximum="{Binding TotalDurationSec}"
+                            Value="{Binding PlaybackPositionSec, Mode=TwoWay}"
+                            ValueChanged="OnScrubberValueChanged"
+                            IsMoveToPointEnabled="True"
+                            Height="20"
+                            Margin="0,0,0,8"
+                            Cursor="Hand"/>
+
+                    <!-- Boutons et affichage du temps -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/> <!-- Bouton Play/Pause -->
+                            <ColumnDefinition Width="*"/>    <!-- Temps écoulé / total -->
+                            <ColumnDefinition Width="Auto"/> <!-- Volume & Plein écran -->
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Bouton Lecture / Pause -->
+                        <Button Grid.Column="0" Command="{Binding TogglePlayPauseCommand}" 
+                                Background="#15803d" Foreground="White" Width="36" Height="36" 
+                                BorderThickness="0" Cursor="Hand">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="18"/></Style></Button.Resources>
+                            <TextBlock Text="{Binding IsPlaying, Converter={x:Null}}" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="▶"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                <Setter Property="Text" Value="⏸"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Button>
+
+                        <!-- Affichage du temps : 00:00 / 01:24 -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                            <TextBlock Text="{Binding FormattedPlaybackPosition}" FontWeight="Bold" Foreground="#0f172a" FontSize="13" FlowDirection="LeftToRight"/>
+                            <TextBlock Text=" / " Foreground="#64748b" FontSize="13"/>
+                            <TextBlock Text="{Binding FormattedTotalDuration}" Foreground="#64748b" FontSize="13" FlowDirection="LeftToRight"/>
+                        </StackPanel>
+
+                        <!-- Volume et Plein écran -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Couper / Activer le son -->
+                            <Button Command="{Binding ToggleMuteCommand}" Background="Transparent" BorderThickness="0" 
+                                    Padding="6,4" Cursor="Hand" Margin="0,0,4,0">
+                                <TextBlock Text="{Binding IsMuted, Converter={x:Null}}" FontSize="14">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="🔊"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                    <Setter Property="Content" Value="⏸ إيقاف مؤقت"/>
+                                                <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                                                    <Setter Property="Text" Value="🔇"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
-                                    </Button.Style>
-                                </Button>
-
-                                <Button Command="{Binding StopCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
-                                        Foreground="#334155" FontWeight="Bold" Padding="10,6" Cursor="Hand">
-                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                    <TextBlock Text="⏹ إيقاف"/>
-                                </Button>
-                            </StackPanel>
-
-                            <!-- Scrubber Slider & Timing Display -->
-                            <Grid Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Grid.Column="0" Text="{Binding FormattedPlaybackPosition}" FlowDirection="LeftToRight"
-                                           FontSize="13" FontWeight="Bold" Foreground="#15803d" VerticalAlignment="Center" Margin="0,0,8,0"/>
-
-                                <Slider Grid.Column="1" Minimum="0" Maximum="{Binding TotalDurationSec, FallbackValue=100}"
-                                        Value="{Binding PlaybackPositionSec}"
-                                        ValueChanged="OnScrubberValueChanged"
-                                        IsMoveToPointEnabled="True"
-                                        VerticalAlignment="Center" Cursor="Hand"/>
-
-                                <TextBlock Grid.Column="2" Text="{Binding FormattedTotalDuration}" FlowDirection="LeftToRight"
-                                           FontSize="12" Foreground="#64748b" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            </Grid>
-
-                            <!-- Volume Slider & Mute -->
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                                <Button Command="{Binding ToggleMuteCommand}" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,4,0">
-                                    <TextBlock Text="🔊" FontSize="14" VerticalAlignment="Center"/>
-                                </Button>
-                                <Slider Minimum="0" Maximum="1" Value="{Binding Volume}" SmallChange="0.05" LargeChange="0.1"
-                                        Width="70" VerticalAlignment="Center" Cursor="Hand"/>
-                            </StackPanel>
-
-                            <!-- Fullscreen Button -->
-                            <Button Grid.Column="3" Command="{Binding ToggleFullscreenCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" BorderThickness="1"
-                                    Padding="8,6" Cursor="Hand" Margin="4,0,0,0" ToolTip="ملء الشاشة / تصغير">
-                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                <TextBlock Text="⛶ ملء الشاشة" FontSize="12" FontWeight="Bold" Foreground="#334155"/>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </Button>
-                        </Grid>
-                    </Border>
+
+                            <!-- Bouton Plein écran -->
+                            <Button Command="{Binding ToggleFullscreenCommand}" Background="#f1f5f9" BorderBrush="#cbd5e1" 
+                                    BorderThickness="1" Padding="8,4" Cursor="Hand" ToolTip="ملء الشاشة">
+                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                <TextBlock Text="⛶" FontSize="14"/>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
-            </Border>
 
-            <!-- 3. Inline Rename Dialog Bar -->
-            <Border Grid.Row="2" Background="#f0f9ff" BorderBrush="#bae6fd" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,16"
-                    Visibility="{Binding IsRenaming, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <DockPanel>
-                    <TextBlock Text="إعادة تسمية الملف :" FontWeight="Bold" FontSize="14" Foreground="#0369a1" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                    <TextBox Text="{Binding NewVideoName, UpdateSourceTrigger=PropertyChanged}" FontSize="14" Padding="8,4" VerticalContentAlignment="Center" Margin="0,0,12,0" DockPanel.Dock="Left" MinWidth="260"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Command="{Binding ConfirmRenameCommand}" Background="#0284c7" Foreground="White"
-                                FontWeight="Bold" FontSize="13" Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                            <TextBlock Text="حفظ الاسم ✔"/>
-                        </Button>
-                        <Button Command="{Binding CancelRenameCommand}" Background="#e2e8f0" Foreground="#475569"
-                                FontWeight="Bold" FontSize="13" Padding="14,6" BorderThickness="0" Cursor="Hand">
-                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                            <TextBlock Text="إلغاء ✖"/>
-                        </Button>
+                <!-- 3. Fiche détaillée du média & actions -->
+                <Border Grid.Row="2" Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="16">
+                    <StackPanel>
+                        <!-- Titre de la vidéo -->
+                        <TextBlock Text="{Binding SelectedVideo.CleanTitle, FallbackValue='اختر مقطعاً لتشغيله'}" 
+                                   FontSize="16" FontWeight="Bold" Foreground="#0f172a" Margin="0,0,0,8"/>
+
+                        <!-- Métadonnées -->
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="👤 القارئ:" FontSize="12" Foreground="#64748b" Margin="0,0,6,0"/>
+                                    <TextBlock Text="الشيخ صابر عبد الحكم" FontSize="12" FontWeight="SemiBold" Foreground="#0f172a"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📖 الرواية:" FontSize="12" Foreground="#64748b" Margin="0,0,6,0"/>
+                                    <TextBlock Text="ورش عن نافع" FontSize="12" FontWeight="SemiBold" Foreground="#15803d"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Border Grid.Column="1" Background="#f0fdf4" BorderBrush="#bbf7d0" BorderThickness="1" 
+                                    CornerRadius="6" Padding="10,4" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SelectedVideo.FormatBadge, FallbackValue='MP4'}" 
+                                           FontWeight="Bold" Foreground="#15803d" FontSize="12"/>
+                            </Border>
+                        </Grid>
+
+                        <Separator Background="#e2e8f0" Margin="0,0,0,14"/>
+
+                        <!-- Actions : Ouvrir dans l'explorateur & Lecteur externe -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Command="{Binding OpenVideosFolderCommand}" Background="#15803d" Foreground="White"
+                                    FontWeight="SemiBold" FontSize="13" Padding="16,8" BorderThickness="0" Cursor="Hand" Margin="0,0,10,0">
+                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="فتح موقع الملف 📁" Margin="0,0,4,0"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Command="{Binding PlayInExternalPlayerCommand}" Background="White" Foreground="#334155"
+                                    FontWeight="SemiBold" FontSize="13" Padding="14,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand">
+                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="مشغل خارجي ↗"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </StackPanel>
-                </DockPanel>
-            </Border>
+                </Border>
 
-            <!-- 4. Videos List / Table -->
-            <Border Grid.Row="3" Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="14">
-                <Grid>
-                    <!-- Empty state -->
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,32"
-                                Visibility="{Binding HasNoVideos, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <TextBlock Text="🎬" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                        <TextBlock Text="لا توجد مقاطع منشأة بعد في هذا المجلد" FontSize="18" FontWeight="Bold" Foreground="#64748b" HorizontalAlignment="Center"/>
-                        <TextBlock Text="اختر سورة وآيات من المعالج V3 أو استوديو الآية الواحدة لتوليد فيديوهات أو استخراج ملفات صوتية." FontSize="14" Foreground="#94a3b8" HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                    </StackPanel>
-
-                    <!-- List of Videos -->
-                    <ListBox ItemsSource="{Binding Videos}" SelectedItem="{Binding SelectedVideo}"
-                             BorderThickness="0" Background="Transparent"
-                             Visibility="{Binding HasVideos, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Border Padding="12,10" BorderBrush="#f1f5f9" BorderThickness="0,0,0,1">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <!-- Video or Audio icon -->
-                                        <Border Grid.Column="0" Background="#f0fdf4" Width="40" Height="40" CornerRadius="6" Margin="0,0,12,0">
-                                            <TextBlock Text="🎬" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-
-                                        <!-- File Name -->
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding FileName}" FontSize="15" FontWeight="SemiBold" Foreground="#0f172a" FlowDirection="LeftToRight" HorizontalAlignment="Right"/>
-                                            <TextBlock Text="{Binding FullPath}" FontSize="11" Foreground="#94a3b8" FlowDirection="LeftToRight" HorizontalAlignment="Right"/>
-                                        </StackPanel>
-
-                                        <!-- Size -->
-                                        <TextBlock Grid.Column="2" Text="{Binding FormattedSize}" FontSize="13" Foreground="#475569" 
-                                                   VerticalAlignment="Center" Margin="24,0"/>
-
-                                        <!-- Date -->
-                                        <TextBlock Grid.Column="3" Text="{Binding FormattedDate}" FontSize="12" Foreground="#64748b" 
-                                                   FlowDirection="LeftToRight" VerticalAlignment="Center" Margin="0,0,16,0"/>
-
-                                        <!-- Quick Row Actions -->
-                                        <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <!-- Play in player -->
-                                            <Button Command="{Binding DataContext.PlaySelectedVideoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    Background="#f0fdf4" BorderBrush="#86efac" BorderThickness="1"
-                                                    Padding="10,5" Cursor="Hand" Margin="0,0,6,0" ToolTip="تشغيل هذا المقطع">
-                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                                <TextBlock Text="▶ تشغيل" FontSize="11" Foreground="#15803d" FontWeight="Bold"/>
-                                            </Button>
-
-                                            <!-- Rename -->
-                                            <Button Command="{Binding DataContext.StartRenameVideoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}" Background="#f0f9ff" BorderBrush="#bae6fd" BorderThickness="1"
-                                                    Padding="8,5" Cursor="Hand" Margin="0,0,6,0" ToolTip="إعادة تسمية هذا الملف">
-                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                                <TextBlock Text="✏️ تعديل" FontSize="11" Foreground="#0284c7" FontWeight="Bold"/>
-                                            </Button>
-
-                                            <!-- Delete -->
-                                            <Button Command="{Binding DataContext.DeleteVideoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}" Background="#fee2e2" BorderBrush="#fca5a5" BorderThickness="1"
-                                                    Padding="8,5" Cursor="Hand" ToolTip="حذف هذا الملف نهائياً">
-                                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                                                <TextBlock Text="🗑️ حذف" FontSize="11" Foreground="#b91c1c" FontWeight="Bold"/>
-                                            </Button>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                <!-- Modale de renommage intégrée -->
+                <Grid Grid.RowSpan="3" Background="#80000000"
+                      Visibility="{Binding IsRenaming, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                    <Border Background="White" CornerRadius="12" Padding="20" Width="360" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <StackPanel>
+                            <TextBlock Text="إعادة تسمية الملف" FontSize="16" FontWeight="Bold" Foreground="#0f172a" Margin="0,0,0,12"/>
+                            <TextBox Text="{Binding NewVideoName, UpdateSourceTrigger=PropertyChanged}" FontSize="14" Padding="8" Margin="0,0,0,16"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Command="{Binding CancelRenameCommand}" Background="#f1f5f9" Foreground="#334155" 
+                                        FontWeight="SemiBold" Padding="14,6" BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="إلغاء"/>
+                                </Button>
+                                <Button Command="{Binding ConfirmRenameCommand}" Background="#15803d" Foreground="White" 
+                                        FontWeight="Bold" Padding="16,6" BorderThickness="0" Cursor="Hand">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="تأكيد التسمية"/>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </Grid>
-            </Border>
-        </Grid>
-    </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
 </UserControl>

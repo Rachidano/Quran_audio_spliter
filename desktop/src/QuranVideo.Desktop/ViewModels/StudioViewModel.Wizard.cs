@@ -171,7 +171,11 @@ public sealed partial class StudioViewModel
     [ObservableProperty]
     private bool _isWizardMode = false;
 
-    public bool IsFineTuningMode => !IsWizardMode;
+    public bool IsFineTuningMode
+    {
+        get => !IsWizardMode;
+        set => IsWizardMode = !value;
+    }
 
     partial void OnIsWizardModeChanged(bool value)
     {

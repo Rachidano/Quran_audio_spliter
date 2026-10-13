@@ -6,9 +6,9 @@
         xmlns:vm="clr-namespace:QuranVideo.Desktop.ViewModels"
         xmlns:views="clr-namespace:QuranVideo.Desktop.Views"
         mc:Ignorable="d"
-        Title="صانع فيديو القرآن الكريم — برواية ورش عن نافع" 
+        Title="صanع مقاطع القرآن — لطريقة ورش عن نافع" 
         Icon="pack://application:,,,/Resources/app.ico"
-        Height="760" Width="1120" MinHeight="680" MinWidth="960"
+        Height="800" Width="1240" MinHeight="680" MinWidth="1020"
         WindowStartupLocation="CenterScreen"
         FlowDirection="RightToLeft"
         FontFamily="Segoe UI, Tahoma, Arial"
@@ -34,138 +34,240 @@
             <views:MyVideosView/>
         </DataTemplate>
 
-        <!-- Navigation Tab Style -->
-        <Style x:Key="NavButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#334155"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="18,10"/>
-            <Setter Property="BorderThickness" Value="0,0,0,3"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <!-- Base Sidebar Nav Button Template -->
+        <ControlTemplate x:Key="SidebarNavButtonTemplate" TargetType="Button">
+            <Border x:Name="RootBorder" 
+                    Background="{TemplateBinding Background}" 
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="8" 
+                    Padding="14,11" 
+                    Margin="10,3">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="26"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Icon / Emoji -->
+                    <ContentPresenter Grid.Column="0" Content="{TemplateBinding Tag}" 
+                                      VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+                    <!-- Label -->
+                    <TextBlock Grid.Column="1" 
+                               Text="{TemplateBinding Content}" 
+                               VerticalAlignment="Center" 
+                               FontSize="14"
+                               Margin="8,0,0,0"/>
+
+                    <!-- Active Right Edge Pill Indicator -->
+                    <Border x:Name="ActivePill" 
+                            Grid.Column="2" 
+                            Width="3" Height="20" 
+                            CornerRadius="2" 
+                            Background="#15803d" 
+                            Visibility="Collapsed"/>
+                </Grid>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="RootBorder" Property="Background" Value="#f1f5f9"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
     </Window.Resources>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        <!-- Layout: Column 0 = Right Sidebar (RTL), Column 1 = Main Workspace -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="230"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <!-- Top Header Navigation Bar -->
-        <Border Grid.Row="0" Background="White" BorderBrush="#e2e8f0" BorderThickness="0,0,0,1">
-            <Grid Margin="24,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Brand / Title -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,12,32,12">
-                    <Border Background="#15803d" Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0">
-                        <TextBlock Text="📖" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <!-- ======================================================== -->
+        <!-- SIDEBAR DE NAVIGATION (DROITE EN RTL)                      -->
+        <!-- ======================================================== -->
+        <Border Grid.Column="0" Background="White" BorderBrush="#e2e8f0" BorderThickness="0,0,1,0">
+            <DockPanel LastChildFill="True">
+                
+                <!-- 1. En-tête : Marque & Logo -->
+                <StackPanel DockPanel.Dock="Top" Margin="16,22,16,16" HorizontalAlignment="Center">
+                    <Border Background="#f0fdf4" BorderBrush="#dcfce7" BorderThickness="1" 
+                            CornerRadius="12" Width="48" Height="48" HorizontalAlignment="Center">
+                        <TextBlock Text="📖" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="صانع فيديو القرآن الكريم" FontSize="18" FontWeight="Bold" Foreground="#0f172a"/>
-                        <TextBlock Text="برواية ورش عن نافع" FontSize="12" FontWeight="SemiBold" Foreground="#15803d"/>
-                    </StackPanel>
+                    <TextBlock Text="صانع مقاطع القرآن" FontSize="16" FontWeight="Bold" Foreground="#0f172a" 
+                               HorizontalAlignment="Center" Margin="0,10,0,2"/>
+                    <TextBlock Text="لطريقة ورش عن نافع" FontSize="12" FontWeight="SemiBold" Foreground="#15803d" 
+                               HorizontalAlignment="Center"/>
+                    <Separator Background="#f1f5f9" Margin="0,16,0,8"/>
                 </StackPanel>
 
-                <!-- The 3 Primary Tabs (L02-03) -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <!-- 2. Pied de la barre latérale : Paramètres & Version -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="10,0,10,16">
+                    <Separator Background="#f1f5f9" Margin="6,0,6,12"/>
+                    <Button Command="{Binding ToggleSettingsCommand}"
+                            Tag="⚙️"
+                            Content="الإعدادات"
+                            Cursor="Hand"
+                            Template="{StaticResource SidebarNavButtonTemplate}"
+                            Background="Transparent"
+                            Foreground="#475569"
+                            FontWeight="SemiBold"/>
+                    <TextBlock Text="تصور الواجهة • V4" FontSize="11" Foreground="#94a3b8" 
+                               HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                </StackPanel>
+
+                <!-- 3. Menu principal de navigation -->
+                <StackPanel Orientation="Vertical" Margin="0,4,0,0">
+                    
                     <!-- 1. المكتبة -->
-                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectLibraryCommand}">
-                        <Button.Triggers>
-                            <!-- Visual triggers for active state -->
-                        </Button.Triggers>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="المكتبة" Margin="0,0,6,0"/>
-                            <TextBlock Text="📚"/>
-                        </StackPanel>
+                    <Button Command="{Binding SelectLibraryCommand}"
+                            Content="المكتبة"
+                            Tag="📚"
+                            Cursor="Hand"
+                            Template="{StaticResource SidebarNavButtonTemplate}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="#475569"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ActiveTab}" Value="Library">
+                                        <Setter Property="Background" Value="#ebfdf5"/>
+                                        <Setter Property="Foreground" Value="#15803d"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                     </Button>
 
-                    <!-- 2. إعداد الفيديو -->
-                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectStudioCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="إعداد الفيديو" Margin="0,0,6,0"/>
-                            <TextBlock Text="🎬"/>
-                        </StackPanel>
+                    <!-- 2. استوديو التقطيع -->
+                    <Button Command="{Binding SelectAudioStudioCommand}"
+                            Content="استوديو التقطيع"
+                            Tag="✂️"
+                            Cursor="Hand"
+                            Template="{StaticResource SidebarNavButtonTemplate}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="#475569"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsAudioStudioTabActive}" Value="True">
+                                        <Setter Property="Background" Value="#ebfdf5"/>
+                                        <Setter Property="Foreground" Value="#15803d"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                     </Button>
 
-                    <!-- 3. التصدير بالدفعة -->
-                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectBatchExportCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="التصدير بالدفعة" Margin="0,0,6,0"/>
-                            <TextBlock Text="📋"/>
-                        </StackPanel>
+                    <!-- 3. إعداد الفيديو -->
+                    <Button Command="{Binding SelectVideoStudioCommand}"
+                            Content="إعداد الفيديو"
+                            Tag="🎬"
+                            Cursor="Hand"
+                            Template="{StaticResource SidebarNavButtonTemplate}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="#475569"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsVideoStudioTabActive}" Value="True">
+                                        <Setter Property="Background" Value="#ebfdf5"/>
+                                        <Setter Property="Foreground" Value="#15803d"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                     </Button>
 
-                    <!-- 4. مجموعاتي (V3) -->
-                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectCollectionsCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="مجموعاتي" Margin="0,0,6,0"/>
-                            <TextBlock Text="🗂️"/>
-                        </StackPanel>
+                    <!-- 4. فيديوهاتي -->
+                    <Button Command="{Binding SelectMyVideosCommand}"
+                            Content="فيديوهاتي"
+                            Tag="📁"
+                            Cursor="Hand"
+                            Template="{StaticResource SidebarNavButtonTemplate}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="#475569"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ActiveTab}" Value="MyVideos">
+                                        <Setter Property="Background" Value="#ebfdf5"/>
+                                        <Setter Property="Foreground" Value="#15803d"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                     </Button>
 
-                    <!-- 5. فيديوهاتي -->
-                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding SelectMyVideosCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="فيديوهاتي" Margin="0,0,6,0"/>
-                            <TextBlock Text="📁"/>
-                        </StackPanel>
+                    <!-- 5. مجموعاتي -->
+                    <Button Command="{Binding SelectCollectionsCommand}"
+                            Content="مجموعاتي"
+                            Tag="🗂️"
+                            Cursor="Hand"
+                            Template="{StaticResource SidebarNavButtonTemplate}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="#475569"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ActiveTab}" Value="Collections">
+                                        <Setter Property="Background" Value="#ebfdf5"/>
+                                        <Setter Property="Foreground" Value="#15803d"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                     </Button>
+
                 </StackPanel>
-
-                <!-- Secondary Actions: Settings -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Command="{Binding ToggleSettingsCommand}" Background="#f1f5f9" Foreground="#334155"
-                            FontWeight="SemiBold" FontSize="13" Padding="12,8" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand">
-                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="الإعدادات" Margin="0,0,6,0"/>
-                            <TextBlock Text="⚙"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- Main Body: Active View -->
-        <ContentControl Grid.Row="1" Content="{Binding CurrentContentViewModel}"/>
-
-        <!-- Bottom Status Bar -->
-        <Border Grid.Row="2" Background="White" BorderBrush="#e2e8f0" BorderThickness="0,1,0,0" Padding="20,8">
-            <DockPanel>
-                <!-- LTR Workspace Path -->
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="مجلد العمل: " Foreground="#64748b" FontSize="12"/>
-                    <TextBlock Text="{Binding WorkspacePath}" FlowDirection="LeftToRight" Foreground="#0f172a" FontSize="12" FontWeight="SemiBold"/>
-                </StackPanel>
-
-                <!-- Status Text -->
-                <TextBlock Text="{Binding StatusText}" Foreground="#15803d" FontWeight="SemiBold" FontSize="13" 
-                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </DockPanel>
         </Border>
 
-        <!-- Settings Dialog Overlay -->
-        <Grid Grid.RowSpan="3"
+        <!-- ======================================================== -->
+        <!-- ESPACE DE TRAVAIL PRINCIPAL (GAUCHE EN RTL)               -->
+        <!-- ======================================================== -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Vue Active -->
+            <ContentControl Grid.Row="0" Content="{Binding CurrentContentViewModel}"/>
+
+            <!-- Barre de statut inférieure discrète -->
+            <Border Grid.Row="1" Background="White" BorderBrush="#e2e8f0" BorderThickness="0,1,0,0" Padding="20,7">
+                <DockPanel>
+                    <!-- Chemin du répertoire de travail LTR -->
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="مجلد العمل: " Foreground="#64748b" FontSize="11"/>
+                        <TextBlock Text="{Binding WorkspacePath}" FlowDirection="LeftToRight" Foreground="#0f172a" FontSize="11" FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <!-- Texte d'état -->
+                    <TextBlock Text="{Binding StatusText}" Foreground="#15803d" FontWeight="SemiBold" FontSize="12" 
+                               VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- ======================================================== -->
+        <!-- MODALE PARAMÈTRES (OVERLAY)                              -->
+        <!-- ======================================================== -->
+        <Grid Grid.ColumnSpan="2"
               Visibility="{Binding IsSettingsOpen, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
             <views:SettingsDialog DataContext="{Binding SettingsVM}"/>
         </Grid>
