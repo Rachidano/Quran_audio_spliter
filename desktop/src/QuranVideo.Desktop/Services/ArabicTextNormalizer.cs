@@ -54,12 +54,18 @@ public static partial class ArabicTextNormalizer
         return Regex.Replace(sb.ToString(), @"\s+", " ").Trim();
     }
 
-    public static string NormalizeForSearch(string? input)
+    public static string NormalizeForSearch(string? input, bool expandDaggerAlif = false)
     {
         if (string.IsNullOrWhiteSpace(input))
             return string.Empty;
 
-        var normalized = Normalize(input.Normalize(NormalizationForm.FormKC))
+        var text = input;
+        if (expandDaggerAlif)
+        {
+            text = text.Replace("\u0670", "ا");
+        }
+
+        var normalized = Normalize(text.Normalize(NormalizationForm.FormKC))
             .Replace('ؤ', 'و')
             .Replace('ئ', 'ي')
             .Replace('ی', 'ي')

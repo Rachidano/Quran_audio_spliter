@@ -111,6 +111,21 @@ public class QuranSearchTests : IDisposable
 
         // Specifically check Ayah 2:255 (Ayat al-Kursi: "الله لا اله الا هو...") is present
         Assert.Contains(result.Items, item => item.SurahNumber == 2 && item.AyahNumber == 255);
+
+        // Test words with dagger alif: "العالمين" with explicit alif
+        var resAlamin = _searchService.Search("العالمين");
+        Assert.True(resAlamin.TotalResults > 0);
+        Assert.Contains(resAlamin.Items, i => i.SurahNumber == 1 && i.AyahNumber == 1);
+
+        // Test "الرحمن" without alif
+        var resRahman = _searchService.Search("الرحمن");
+        Assert.True(resRahman.TotalResults > 0);
+        Assert.Contains(resRahman.Items, i => i.SurahNumber == 1 && i.AyahNumber == 2);
+
+        // Test phrase "الحمد لله"
+        var resHamd = _searchService.Search("الحمد لله");
+        Assert.True(resHamd.TotalResults > 0);
+        Assert.Contains(resHamd.Items, i => i.SurahNumber == 1 && i.AyahNumber == 1);
     }
 
     [Fact]

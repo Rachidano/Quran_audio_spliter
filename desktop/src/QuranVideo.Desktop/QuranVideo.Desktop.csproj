@@ -21,5 +21,8 @@
   <ItemGroup>
     <Resource Include="Resources\app.ico" />
     <EmbeddedResource Include="Resources/saber-audio-links.json" LogicalName="QuranVideo.SaberAudioLinks" />
+    <None Update="pack\source.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

@@ -17,6 +17,7 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
     private readonly CompositionService _compositionService;
     private CancellationTokenSource? _videoCts;
     private bool _isOperationBusy;
+    private string? _currentAudioPath;
 
     public AudioPlayerService Player { get; }
 
@@ -328,6 +329,7 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
             var path = source == null ? null : _workspaceService.ToAbsolutePath(source.RelativeFilePath);
             if (path != null && File.Exists(path))
             {
+                _currentAudioPath = path;
                 Player.Load(path);
                 CurrentAudioSha256 = source!.Sha256;
                 AudioDurationSec = Player.DurationSec;
@@ -336,7 +338,11 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
                 WaveformPeaks = peaks;
                 StatusMessage = $"تم تحميل تلاوة {CurrentReciterNameArabic} ({FormattedTotalDuration})";
             }
-            else StatusMessage = "التلاوة غير منزلة لهذا القارئ. اضغط تنزيل أو افتح إعداد روابط السور.";
+            else
+            {
+                _currentAudioPath = null;
+                StatusMessage = "التلاوة غير منزلة لهذا القارئ. اضغط تنزيل أو افتح إعداد روابط السور.";
+            }
             await RefreshPassagesListAsync();
             if (version == _audioLoadVersion) LoadPassageBoundsForCurrentAyah();
         }
@@ -966,6 +972,76 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
         {
             StatusMessage = $"خطأ غير متوقع : {ex.Message}";
             LoggingService.Instance.LogError("Erreur inattendue création vidéo", ex);
+        }
+        finally
+        {
+            IsGenerating = false;
+            _videoCts?.Dispose();
+            _videoCts = null;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExtractAudioOnlyAsync()
+    {
+        if (IsGenerating) return;
+
+        if (string.IsNullOrEmpty(_currentAudioPath) || !File.Exists(_currentAudioPath))
+        {
+            StatusMessage = "تعذر الاستخراج: ملف التلاوة الصوتية لهذه السورة غير متوفر محلياً.";
+            return;
+        }
+
+        if (EndTimeSec <= StartTimeSec)
+        {
+            StatusMessage = "تعذر الاستخراج: وقت نهاية المقطع يجب أن يكون أكبر من وقت البداية.";
+            return;
+        }
+
+        IsGenerating = true;
+        StatusMessage = "جارٍ استخراج المقطع الصوتي MP3 بواسطة FFmpeg...";
+        GenerationProgress = 20;
+
+        _videoCts = new CancellationTokenSource();
+
+        try
+        {
+            var outputDir = Path.Combine(_workspaceService.WorkspacePath, "media", "videos");
+            Directory.CreateDirectory(outputDir);
+            var fileName = $"ayah_{CurrentSurah.Number:D3}_{CurrentAyahNumber:D3}_audio.mp3";
+            var outputMp3Path = Path.Combine(outputDir, fileName);
+
+            GenerationProgress = 50;
+
+            var result = await FfmpegVideoGenerator.ExtractAyahAudioAsync(
+                _currentAudioPath,
+                StartTimeSec,
+                EndTimeSec,
+                outputMp3Path,
+                _videoCts.Token);
+
+            if (result.Success && File.Exists(outputMp3Path))
+            {
+                GenerationProgress = 100;
+                LastGeneratedVideoPath = outputMp3Path;
+                StatusMessage = $"تم استخراج ملف الصوت بنجاح: {fileName} 🎵";
+                LoggingService.Instance.LogInfo($"Audio MP3 extrait avec succès : {outputMp3Path}");
+            }
+            else
+            {
+                StatusMessage = result.ErrorMessage ?? "فشل استخراج المقطع الصوتي بواسطة FFmpeg.";
+                LoggingService.Instance.LogError($"Échec extraction audio MP3 : {outputMp3Path}");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "تم إلغاء عملية استخراج الصوت.";
+            LoggingService.Instance.LogInfo("Extraction audio annulée par l'utilisateur.");
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ غير متوقع: {ex.Message}";
+            LoggingService.Instance.LogError("Erreur inattendue extraction audio", ex);
         }
         finally
         {

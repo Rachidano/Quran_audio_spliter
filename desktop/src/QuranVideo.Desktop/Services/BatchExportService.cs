@@ -67,11 +67,12 @@ public sealed class BatchExportService : IDisposable
         int startAyah,
         int endAyah,
         VideoOrientation orientation,
-        string reciterId = "husary", string? collectionId = null)
+        string reciterId = "husary", string? collectionId = null,
+        bool isAudioOnly = false)
     {
         using var db = CreateDbContext();
         var audioSourceId = $"{collectionId ?? (reciterId == "saber_abdelhakam" ? RecitationCatalogService.SaberCollection : reciterId + "_murattal_warsh")}:{surahNumber:D3}";
-        var orientationStr = orientation == VideoOrientation.Horizontal ? "Horizontal" : "Vertical";
+        var orientationStr = isAudioOnly ? "Audio" : (orientation == VideoOrientation.Horizontal ? "Horizontal" : "Vertical");
 
         // Resolve audio source path
         var audioPath = ResolveAudioPath(audioSourceId);
@@ -119,13 +120,23 @@ public sealed class BatchExportService : IDisposable
                 continue;
             }
 
-            // 2. Image recipe
-            var (imageOk, imagePath, recipe) = await _imageService.GetOrExtractAyahImageAsync(surahNumber, ayah);
-            if (!imageOk || string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath))
+            // 2. Image recipe (seulement requis pour le format vidéo)
+            int recipeId = 0;
+            int recipeRevision = 0;
+            string imagePath = string.Empty;
+
+            if (!isAudioOnly)
             {
-                skippedCount++;
-                skippedDetails.Add($"الآية {ayah}: تعذر استخراج صورة الآية من المصحف.");
-                continue;
+                var (imageOk, imgPath, recipe) = await _imageService.GetOrExtractAyahImageAsync(surahNumber, ayah);
+                if (!imageOk || string.IsNullOrEmpty(imgPath) || !File.Exists(imgPath))
+                {
+                    skippedCount++;
+                    skippedDetails.Add($"الآية {ayah}: تعذر استخراج صورة الآية من المصحف.");
+                    continue;
+                }
+                recipeId = recipe.Id;
+                recipeRevision = recipe.Revision;
+                imagePath = imgPath;
             }
 
             // 3. Freeze snapshot (L09-02)
@@ -141,8 +152,8 @@ public sealed class BatchExportService : IDisposable
                 PassageRevision = passage.Revision,
                 StartTimeSec = passage.StartTimeSec,
                 EndTimeSec = passage.EndTimeSec,
-                ImageRecipeId = recipe.Id,
-                ImageRevision = recipe.Revision,
+                ImageRecipeId = recipeId,
+                ImageRevision = recipeRevision,
                 ImagePath = imagePath,
                 CreatedAtUtc = DateTime.UtcNow
             };
@@ -234,7 +245,9 @@ public sealed class BatchExportService : IDisposable
             }
         }
 
-        if (!File.Exists(job.ImagePath))
+        bool isAudioOnly = string.Equals(job.Orientation, "Audio", StringComparison.OrdinalIgnoreCase);
+
+        if (!isAudioOnly && !File.Exists(job.ImagePath))
         {
             job.Status = BatchJobStatus.Failed;
             job.ErrorMessage = "صورة الآية غير متوفرة.";
@@ -249,67 +262,120 @@ public sealed class BatchExportService : IDisposable
         await db.SaveChangesAsync();
         JobStatusChanged?.Invoke(job);
 
-        var orientEnum = job.Orientation == "Horizontal" ? VideoOrientation.Horizontal : VideoOrientation.Vertical;
-        var orientSuffix = orientEnum == VideoOrientation.Horizontal ? "h" : "v";
-
         var videosDir = Path.Combine(_workspaceService.WorkspacePath, "media", "videos");
         Directory.CreateDirectory(videosDir);
 
-        var fileName = $"ayah_{job.SurahNumber:D3}_{job.AyahNumber:D3}_{orientSuffix}_rev{job.PassageRevision}.mp4";
-        var finalVideoPath = Path.Combine(videosDir, fileName);
-
-        var req = new VideoGenerationRequest(
-            job.ImagePath,
-            job.AudioPath,
-            job.StartTimeSec,
-            job.EndTimeSec,
-            finalVideoPath,
-            orientEnum);
-
-        var progress = new Progress<int>(p =>
+        if (isAudioOnly)
         {
-            job.ProgressPercent = p;
+            var fileName = $"ayah_{job.SurahNumber:D3}_{job.AyahNumber:D3}_audio_rev{job.PassageRevision}.mp3";
+            var finalAudioPath = Path.Combine(videosDir, fileName);
+
+            job.ProgressPercent = 40;
             JobProgressChanged?.Invoke(job);
-        });
 
-        try
-        {
-            var result = await FfmpegVideoGenerator.GenerateAyahVideoAsync(req, cancellationToken);
+            try
+            {
+                var result = await FfmpegVideoGenerator.ExtractAyahAudioAsync(
+                    job.AudioPath,
+                    job.StartTimeSec,
+                    job.EndTimeSec,
+                    finalAudioPath,
+                    cancellationToken);
 
-            if (cancellationToken.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    job.Status = BatchJobStatus.Cancelled;
+                    job.ErrorMessage = "تم إلغاء التصدير بطلب من المستخدم.";
+                }
+                else if (result.Success && File.Exists(finalAudioPath))
+                {
+                    var sha = ComputeSha256(finalAudioPath);
+                    job.Status = BatchJobStatus.Completed;
+                    job.RelativeVideoPath = Path.GetRelativePath(_workspaceService.WorkspacePath, finalAudioPath);
+                    job.VideoSha256 = sha;
+                    job.DurationSeconds = Math.Max(0.1, job.EndTimeSec - job.StartTimeSec);
+                    job.ProgressPercent = 100;
+                    job.CompletedAtUtc = DateTime.UtcNow;
+                    job.ErrorMessage = null;
+                }
+                else
+                {
+                    job.Status = BatchJobStatus.Failed;
+                    job.ErrorMessage = result.ErrorMessage ?? "فشل استخراج ملف الصوت بواسطة FFmpeg.";
+                }
+            }
+            catch (OperationCanceledException)
             {
                 job.Status = BatchJobStatus.Cancelled;
-                job.ErrorMessage = "تم إلغاء التصدير بطلب من المستخدم.";
+                job.ErrorMessage = "تم إلغاء التصدير.";
             }
-            else if (result.Success)
-            {
-                var sha = ComputeSha256(finalVideoPath);
-                job.Status = BatchJobStatus.Completed;
-                job.RelativeVideoPath = Path.GetRelativePath(_workspaceService.WorkspacePath, finalVideoPath);
-                job.VideoSha256 = sha;
-                job.DurationSeconds = result.DurationSeconds;
-                job.ProgressPercent = 100;
-                job.CompletedAtUtc = DateTime.UtcNow;
-                job.ErrorMessage = null;
-
-                // L09-05: Écrire le manifeste sidecar JSON
-                await WriteJobManifestAsync(job, result.Width, result.Height, sha, cancellationToken);
-            }
-            else
+            catch (Exception ex)
             {
                 job.Status = BatchJobStatus.Failed;
-                job.ErrorMessage = result.ErrorMessage;
+                job.ErrorMessage = $"خطأ أثناء استخراج الصوت: {ex.Message}";
             }
         }
-        catch (OperationCanceledException)
+        else
         {
-            job.Status = BatchJobStatus.Cancelled;
-            job.ErrorMessage = "تم إلغاء التصدير.";
-        }
-        catch (Exception ex)
-        {
-            job.Status = BatchJobStatus.Failed;
-            job.ErrorMessage = $"خطأ أثناء المعالجة: {ex.Message}";
+            var orientEnum = job.Orientation == "Horizontal" ? VideoOrientation.Horizontal : VideoOrientation.Vertical;
+            var orientSuffix = orientEnum == VideoOrientation.Horizontal ? "h" : "v";
+
+            var fileName = $"ayah_{job.SurahNumber:D3}_{job.AyahNumber:D3}_{orientSuffix}_rev{job.PassageRevision}.mp4";
+            var finalVideoPath = Path.Combine(videosDir, fileName);
+
+            var req = new VideoGenerationRequest(
+                job.ImagePath,
+                job.AudioPath,
+                job.StartTimeSec,
+                job.EndTimeSec,
+                finalVideoPath,
+                orientEnum);
+
+            var progress = new Progress<int>(p =>
+            {
+                job.ProgressPercent = p;
+                JobProgressChanged?.Invoke(job);
+            });
+
+            try
+            {
+                var result = await FfmpegVideoGenerator.GenerateAyahVideoAsync(req, cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    job.Status = BatchJobStatus.Cancelled;
+                    job.ErrorMessage = "تم إلغاء التصدير بطلب من المستخدم.";
+                }
+                else if (result.Success)
+                {
+                    var sha = ComputeSha256(finalVideoPath);
+                    job.Status = BatchJobStatus.Completed;
+                    job.RelativeVideoPath = Path.GetRelativePath(_workspaceService.WorkspacePath, finalVideoPath);
+                    job.VideoSha256 = sha;
+                    job.DurationSeconds = result.DurationSeconds;
+                    job.ProgressPercent = 100;
+                    job.CompletedAtUtc = DateTime.UtcNow;
+                    job.ErrorMessage = null;
+
+                    // L09-05: Écrire le manifeste sidecar JSON
+                    await WriteJobManifestAsync(job, result.Width, result.Height, sha, cancellationToken);
+                }
+                else
+                {
+                    job.Status = BatchJobStatus.Failed;
+                    job.ErrorMessage = result.ErrorMessage;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                job.Status = BatchJobStatus.Cancelled;
+                job.ErrorMessage = "تم إلغاء التصدير.";
+            }
+            catch (Exception ex)
+            {
+                job.Status = BatchJobStatus.Failed;
+                job.ErrorMessage = $"خطأ أثناء المعالجة: {ex.Message}";
+            }
         }
 
         await db.SaveChangesAsync();

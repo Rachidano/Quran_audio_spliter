@@ -132,6 +132,82 @@ public static class FfmpegVideoGenerator
         return verification;
     }
 
+    public static async Task<(bool Success, string? ErrorMessage)> ExtractAyahAudioAsync(
+        string sourceAudioPath,
+        double startTimeSec,
+        double endTimeSec,
+        string outputMp3Path,
+        CancellationToken cancellationToken = default)
+    {
+        var duration = endTimeSec - startTimeSec;
+        if (duration <= 0.05)
+        {
+            return (false, "مدة المقطع الصوتي قصيرة جداً (أقل من 50 مللي ثانية).");
+        }
+
+        if (!File.Exists(sourceAudioPath))
+        {
+            return (false, "ملف الصوت المصدر غير موجود.");
+        }
+
+        var tempOutput = Path.Combine(
+            Path.GetDirectoryName(outputMp3Path) ?? ".",
+            $"tmp_audio_{Guid.NewGuid():N}.mp3");
+
+        var psi = new ProcessStartInfo(GetFfmpegPath())
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        psi.ArgumentList.Add("-y");
+        psi.ArgumentList.Add("-ss");
+        psi.ArgumentList.Add(startTimeSec.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+        psi.ArgumentList.Add("-to");
+        psi.ArgumentList.Add(endTimeSec.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+        psi.ArgumentList.Add("-i");
+        psi.ArgumentList.Add(sourceAudioPath);
+        psi.ArgumentList.Add("-c:a");
+        psi.ArgumentList.Add("libmp3lame");
+        psi.ArgumentList.Add("-q:a");
+        psi.ArgumentList.Add("2");
+        psi.ArgumentList.Add(tempOutput);
+
+        using var process = new Process { StartInfo = psi };
+        process.Start();
+
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+            if (process.ExitCode != 0)
+            {
+                var stderr = await process.StandardError.ReadToEndAsync(cancellationToken);
+                if (File.Exists(tempOutput)) File.Delete(tempOutput);
+                return (false, $"FFmpeg audio error: {stderr}");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            try { process.Kill(entireProcessTree: true); } catch { }
+            if (File.Exists(tempOutput)) File.Delete(tempOutput);
+            throw;
+        }
+
+        if (!File.Exists(tempOutput) || new FileInfo(tempOutput).Length == 0)
+        {
+            if (File.Exists(tempOutput)) File.Delete(tempOutput);
+            return (false, "فشل إنشاء الملف الصوتي المستخرج.");
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputMp3Path)) ?? ".");
+        if (File.Exists(outputMp3Path)) File.Delete(outputMp3Path);
+        File.Move(tempOutput, outputMp3Path);
+
+        return (true, null);
+    }
+
     public static async Task<VideoVerificationResult> ProbeVideoAsync(string videoPath)
     {
         var psi = new ProcessStartInfo(GetFfprobePath())

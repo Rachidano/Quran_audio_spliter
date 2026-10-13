@@ -32,6 +32,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
@@ -59,17 +60,26 @@
                         <TextBox Text="{Binding EndAyah, UpdateSourceTrigger=PropertyChanged}" Height="38" FontSize="14" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                     </StackPanel>
 
-                    <!-- Orientation -->
+                    <!-- Export Type (Video vs Audio) -->
                     <StackPanel Grid.Column="3" Margin="0,0,12,0" VerticalAlignment="Center">
+                        <TextBlock Text="نوع المخرج :" FontWeight="SemiBold" Foreground="#475569" Margin="0,0,0,6"/>
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton IsChecked="{Binding IsVideoExport, Mode=TwoWay}" GroupName="BatchExportMode" Content="فيديو (MP4)" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                            <RadioButton IsChecked="{Binding IsAudioOnly, Mode=TwoWay}" GroupName="BatchExportMode" Content="صوت (MP3)" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Orientation (Enabled only when Video is selected) -->
+                    <StackPanel Grid.Column="4" Margin="0,0,12,0" VerticalAlignment="Center" IsEnabled="{Binding IsVideoExport}">
                         <TextBlock Text="تنسيق العرض :" FontWeight="SemiBold" Foreground="#475569" Margin="0,0,0,6"/>
                         <StackPanel Orientation="Horizontal">
-                            <RadioButton IsChecked="{Binding IsHorizontal}" Content="أفقي 16:9" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                            <RadioButton IsChecked="{Binding IsHorizontal, Converter={x:Null}}" Content="عمودي 9:16" FontWeight="SemiBold"/>
+                            <RadioButton IsChecked="{Binding IsHorizontal, Mode=TwoWay}" GroupName="BatchOrientation" Content="أفقي 16:9" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            <RadioButton IsChecked="{Binding IsVertical, Mode=TwoWay}" GroupName="BatchOrientation" Content="عمودي 9:16" FontWeight="SemiBold"/>
                         </StackPanel>
                     </StackPanel>
 
                     <!-- Add Button -->
-                    <Button Grid.Column="4" Command="{Binding EnqueueRangeCommand}" Background="#0284c7" Foreground="White"
+                    <Button Grid.Column="5" Command="{Binding EnqueueRangeCommand}" Background="#0284c7" Foreground="White"
                             FontWeight="Bold" FontSize="14" Padding="18,8" Height="38" BorderThickness="0" Cursor="Hand" VerticalAlignment="Bottom">
                         <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                         <StackPanel Orientation="Horizontal">
@@ -119,11 +129,16 @@
 
                     <!-- Clear All Non-Running Button -->
                     <Button Command="{Binding ClearAllJobsCommand}" Background="#fef2f2" Foreground="#b91c1c"
-                            FontWeight="SemiBold" FontSize="13" Padding="12,8" BorderThickness="1" BorderBrush="#fecaca" Cursor="Hand"
+                            FontWeight="SemiBold" FontSize="13" Padding="12,8" BorderThickness="1" BorderBrush="#fecaca" Cursor="Hand" Margin="0,0,12,0"
                             ToolTip="إفراغ القائمة بالكامل (المهام غير قيد التشغيل)">
                         <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                         <TextBlock Text="🗑️ إفراغ القائمة"/>
                     </Button>
+
+                    <!-- Filter checkbox -->
+                    <CheckBox IsChecked="{Binding FilterBySelectedSurah}" Content="عرض مهام السورة المحددة فقط 🎯"
+                              FontWeight="Bold" Foreground="#0369a1" VerticalAlignment="Center" Margin="6,0,0,0"
+                              ToolTip="عند تفعيل هذا الخيار، يتم عرض مهام السورة المختارة في القائمة لتسهيل المتابعة"/>
                 </StackPanel>
 
                 <!-- Status Text -->

@@ -12,6 +12,7 @@ public sealed class AudioPlayerService : IDisposable
     private double _segmentStartSec;
     private double _segmentEndSec;
     private bool _isLoopingSegment;
+    private bool _isSegmentPlay;
 
     public event Action<double>? PositionChanged;
     public event Action? PlaybackStopped;
@@ -95,6 +96,7 @@ public sealed class AudioPlayerService : IDisposable
         lock (_lock)
         {
             _isLoopingSegment = false;
+            _isSegmentPlay = false;
             _waveOut?.Play();
         }
     }
@@ -118,6 +120,7 @@ public sealed class AudioPlayerService : IDisposable
     private void StopInternal()
     {
         _isLoopingSegment = false;
+        _isSegmentPlay = false;
         _waveOut?.Stop();
         if (_reader != null)
         {
@@ -148,6 +151,7 @@ public sealed class AudioPlayerService : IDisposable
             _segmentStartSec = Math.Max(0, startTimeSec);
             _segmentEndSec = Math.Min(DurationSec, Math.Max(_segmentStartSec + 0.1, endTimeSec));
             _isLoopingSegment = loop;
+            _isSegmentPlay = true;
 
             var targetSec = Math.Clamp(_segmentStartSec, 0, DurationSec);
             _reader.CurrentTime = TimeSpan.FromSeconds(targetSec);
@@ -172,6 +176,7 @@ public sealed class AudioPlayerService : IDisposable
         bool looping;
         double segEnd;
         double segStart;
+        bool shouldStop = false;
 
         lock (_lock)
         {
@@ -188,9 +193,21 @@ public sealed class AudioPlayerService : IDisposable
                 _reader.CurrentTime = TimeSpan.FromSeconds(targetSec);
                 cur = targetSec;
             }
+            else if (!looping && _isSegmentPlay && cur >= segEnd)
+            {
+                _isSegmentPlay = false;
+                _waveOut.Pause();
+                _reader.CurrentTime = TimeSpan.FromSeconds(segEnd);
+                cur = segEnd;
+                shouldStop = true;
+            }
         }
 
         PositionChanged?.Invoke(cur);
+        if (shouldStop)
+        {
+            PlaybackStopped?.Invoke();
+        }
     }
 
     private void OnWaveOutPlaybackStopped(object? sender, StoppedEventArgs e)

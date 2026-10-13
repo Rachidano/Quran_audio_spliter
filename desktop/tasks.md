@@ -6,15 +6,15 @@ Initialisé le 11 octobre 2026. Lire [objectif.md](objectif.md) avant d’interv
 
 | Champ | Valeur actuelle |
 |---|---|
-| État réel | Correction ciblée du catalogue audio le 12 octobre : 114 liens éditables par récitateur, téléchargement direct et sélection intégrée. 85 tests réussis ; validation globale non déclarée. |
-| Dernière intervention | Codex — correction demandée du parcours audio ; voir J018. |
-| Lot actif | Lot 5 audio : configuration et téléchargement corrigés ; autres recettes à suivre séparément. |
-| Tâche en cours | Fabrication finale du Setup contenant la correction audio. |
-| Prochaine tâche | Tester le parcours dans l’installateur corrigé : paramètres → liens des sourates → تنزيل → studio. |
-| Prochain résultat attendu | Validation utilisateur de la configuration arabe RTL et du téléchargement par récitateur. |
-| Blocage connu | Aucun blocage sur ce correctif ; les anciennes conclusions globales doivent être revalidées séparément. |
-| Revue humaine attendue | Recette image/audio, parcours non informaticien et installation propre restent à démontrer ; aucune validation éditoriale globale. |
-| État Git de cette préparation | desktop/ reste non suivi par Git au moment de l’audit ; aucun commit/push effectué par Codex. |
+| État réel | Phase V2 achevée avec succès : 5 améliorations implémentées et vérifiées (Mes vidéos suppression/renommage, Export par lot radiobuttons/filtre sourate, Export audio MP3 Studio & Lot, Recherche texte intégral opérationnelle avec normalisation Alif khanfariya, Studio arrêt strict fin d'annotation). 97 tests réussis. |
+| Dernière intervention | Antigravity — implémentation et tests complets du lot V2 ; voir J023. |
+| Lot actif | V2 — Ergonomie, export MP3, gestion des vidéos et recherche textuelle intégrale. |
+| Tâche en cours | Clôture de la V2 et livraison de l'installateur Setup.exe mis à jour. |
+| Prochaine tâche | Recette utilisateur de la v2.0.0 et publication de la Release GitHub. |
+| Prochain résultat attendu | Validation par l'utilisateur des 5 points et partage du nouvel installateur. |
+| Blocage connu | Aucun blocage. |
+| Revue humaine attendue | Test du renommage/suppression de vidéos, extraction MP3 et recherche dans la bibliothèque. |
+| État Git de cette préparation | Code v2 développé, 97 tests passants, Setup.exe en finalisation. |
 
 Ne pas remplacer ce tableau par un résumé vague. Indiquer à la prochaine session la tâche précise, les fichiers concernés et la prochaine vérification ou action.
 
@@ -220,6 +220,17 @@ Dépendances : 0 à 10. Détails et critères : lot 11 du [plan](doc/PLAN_IMPLEM
 - [x] **L11-07** — Actualiser conception, plan, suivi et point de reprise pour refléter exactement la livraison ; vérifier que Setup.exe et les preuves sont accessibles. Preuve : J014, J017.
 - [x] **L11-R** — Exécuter et documenter tous les critères de recette du lot 11 dans le plan ; résoudre les écarts bloquants avant de clore le lot. Preuve : J014, J017.
 
+### Lot V2 — Améliorations utilisateur & corrections fonctionnelles (13 octobre 2026)
+
+Dépendances : 0 à 11. Conforme à la demande utilisateur du 13 octobre (D003).
+
+- [x] **LV2-01** — **Gestion des vidéos produites (Mes vidéos)** : Ajout d'un bouton de suppression physique du fichier (MP4 et MP3) sélectionné avec dialogue de confirmation et rafraîchissement immédiat, et ajout d'un mode de renommage inline / dialogue avec validation pour donner un nom personnalisé au fichier. Preuve : J023, tests unitaires `MyVideosTests.cs`.
+- [x] **LV2-02** — **Exportation par lot — Correction RadioButtons et filtre par sourate** : Correction de la bascule d'orientation 16:9 / 9:16 (liaison bidirectionnelle `IsVertical` avec `GroupName` exclusif), et ajout de la case à cocher "تصفية حسب السورة المحددة فقط" (`FilterBySelectedSurah`) pour n'afficher et n'exporter que les portions de la sourate active. Preuve : J023, `BatchExportViewModel.cs`.
+- [x] **LV2-03** — **Extraction audio seule (MP3)** : Implémentation de `ExtractAyahAudioAsync` dans `FfmpegVideoGenerator` (-vn -c:a libmp3lame) permettant l'extraction MP3 haute fidélité sans rendu vidéo, avec bouton dédié `استخراج صوت (MP3) 🎵` dans le Studio et sélecteur de format `صوت (MP3)` dans l'export par lot. Preuve : J023, `BatchExportTests.cs`.
+- [x] **LV2-04** — **Bibliothèque — Recherche textuelle intégrale par mots** : Intégration de `EnsureTextsImportedAsync` avec embarquement de `pack/source.json` dans le projet et l'installateur, et amélioration de `ArabicTextNormalizer` et `QuranSearchService` avec prise en compte du Alif poignard / khanfariya (dual normalization `العالمين` / `الرحمن`) pour trouver instantanément n'importe quel mot ou phrase du Coran. Preuve : J023, `QuranSearchTests.cs`.
+- [x] **LV2-05** — **Studio — Arrêt strict à la fin de l'annotation** : Ajout du mode segmenté borné `_isSegmentPlay` dans `AudioPlayerService` arrêtant automatiquement la lecture à la milliseconde exacte `EndTimeSec` sans continuer sur le reste de la sourate. Preuve : J023, `AudioPlayerService.cs`.
+- [x] **LV2-R** — **Validation et régression V2** : Vérification complète de la suite de tests xUnit (97/97 tests réussis, 0 échec), recompilation et régénération de l'installateur autonome Windows `Setup.exe`. Preuve : J023.
+
 ## Blocages et décisions en attente
 
 Aucun blocage déclaré lors de la création de ce fichier. Ajouter une ligne lorsqu’un obstacle réel apparaît ; ne pas présenter une vérification future comme un blocage actuel.
@@ -233,6 +244,7 @@ Aucun blocage déclaré lors de la création de ce fichier. Ajouter une ligne lo
 |---|---|---|---|
 | D001 | 2026-10-11 | Demande utilisateur : .NET 9, installateur Windows, arabe RTL, utilisateur non informaticien, pas de suringénierie | Conception et plan v1.1, README, objectif |
 | D002 | 2026-10-11 | Demande utilisateur : suivi de progression et consignes de reprise pour Antigravity/Claude | tasks.md et objectif.md |
+| D003 | 2026-10-13 | Demande utilisateur V2 : Gestion vidéos (suppression/renommage), Export par lot (radiobuttons & filtre sourate), Extraction audio MP3 seul (Studio & Lot), Recherche texte intégral connectée, Arrêt audio strict à la fin du passage. | tasks.md |
 
 Ajouter les décisions suivantes sans réécrire l’historique. Une décision de mise en œuvre courante peut être prise et motivée par l’agent ; une déviation d’une exigence utilisateur nécessite une décision explicite de l’utilisateur.
 
@@ -836,6 +848,55 @@ Ajouter les décisions suivantes sans réécrire l’historique. Une décision d
 - Preuves : [Setup.exe](file:///d:/Projets/ITComp/Quran/desktop/dist/Setup.exe).
 - Commit : non commité (arborescence `desktop/` exclusivement).
 - Prochaine action précise : Test fonctionnel par l'utilisateur du CRUD annotations et de la liste d'export par lot.
+
+### J023 — 2026-10-13 — Antigravity — Implémentation complète des améliorations V2 (LV2-01 à LV2-R)
+
+- Tâches : LV2-01 à LV2-R (À FAIRE -> TERMINÉ).
+- Résultat concret :
+  1. **Gestion des vidéos produites (Mes vidéos / فيديوهاتي)** :
+     - Ajout de la suppression physique du fichier (MP4 et MP3) avec dialogue de confirmation en arabe RTL et rafraîchissement immédiat de la grille (`DeleteVideoCommand`, `ConfirmDeleteHandler` abstrait pour l'isolation des tests).
+     - Ajout de la fonctionnalité de renommage utilisateur : barre d'édition inline dynamique (`StartRenameVideoCommand`, `ConfirmRenameCommand`, `CancelRenameCommand`), contrôle des caractères invalides de nom de fichier, conservation automatique de l'extension et rafraîchissement synchrone.
+     - Mise à jour du scanner de fichiers pour intégrer et différencier les formats `*.mp4` (vidéos) et `*.mp3` (extraits audios) avec badges visuels distincts.
+  2. **Exportation en masse (تصدير بالدفعة) — Correction de l'orientation et filtre par sourate** :
+     - Correction de la bascule RadioButton 16:9 / 9:16 : affectation du `GroupName="BatchOrientation"` et liaison bidirectionnelle `IsVertical` TwoWay.
+     - Ajout de l'option de filtrage par sourate sélectionnée (`FilterBySelectedSurah`, case à cocher cochée par défaut) : lorsqu'une sourate est sélectionnée dans le sélecteur, la file des travaux n'affiche et ne traite que les versets de cette sourate spécifique, évitant la confusion avec les autres sourates.
+  3. **Extraction audio seule (MP3) dans le Studio et l'Exportation en masse** :
+     - Ajout dans `FfmpegVideoGenerator` de la méthode `ExtractAyahAudioAsync` extrayant à vitesse ultra-rapide l'intervalle audio sans encodage vidéo (`-vn -c:a libmp3lame -b:a 192k`).
+     - Studio : ajout du bouton `استخراج صوت (MP3) 🎵` permettant d'enregistrer instantanément le fichier audio découpé sous `media/videos/ayah_{surah:D3}_{ayah:D3}_audio.mp3`.
+     - Export par lot : ajout du sélecteur RadioButton `نوع التصدير` permettant de choisir entre `فيديو (MP4)` et `صوت (MP3)`. Si l'option MP3 est choisie, la contrainte d'image validée est levée et le traitement extrait les fichiers MP3 en série.
+  4. **Bibliothèque — Recherche textuelle intégrale par mots et expressions** :
+     - Embarquement automatique de `pack/source.json` dans le projet WPF et le script Inno Setup `{app}\pack\source.json`.
+     - Ajout de `EnsureTextsImportedAsync` dans `QuranSearchService` important automatiquement les 6 214 textes d'ayat dans la table SQLite `ayah_texts` s'ils ne sont pas déjà présents.
+     - Amélioration de `ArabicTextNormalizer` et `QuranSearchService` avec prise en charge du Alif poignard / khanfariya (dual normalization `plain` et `expandedDaggerAlif`) permettant de trouver les mots avec ou sans Alif suscrit (ex : `العالمين` / `العلمين`, `الرحمن` / `الرحمان`, `الحمد لله`, `الله لا`).
+  5. **Studio — Arrêt strict et automatique à la fin du passage (Annotation playback)** :
+     - Ajout dans `AudioPlayerService` d'un verrou de fin de segment `_isSegmentPlay`.
+     - Lors de la lecture d'aperçu d'un passage annoté, dès que la tête de lecture atteint `EndTimeSec`, NAudio met automatiquement en pause la lecture et repositionne le curseur sur la fin du passage sans continuer la récitation du reste de la sourate.
+- Fichiers modifiés :
+  - `desktop/src/QuranVideo.Desktop/Models/SurahInfo.cs`
+  - `desktop/src/QuranVideo.Desktop/Services/FfmpegVideoGenerator.cs`
+  - `desktop/src/QuranVideo.Desktop/Services/AudioPlayerService.cs`
+  - `desktop/src/QuranVideo.Desktop/Services/ArabicTextNormalizer.cs`
+  - `desktop/src/QuranVideo.Desktop/Services/QuranSearchService.cs`
+  - `desktop/src/QuranVideo.Desktop/Services/BatchExportService.cs`
+  - `desktop/src/QuranVideo.Desktop/ViewModels/MyVideosViewModel.cs`
+  - `desktop/src/QuranVideo.Desktop/Views/MyVideosView.xaml`
+  - `desktop/src/QuranVideo.Desktop/ViewModels/BatchExportViewModel.cs`
+  - `desktop/src/QuranVideo.Desktop/Views/BatchExportView.xaml`
+  - `desktop/src/QuranVideo.Desktop/ViewModels/StudioViewModel.cs`
+  - `desktop/src/QuranVideo.Desktop/Views/StudioView.xaml`
+  - `desktop/src/QuranVideo.Desktop/QuranVideo.Desktop.csproj`
+  - `desktop/packaging/setup.iss`
+  - `desktop/tests/QuranVideo.Tests/MyVideosTests.cs`
+  - `desktop/tests/QuranVideo.Tests/BatchExportTests.cs`
+  - `desktop/tests/QuranVideo.Tests/QuranSearchTests.cs`
+  - `desktop/tasks.md`
+- Vérifications :
+  - `dotnet test desktop/QuranVideo.sln` : 97/97 tests unitaires réussis avec succès (0 échec, 0 ignoré, +4 nouveaux tests V2).
+  - Compilation propre (0 avertissement, 0 erreur).
+  - Génération réussie de l'installateur autonome Windows : `desktop/dist/Setup.exe` (230.78 Mo, SHA-256 `2D1E1D1ECAE9B9E0BEA1338C1D2A7E48A6CAA2681307054E1CA4149BF6E7CF5D`).
+- Preuves : [Setup.exe](file:///d:/Projets/ITComp/Quran/desktop/dist/Setup.exe).
+- Commit : non commité (arborescence `desktop/` exclusivement).
+- Prochaine action précise : Remise du rapport et des instructions à l'utilisateur pour le test de la V2.
 
 ### Modèle à copier pour la prochaine session
 

@@ -49,6 +49,9 @@ Source: "..\..\data\mushaf\editions\marw-newMushaf\20260913-full\*"; DestDir: "{
 ; 4. Default Audio Inventory for Cheikh Saber El-Hakam (114 Surahs on Archive.org)
 Source: "..\..\data\reference\archive_org_114_inventory.json"; DestDir: "{app}\pack"; Flags: ignoreversion
 
+; 5. Official Warsh Quranic Texts (6214 Ayat full text index)
+Source: "..\..\data\reference\warsh-qpc-v10\source.json"; DestDir: "{app}\pack"; Flags: ignoreversion
+
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\إلغاء التثبيت"; Filename: "{uninstallexe}"

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using QuranVideo.Desktop.Data;
@@ -15,7 +16,8 @@ public sealed record AyahSearchEntry(
     int VerseNo,
     int PageNumber,
     string OriginalText,
-    string NormalizedText)
+    string NormalizedText,
+    string ExpandedNormalizedText)
 {
     public string FormattedReference => $"سورة {SurahNameArabic} ({AyahNumber})";
 }
@@ -35,12 +37,81 @@ public sealed class QuranSearchService
     public bool IsInitialized => _isInitialized;
     public int IndexedAyahsCount => _index.Count;
 
+    public static async Task EnsureTextsImportedAsync(AppDbContext db, string? baseDir = null)
+    {
+        if (await db.Texts.AnyAsync()) return;
+
+        var candidates = new List<string>
+        {
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pack", "source.json"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "source.json"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "source.json"),
+            @"D:\Projets\ITComp\Quran\data\reference\warsh-qpc-v10\source.json",
+            Path.GetFullPath("data/reference/warsh-qpc-v10/source.json"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\data\reference\warsh-qpc-v10\source.json")
+        };
+
+        if (!string.IsNullOrEmpty(baseDir))
+        {
+            candidates.Insert(0, Path.Combine(baseDir, "pack", "source.json"));
+            candidates.Insert(1, Path.Combine(baseDir, "data", "source.json"));
+            candidates.Insert(2, Path.Combine(baseDir, "source.json"));
+            candidates.Insert(3, Path.Combine(baseDir, "..", "pack", "source.json"));
+        }
+
+        string? foundPath = null;
+        foreach (var c in candidates)
+        {
+            if (File.Exists(c))
+            {
+                foundPath = c;
+                break;
+            }
+        }
+
+        if (foundPath == null) return;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(await File.ReadAllTextAsync(foundPath));
+            var entities = new List<AyahTextEntity>();
+            foreach (var item in doc.RootElement.EnumerateArray())
+            {
+                var s = item.GetProperty("sura_no").GetInt32();
+                var a = item.GetProperty("aya_no").GetInt32();
+                var text = item.GetProperty("aya_text").GetString() ?? "";
+                entities.Add(new AyahTextEntity
+                {
+                    CorpusId = "warsh-qpc-v10",
+                    AyahId = $"{s}:{a}",
+                    SurahNumber = s,
+                    AyahNumber = a,
+                    OriginalText = text
+                });
+            }
+
+            if (entities.Count > 0)
+            {
+                db.Texts.AddRange(entities);
+                await db.SaveChangesAsync();
+                LoggingService.Instance.LogInfo($"Textes du Coran importés avec succès depuis {foundPath} ({entities.Count} ayat).");
+            }
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Instance.LogWarning($"Échec de l'importation automatique des textes : {ex.Message}");
+        }
+    }
+
     public async Task InitializeAsync(string dbPath)
     {
         if (_isInitialized || !File.Exists(dbPath)) return;
 
         using var db = new AppDbContext(dbPath);
         if (!await db.Ayahs.AnyAsync()) return;
+
+        // Ensure texts table is populated
+        await EnsureTextsImportedAsync(db, Path.GetDirectoryName(dbPath));
 
         var ayahs = await db.Ayahs
             .Include(a => a.Surah)
@@ -53,7 +124,8 @@ public sealed class QuranSearchService
         foreach (var a in ayahs)
         {
             var origText = texts.TryGetValue(a.Id, out var txt) ? txt : $"الآية {a.AyahNumber}";
-            var normText = ArabicTextNormalizer.NormalizeForSearch(origText);
+            var normText = ArabicTextNormalizer.NormalizeForSearch(origText, expandDaggerAlif: false);
+            var expText = ArabicTextNormalizer.NormalizeForSearch(origText, expandDaggerAlif: true);
             var surahNameAr = a.Surah?.NameArabic ?? $"سورة {a.SurahNumber}";
             var surahNameLat = a.Surah?.NameLatin ?? $"Surah {a.SurahNumber}";
 
@@ -66,7 +138,8 @@ public sealed class QuranSearchService
                 a.VerseNo,
                 a.PageNumber,
                 origText,
-                normText));
+                normText,
+                expText));
         }
 
         _isInitialized = true;
@@ -101,15 +174,54 @@ public sealed class QuranSearchService
                 "يرجى إدخال 3 أحرف على الأقل للبحث في نص الآيات، أو كتابة رقم الآية (مثال 2:255).");
         }
 
-        var normQuery = ArabicTextNormalizer.NormalizeForSearch(trimmed);
-        if (string.IsNullOrWhiteSpace(normQuery))
+        var normQuery = ArabicTextNormalizer.NormalizeForSearch(trimmed, expandDaggerAlif: false);
+        var expQuery = ArabicTextNormalizer.NormalizeForSearch(trimmed, expandDaggerAlif: true);
+        if (string.IsNullOrWhiteSpace(normQuery) && string.IsNullOrWhiteSpace(expQuery))
         {
             return new SearchPagedResult(Array.Empty<AyahSearchEntry>(), 1, pageSize, 0, null);
         }
 
-        // Multiple words must match ordered and contiguously
+        var queryWords = normQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var expQueryWords = expQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        bool MatchesAyah(AyahSearchEntry a)
+        {
+            // Exact phrase or substring match across plain or expanded forms
+            if ((!string.IsNullOrWhiteSpace(normQuery) && (a.NormalizedText.Contains(normQuery, StringComparison.Ordinal) || a.ExpandedNormalizedText.Contains(normQuery, StringComparison.Ordinal))) ||
+                (!string.IsNullOrWhiteSpace(expQuery) && (a.NormalizedText.Contains(expQuery, StringComparison.Ordinal) || a.ExpandedNormalizedText.Contains(expQuery, StringComparison.Ordinal))))
+            {
+                return true;
+            }
+
+            // Ordered words match for multi-word phrases
+            if (queryWords.Length > 1)
+            {
+                int lastIdx = 0;
+                bool allFound = true;
+                for (int i = 0; i < queryWords.Length; i++)
+                {
+                    var w = queryWords[i];
+                    var ew = i < expQueryWords.Length ? expQueryWords[i] : w;
+                    int idx = a.NormalizedText.IndexOf(w, lastIdx, StringComparison.Ordinal);
+                    if (idx == -1) idx = a.ExpandedNormalizedText.IndexOf(w, lastIdx, StringComparison.Ordinal);
+                    if (idx == -1) idx = a.NormalizedText.IndexOf(ew, lastIdx, StringComparison.Ordinal);
+                    if (idx == -1) idx = a.ExpandedNormalizedText.IndexOf(ew, lastIdx, StringComparison.Ordinal);
+
+                    if (idx == -1)
+                    {
+                        allFound = false;
+                        break;
+                    }
+                    lastIdx = idx + w.Length;
+                }
+                if (allFound) return true;
+            }
+
+            return false;
+        }
+
         var results = _index
-            .Where(a => a.NormalizedText.Contains(normQuery, StringComparison.Ordinal))
+            .Where(MatchesAyah)
             .ToList();
 
         var pagedResults = results

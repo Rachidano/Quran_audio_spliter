@@ -593,18 +593,42 @@
                             <ProgressBar Value="{Binding GenerationProgress}" Height="6" Maximum="100" Margin="0,0,0,12"
                                          Visibility="{Binding IsGenerating, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
 
-                            <!-- Create Video Button -->
-                            <Button Command="{Binding GenerateVideoCommand}" Background="#15803d" Foreground="White"
-                                    FontWeight="Bold" FontSize="15" Padding="20,10" BorderThickness="0" Cursor="Hand"
-                                    IsEnabled="{Binding IsNotGenerating}">
-                                <Button.Resources>
-                                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
-                                </Button.Resources>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="إنشاء الفيديو" Margin="0,0,8,0"/>
-                                    <TextBlock Text="🎬"/>
-                                </StackPanel>
-                            </Button>
+                            <!-- Action Buttons: Create Video & Extract MP3 Audio -->
+                            <Grid Margin="0,0,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Create Video Button -->
+                                <Button Grid.Column="0" Command="{Binding GenerateVideoCommand}" Background="#15803d" Foreground="White"
+                                        FontWeight="Bold" FontSize="14" Padding="10,10" BorderThickness="0" Cursor="Hand"
+                                        IsEnabled="{Binding IsNotGenerating}"
+                                        ToolTip="توليد فيديو الآية كاملاً بصيغة MP4 مع صورة المصحف الشريف">
+                                    <Button.Resources>
+                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                    </Button.Resources>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="إنشاء فيديو" Margin="0,0,6,0"/>
+                                        <TextBlock Text="🎬"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- Extract Audio Only Button -->
+                                <Button Grid.Column="2" Command="{Binding ExtractAudioOnlyCommand}" Background="#0284c7" Foreground="White"
+                                        FontWeight="Bold" FontSize="14" Padding="10,10" BorderThickness="0" Cursor="Hand"
+                                        IsEnabled="{Binding IsNotGenerating}"
+                                        ToolTip="استخراج مقطع الصوت المحدد فقط كملف MP3 بدون توليد فيديو">
+                                    <Button.Resources>
+                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                    </Button.Resources>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="استخراج صوت" Margin="0,0,6,0"/>
+                                        <TextBlock Text="🎵"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
                         </StackPanel>
                     </Border>
 

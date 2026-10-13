@@ -380,6 +380,42 @@ public class BatchExportTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task EnqueueRange_AudioOnly_SetsOrientationToAudio()
+    {
+        var dbPath = Path.Combine(_testWorkspaceDir, "data", "quran.db");
+        using (var db = new AppDbContext(dbPath))
+        {
+            db.Passages.Add(new AyahPassageEntity
+            {
+                AudioSourceId = "husary_murattal_warsh:001",
+                AyahId = "1:1",
+                SurahNumber = 1,
+                AyahNumber = 1,
+                StartTimeSec = 0.5,
+                EndTimeSec = 4.0,
+                IsSelectedForExport = true,
+                Revision = 1
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var result = await _batchService.EnqueueRangeAsync(
+            1, 1, 1,
+            VideoOrientation.Horizontal,
+            reciterId: "husary",
+            collectionId: "husary_murattal_warsh",
+            isAudioOnly: true);
+
+        Assert.Equal(1, result.EnqueuedCount);
+        Assert.Equal(0, result.SkippedCount);
+
+        using var dbVerify = new AppDbContext(dbPath);
+        var job = await dbVerify.BatchJobs.FirstOrDefaultAsync(j => j.SurahNumber == 1 && j.AyahNumber == 1);
+        Assert.NotNull(job);
+        Assert.Equal("Audio", job.Orientation);
+    }
+
     public void Dispose()
     {
         _batchService.Dispose();

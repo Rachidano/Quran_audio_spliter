@@ -29,11 +29,60 @@ public sealed partial class BatchExportViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isHorizontal = true;
 
+    public bool IsVertical
+    {
+        get => !IsHorizontal;
+        set
+        {
+            if (value != !IsHorizontal)
+            {
+                IsHorizontal = !value;
+            }
+        }
+    }
+
+    partial void OnIsHorizontalChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsVertical));
+    }
+
+    [ObservableProperty]
+    private bool _isAudioOnly;
+
+    public bool IsVideoExport
+    {
+        get => !IsAudioOnly;
+        set
+        {
+            if (value != !IsAudioOnly)
+            {
+                IsAudioOnly = !value;
+                OnPropertyChanged(nameof(IsAudioOnly));
+                OnPropertyChanged(nameof(IsVideoExport));
+            }
+        }
+    }
+
+    partial void OnIsAudioOnlyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsVideoExport));
+    }
+
+    [ObservableProperty]
+    private bool _filterBySelectedSurah = true;
+
+    partial void OnFilterBySelectedSurahChanged(bool value)
+    {
+        ApplyJobsFilter();
+    }
+
     [ObservableProperty]
     private bool _isProcessing;
 
     [ObservableProperty]
     private string _statusMessage = "جاهز لجدولة التصدير بالدفعة.";
+
+    private readonly List<BatchExportJobEntity> _allJobs = new();
 
     [ObservableProperty]
     private ObservableCollection<BatchExportJobEntity> _jobs = new();
@@ -78,16 +127,33 @@ public sealed partial class BatchExportViewModel : ViewModelBase
         {
             StartAyah = 1;
             EndAyah = value.AyahCount;
+            if (FilterBySelectedSurah)
+            {
+                ApplyJobsFilter();
+            }
         }
+    }
+
+    public void ApplyJobsFilter()
+    {
+        IEnumerable<BatchExportJobEntity> filtered = _allJobs;
+        if (FilterBySelectedSurah && SelectedSurah != null)
+        {
+            filtered = _allJobs.Where(j => j.SurahNumber == SelectedSurah.Number);
+        }
+
+        Jobs = new ObservableCollection<BatchExportJobEntity>(filtered);
+        OnPropertyChanged(nameof(HasJobs));
+        OnPropertyChanged(nameof(HasNoJobs));
     }
 
     public async Task LoadJobsAsync()
     {
         await _batchService.RecoverInterruptedJobsAsync();
         var list = await _batchService.GetJobsAsync();
-        Jobs = new ObservableCollection<BatchExportJobEntity>(list);
-        OnPropertyChanged(nameof(HasJobs));
-        OnPropertyChanged(nameof(HasNoJobs));
+        _allJobs.Clear();
+        _allJobs.AddRange(list);
+        ApplyJobsFilter();
     }
 
     [RelayCommand]
@@ -106,7 +172,8 @@ public sealed partial class BatchExportViewModel : ViewModelBase
             SelectedSurah.Number,
             StartAyah,
             EndAyah,
-            orientation, reciter.ReciterId, reciter.CollectionId);
+            orientation, reciter.ReciterId, reciter.CollectionId,
+            isAudioOnly: IsAudioOnly);
 
         await LoadJobsAsync();
 
@@ -221,11 +288,11 @@ public sealed partial class BatchExportViewModel : ViewModelBase
     {
         App.Current?.Dispatcher?.Invoke(() =>
         {
+            var matchAll = _allJobs.FirstOrDefault(j => j.Id == updatedJob.Id);
+            if (matchAll != null) matchAll.ProgressPercent = updatedJob.ProgressPercent;
+
             var match = Jobs.FirstOrDefault(j => j.Id == updatedJob.Id);
-            if (match != null)
-            {
-                match.ProgressPercent = updatedJob.ProgressPercent;
-            }
+            if (match != null) match.ProgressPercent = updatedJob.ProgressPercent;
         });
     }
 
@@ -233,19 +300,11 @@ public sealed partial class BatchExportViewModel : ViewModelBase
     {
         App.Current?.Dispatcher?.Invoke(() =>
         {
-            var index = -1;
-            for (int i = 0; i < Jobs.Count; i++)
-            {
-                if (Jobs[i].Id == updatedJob.Id) { index = i; break; }
-            }
-            if (index >= 0)
-            {
-                Jobs[index] = updatedJob;
-            }
-            else
-            {
-                Jobs.Insert(0, updatedJob);
-            }
+            var allIndex = _allJobs.FindIndex(j => j.Id == updatedJob.Id);
+            if (allIndex >= 0) _allJobs[allIndex] = updatedJob;
+            else _allJobs.Insert(0, updatedJob);
+
+            ApplyJobsFilter();
         });
     }
 
