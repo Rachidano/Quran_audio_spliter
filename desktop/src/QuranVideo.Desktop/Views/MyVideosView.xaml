@@ -460,6 +460,7 @@
 
                 <!-- 3. Fiche détaillée du fichier sélectionné & actions -->
                 <Border Grid.Row="2" Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="14">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
                         <DockPanel Margin="0,0,0,10">
                             <Border DockPanel.Dock="Left" Background="#e0f2fe" BorderBrush="#bae6fd" BorderThickness="1" 
@@ -510,7 +511,51 @@
                                 </StackPanel>
                             </Button>
                         </Grid>
+
+                        <!-- Texte de publication : titre et description prêts à copier -->
+                        <Border Margin="0,14,0,0" Background="White" BorderBrush="#bbf7d0" BorderThickness="1" CornerRadius="8" Padding="12"
+                                Visibility="{Binding IsPublicationPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <Button DockPanel.Dock="Left" Command="{Binding GeneratePublicationTextCommand}" Background="#f0fdf4" Foreground="#15803d"
+                                            BorderBrush="#86efac" BorderThickness="1" FontSize="11" FontWeight="Bold" Padding="10,4" Cursor="Hand"
+                                            ToolTip="إنشاء العنوان والوصف من معلومات الفيديو (السورة، الآيات، القارئ، الرواية، المصدر)">
+                                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                        <TextBlock Text="{Binding GeneratePublicationTextLabel}"/>
+                                    </Button>
+                                    <TextBlock Text="📝 نص النشر" FontWeight="Bold" FontSize="13" Foreground="#166534" VerticalAlignment="Center"/>
+                                </DockPanel>
+
+                                <StackPanel Visibility="{Binding HasPublicationText, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Button DockPanel.Dock="Left" Command="{Binding CopyPublicationTitleCommand}" Background="#15803d" Foreground="White"
+                                                BorderThickness="0" FontSize="11" FontWeight="Bold" Padding="10,4" Cursor="Hand" ToolTip="نسخ العنوان إلى الحافظة">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="📋 نسخ العنوان"/>
+                                        </Button>
+                                        <TextBlock Text="العنوان" FontSize="12" FontWeight="SemiBold" Foreground="#475569" VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                    <TextBox Text="{Binding PublicationTitle, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="12"
+                                             Background="#f8fafc" BorderBrush="#e2e8f0" Padding="6,4" Margin="0,0,0,10"/>
+
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Button DockPanel.Dock="Left" Command="{Binding CopyPublicationDescriptionCommand}" Background="#15803d" Foreground="White"
+                                                BorderThickness="0" FontSize="11" FontWeight="Bold" Padding="10,4" Cursor="Hand" ToolTip="نسخ الوصف إلى الحافظة">
+                                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                            <TextBlock Text="📋 نسخ الوصف"/>
+                                        </Button>
+                                        <TextBlock Text="الوصف" FontSize="12" FontWeight="SemiBold" Foreground="#475569" VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                    <TextBox Text="{Binding PublicationDescription, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="12"
+                                             AcceptsReturn="True" MaxHeight="120" VerticalScrollBarVisibility="Auto"
+                                             Background="#f8fafc" BorderBrush="#e2e8f0" Padding="6,4"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding PublicationStatusMessage}" FontSize="11" Foreground="#15803d" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
+                    </ScrollViewer>
                 </Border>
             </Grid>
         </Border>

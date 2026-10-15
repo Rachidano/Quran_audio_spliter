@@ -91,4 +91,122 @@ public sealed class PublicationTextService
             .Select(a => a.Collection!.Reciter!.NameArabic)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    /// <summary>Sépare le titre et la description d'un fichier écrit par <see cref="BuildText"/>.</summary>
+    public static PublicationText? Parse(string text)
+    {
+        var lines = text.Replace("\r\n", "\n").Split('\n');
+        var titleIndex = Array.FindIndex(lines, l => l.Trim() == "العنوان:");
+        var descriptionIndex = Array.FindIndex(lines, l => l.Trim() == "الوصف:");
+        if (titleIndex < 0 || descriptionIndex < 0 || descriptionIndex < titleIndex) return null;
+
+        var title = string.Join(" ", lines[(titleIndex + 1)..descriptionIndex].Where(l => l.Trim().Length > 0)).Trim();
+        var description = string.Join("\n", lines[(descriptionIndex + 1)..]).Trim();
+        return title.Length == 0 ? null : new PublicationText(title, description);
+    }
+
+    /// <summary>Lit le titre et la description de la vidéo, ou null si le fichier n'existe pas.</summary>
+    public static PublicationText? Read(string videoPath)
+    {
+        var textPath = GetTextPath(videoPath);
+        if (!File.Exists(textPath)) return null;
+        try
+        {
+            return Parse(File.ReadAllText(textPath));
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// (Re)crée le texte d'une vidéo déjà produite. Les informations viennent de la base (projet,
+    /// composition ou tâche de lot qui a produit ce fichier), sinon du nom du fichier.
+    /// Retourne null si la sourate et les ayat ne peuvent pas être déterminées.
+    /// </summary>
+    public async Task<string?> GenerateForExistingVideoAsync(string videoPath, CancellationToken cancellationToken = default)
+    {
+        var target = await ResolveVideoTargetAsync(videoPath, cancellationToken);
+        if (target == null) return null;
+
+        if (target.ReciterIdFallback != null)
+        {
+            // Nom de fichier seul : retrouver le nom du récitateur à partir de son identifiant
+            var surahName = SurahCatalogService.GetSurah(target.SurahNumber)?.NameArabic ?? target.SurahNumber.ToString();
+            string? reciterName = null;
+            if (target.ReciterIdFallback.Length > 0 && File.Exists(_workspace.GetDatabasePath()))
+            {
+                using var db = new AppDbContext(_workspace.GetDatabasePath());
+                reciterName = await db.Reciters
+                    .Where(r => r.Id == target.ReciterIdFallback)
+                    .Select(r => r.NameArabic)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+            var textPath = GetTextPath(videoPath);
+            await File.WriteAllTextAsync(textPath, BuildText(surahName, target.StartAyah, target.EndAyah, reciterName),
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true), cancellationToken);
+            return textPath;
+        }
+
+        return await WriteForVideoAsync(videoPath, target.SurahNumber, target.StartAyah, target.EndAyah,
+            target.AudioSourceId ?? string.Empty, cancellationToken);
+    }
+
+    private sealed record VideoTarget(int SurahNumber, int StartAyah, int EndAyah, string? AudioSourceId, string? ReciterIdFallback);
+
+    private async Task<VideoTarget?> ResolveVideoTargetAsync(string videoPath, CancellationToken cancellationToken)
+    {
+        var fileName = Path.GetFileName(videoPath);
+        bool SameFile(string? stored) => !string.IsNullOrEmpty(stored) &&
+            string.Equals(Path.GetFileName(stored), fileName, StringComparison.OrdinalIgnoreCase);
+
+        if (File.Exists(_workspace.GetDatabasePath()))
+        using (var db = new AppDbContext(_workspace.GetDatabasePath()))
+        {
+            var project = (await db.Projects.Where(p => p.OutputVideoPath != null && p.OutputVideoPath.EndsWith(fileName))
+                    .ToListAsync(cancellationToken))
+                .FirstOrDefault(p => SameFile(p.OutputVideoPath));
+            if (project != null)
+                return new VideoTarget(project.SurahNumber, project.StartAyahNumber, project.EndAyahNumber, project.AudioSourceId, null);
+
+            var composition = (await db.Compositions.Where(c => c.RelativeVideoPath.EndsWith(fileName))
+                    .ToListAsync(cancellationToken))
+                .FirstOrDefault(c => SameFile(c.RelativeVideoPath));
+            if (composition != null)
+                return new VideoTarget(composition.SurahNumber, composition.AyahNumber, composition.AyahNumber, composition.AudioSourceId, null);
+
+            var job = (await db.BatchJobs.Where(j => j.RelativeVideoPath.EndsWith(fileName))
+                    .ToListAsync(cancellationToken))
+                .FirstOrDefault(j => SameFile(j.RelativeVideoPath));
+            if (job != null)
+                return new VideoTarget(job.SurahNumber, job.AyahNumber, job.AyahNumber, job.AudioSourceId, null);
+        }
+
+        // Noms produits par l'application (voir CompositionService et BatchExportService)
+        var name = Path.GetFileNameWithoutExtension(videoPath);
+        var single = System.Text.RegularExpressions.Regex.Match(name, @"^ayah_(\d{3})_(\d{3})_(.+)_[hv]_p\d+_r\d+_i\d+$");
+        if (single.Success)
+            return Target(single.Groups[1].Value, single.Groups[2].Value, single.Groups[2].Value, single.Groups[3].Value);
+
+        var range = System.Text.RegularExpressions.Regex.Match(name, @"^project_p\d+_(\d{3})_(\d{3})_(\d{3})_(.+)_[hv]_r\d+$");
+        if (range.Success)
+            return Target(range.Groups[1].Value, range.Groups[2].Value, range.Groups[3].Value, range.Groups[4].Value);
+
+        var batch = System.Text.RegularExpressions.Regex.Match(name, @"^ayah_(\d{3})_(\d{3})_[hv]_rev\d+$");
+        if (batch.Success)
+            return Target(batch.Groups[1].Value, batch.Groups[2].Value, batch.Groups[2].Value, string.Empty);
+
+        return null;
+
+        static VideoTarget? Target(string surah, string start, string end, string reciterId)
+        {
+            int s = int.Parse(surah), a = int.Parse(start), b = int.Parse(end);
+            var info = SurahCatalogService.GetSurah(s);
+            if (info == null || a < 1 || b < a || b > info.AyahCount) return null;
+            return new VideoTarget(s, a, b, null, reciterId);
+        }
+    }
 }
+
+public sealed record PublicationText(string Title, string Description);

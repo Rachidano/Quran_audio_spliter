@@ -88,6 +88,8 @@ public sealed partial class MyVideosViewModel : ViewModelBase
                 PlayerStatusMessage = "الملف المحدد غير موجود على القرص.";
             }
         }
+
+        RefreshPublicationText();
     }
 
     [ObservableProperty]
@@ -533,6 +535,14 @@ public sealed partial class MyVideosViewModel : ViewModelBase
             var newRelPath = Path.GetRelativePath(_workspaceService.WorkspacePath, newFullPath);
 
             File.Move(VideoToRename.FullPath, newFullPath);
+            try
+            {
+                MovePublicationText(VideoToRename.FullPath, newFullPath);
+            }
+            catch (Exception txtEx)
+            {
+                LoggingService.Instance.LogWarning($"Texte de publication non renommé : {txtEx.Message}");
+            }
 
             // Update database records pointing to this video file
             try
