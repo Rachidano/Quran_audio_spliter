@@ -458,104 +458,117 @@
                     </Grid>
                 </StackPanel>
 
-                <!-- 3. Fiche détaillée du fichier sélectionné & actions -->
-                <Border Grid.Row="2" Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="14">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <!-- 3. Fiche détaillée du fichier sélectionné, actions et texte de publication (sans défilement) -->
+                <Border Grid.Row="2" Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="10" Padding="12,10">
                     <StackPanel>
-                        <DockPanel Margin="0,0,0,10">
-                            <Border DockPanel.Dock="Left" Background="#e0f2fe" BorderBrush="#bae6fd" BorderThickness="1" 
-                                    CornerRadius="4" Padding="6,2">
+                        <!-- En-tête : badge + titre (nom complet au survol) + actions compactes -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="#e0f2fe" BorderBrush="#bae6fd" BorderThickness="1"
+                                    CornerRadius="4" Padding="6,1" Margin="0,0,8,0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding SelectedVideo.FormatBadge, FallbackValue='MP4'}" FontSize="10" FontWeight="Bold" Foreground="#0284c7"/>
                             </Border>
-                            <TextBlock Text="{Binding SelectedVideo.CleanTitle, FallbackValue='لا يوجد ملف محدد'}" 
-                                       FontWeight="Bold" FontSize="15" Foreground="#0f172a" TextTrimming="CharacterEllipsis"/>
-                        </DockPanel>
-
-                        <!-- Détails techniques -->
-                        <StackPanel Margin="0,0,0,16">
-                            <TextBlock FontSize="12" Foreground="#475569" Margin="0,0,0,4">
-                                <Run Text="📁 اسم الملف: " FontWeight="SemiBold"/>
-                                <Run Text="{Binding SelectedVideo.FileName, Mode=OneWay, FallbackValue='-'}" Foreground="#0f172a"/>
-                            </TextBlock>
-                            <TextBlock FontSize="12" Foreground="#475569" Margin="0,0,0,4">
-                                <Run Text="📅 تاريخ الإنتاج: " FontWeight="SemiBold"/>
-                                <Run Text="{Binding SelectedVideo.FormattedDate, Mode=OneWay, FallbackValue='-'}" Foreground="#0f172a"/>
-                            </TextBlock>
-                            <TextBlock FontSize="12" Foreground="#475569">
-                                <Run Text="💾 الحجم: " FontWeight="SemiBold"/>
-                                <Run Text="{Binding SelectedVideo.FormattedSize, Mode=OneWay, FallbackValue='-'}" Foreground="#0f172a"/>
-                            </TextBlock>
-                        </StackPanel>
-
-                        <!-- Boutons d'ouverture (Explorateur et Lecteur externe) -->
-                        <Grid Margin="0,4,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <Button Grid.Column="0" Command="{Binding OpenVideosFolderCommand}" Background="#15803d" Foreground="White"
-                                    FontWeight="Bold" FontSize="12" Padding="12,10" BorderThickness="0" Cursor="Hand" ToolTip="فتح المجلد في مستكشف Windows">
-                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="📁 فتح المجلد" Margin="0,0,4,0"/>
-                                </StackPanel>
-                            </Button>
-
-                            <Button Grid.Column="2" Command="{Binding PlayInExternalPlayerCommand}" Background="#f1f5f9" Foreground="#334155"
-                                    FontWeight="Bold" FontSize="12" Padding="12,10" BorderThickness="1" BorderBrush="#cbd5e1" Cursor="Hand" ToolTip="تشغيل في مشغل وسائط خارجي (VLC, Media Player)">
-                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="↗ مشغل خارجي" Margin="0,0,4,0"/>
-                                </StackPanel>
-                            </Button>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedVideo.CleanTitle, FallbackValue='لا يوجد ملف محدد'}"
+                                       ToolTip="{Binding SelectedVideo.FileName}"
+                                       FontWeight="Bold" FontSize="14" Foreground="#0f172a" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
+                                <Button Command="{Binding OpenVideosFolderCommand}" Width="32" Height="30" Margin="0,0,6,0"
+                                        Background="#15803d" Foreground="White" BorderThickness="0" Cursor="Hand" ToolTip="فتح المجلد في مستكشف Windows">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="📁" FontSize="13"/>
+                                </Button>
+                                <Button Command="{Binding PlayInExternalPlayerCommand}" Width="32" Height="30"
+                                        Background="#f1f5f9" Foreground="#334155" BorderBrush="#cbd5e1" BorderThickness="1" Cursor="Hand"
+                                        ToolTip="تشغيل في مشغل وسائط خارجي (VLC, Media Player)">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="↗" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                            </StackPanel>
                         </Grid>
 
+                        <!-- Informations sur une seule ligne -->
+                        <TextBlock FontSize="11" Foreground="#64748b" Margin="0,6,0,0">
+                            <Run Text="📅"/>
+                            <Run Text="{Binding SelectedVideo.FormattedDate, Mode=OneWay, FallbackValue='-'}" Foreground="#334155"/>
+                            <Run Text="   •   💾"/>
+                            <Run Text="{Binding SelectedVideo.FormattedSize, Mode=OneWay, FallbackValue='-'}" Foreground="#334155"/>
+                        </TextBlock>
+
                         <!-- Texte de publication : titre et description prêts à copier -->
-                        <Border Margin="0,14,0,0" Background="White" BorderBrush="#bbf7d0" BorderThickness="1" CornerRadius="8" Padding="12"
-                                Visibility="{Binding IsPublicationPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <StackPanel>
-                                <DockPanel Margin="0,0,0,10">
-                                    <Button DockPanel.Dock="Left" Command="{Binding GeneratePublicationTextCommand}" Background="#f0fdf4" Foreground="#15803d"
-                                            BorderBrush="#86efac" BorderThickness="1" FontSize="11" FontWeight="Bold" Padding="10,4" Cursor="Hand"
-                                            ToolTip="إنشاء العنوان والوصف من معلومات الفيديو (السورة، الآيات، القارئ، الرواية، المصدر)">
-                                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                        <TextBlock Text="{Binding GeneratePublicationTextLabel}"/>
-                                    </Button>
-                                    <TextBlock Text="📝 نص النشر" FontWeight="Bold" FontSize="13" Foreground="#166534" VerticalAlignment="Center"/>
-                                </DockPanel>
+                        <StackPanel Margin="0,10,0,0"
+                                    Visibility="{Binding IsPublicationPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Border BorderBrush="#e2e8f0" BorderThickness="0,1,0,0" Margin="0,0,0,8"/>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="📝 نص النشر" FontWeight="Bold" FontSize="13" Foreground="#166534" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding PublicationStatusMessage}" FontSize="11" Foreground="#15803d"
+                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="10,0"
+                                           ToolTip="{Binding PublicationStatusMessage}"/>
+                                <Button Grid.Column="2" Command="{Binding GeneratePublicationTextCommand}" Background="#f0fdf4" Foreground="#15803d"
+                                        BorderBrush="#86efac" BorderThickness="1" FontSize="11" FontWeight="Bold" Padding="8,3" Cursor="Hand"
+                                        ToolTip="إنشاء العنوان والوصف من معلومات الفيديو (السورة، الآيات، القارئ، الرواية)">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                    <TextBlock Text="{Binding GeneratePublicationTextLabel}"/>
+                                </Button>
+                            </Grid>
 
-                                <StackPanel Visibility="{Binding HasPublicationText, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                    <DockPanel Margin="0,0,0,4">
-                                        <Button DockPanel.Dock="Left" Command="{Binding CopyPublicationTitleCommand}" Background="#15803d" Foreground="White"
-                                                BorderThickness="0" FontSize="11" FontWeight="Bold" Padding="10,4" Cursor="Hand" ToolTip="نسخ العنوان إلى الحافظة">
+                            <StackPanel Visibility="{Binding HasPublicationText, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <!-- Titre : 2 lignes au maximum, texte complet au survol, copie du texte complet -->
+                                <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <TextBlock Text="العنوان" FontSize="10" FontWeight="Bold" Foreground="#94a3b8"/>
+                                            <TextBlock Text="{Binding PublicationTitle}" ToolTip="{Binding PublicationTitle}" FontSize="12" Foreground="#0f172a"
+                                                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" LineHeight="17"
+                                                       LineStackingStrategy="BlockLineHeight" MaxHeight="34"/>
+                                        </StackPanel>
+                                        <!-- RTL : la dernière colonne est affichée à gauche -->
+                                        <Button Grid.Column="1" Command="{Binding CopyPublicationTitleCommand}" VerticalAlignment="Center"
+                                                Width="30" Height="30" Padding="0" Background="#15803d" Foreground="White" BorderThickness="0"
+                                                Cursor="Hand" ToolTip="نسخ العنوان إلى الحافظة">
                                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                            <TextBlock Text="📋 نسخ العنوان"/>
+                                            <TextBlock Text="📋" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Button>
-                                        <TextBlock Text="العنوان" FontSize="12" FontWeight="SemiBold" Foreground="#475569" VerticalAlignment="Center"/>
-                                    </DockPanel>
-                                    <TextBox Text="{Binding PublicationTitle, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="12"
-                                             Background="#f8fafc" BorderBrush="#e2e8f0" Padding="6,4" Margin="0,0,0,10"/>
+                                    </Grid>
+                                </Border>
 
-                                    <DockPanel Margin="0,0,0,4">
-                                        <Button DockPanel.Dock="Left" Command="{Binding CopyPublicationDescriptionCommand}" Background="#15803d" Foreground="White"
-                                                BorderThickness="0" FontSize="11" FontWeight="Bold" Padding="10,4" Cursor="Hand" ToolTip="نسخ الوصف إلى الحافظة">
+                                <!-- Description : 3 lignes au maximum, texte complet au survol, copie du texte complet -->
+                                <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="6" Padding="8,6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <TextBlock Text="الوصف" FontSize="10" FontWeight="Bold" Foreground="#94a3b8"/>
+                                            <TextBlock Text="{Binding PublicationDescription}" ToolTip="{Binding PublicationDescription}" FontSize="12" Foreground="#334155"
+                                                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" LineHeight="17"
+                                                       LineStackingStrategy="BlockLineHeight" MaxHeight="51"/>
+                                        </StackPanel>
+                                        <!-- RTL : la dernière colonne est affichée à gauche -->
+                                        <Button Grid.Column="1" Command="{Binding CopyPublicationDescriptionCommand}" VerticalAlignment="Center"
+                                                Width="30" Height="30" Padding="0" Background="#15803d" Foreground="White" BorderThickness="0"
+                                                Cursor="Hand" ToolTip="نسخ الوصف كاملاً إلى الحافظة">
                                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
-                                            <TextBlock Text="📋 نسخ الوصف"/>
+                                            <TextBlock Text="📋" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Button>
-                                        <TextBlock Text="الوصف" FontSize="12" FontWeight="SemiBold" Foreground="#475569" VerticalAlignment="Center"/>
-                                    </DockPanel>
-                                    <TextBox Text="{Binding PublicationDescription, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="12"
-                                             AcceptsReturn="True" MaxHeight="120" VerticalScrollBarVisibility="Auto"
-                                             Background="#f8fafc" BorderBrush="#e2e8f0" Padding="6,4"/>
-                                </StackPanel>
-
-                                <TextBlock Text="{Binding PublicationStatusMessage}" FontSize="11" Foreground="#15803d" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    </Grid>
+                                </Border>
                             </StackPanel>
-                        </Border>
+                        </StackPanel>
                     </StackPanel>
-                    </ScrollViewer>
                 </Border>
             </Grid>
         </Border>

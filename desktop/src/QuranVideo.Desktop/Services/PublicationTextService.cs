@@ -7,13 +7,12 @@ namespace QuranVideo.Desktop.Services;
 
 /// <summary>
 /// Écrit à côté de chaque vidéo un fichier texte (même nom, extension .txt) contenant un titre et
-/// une description prêts à copier pour la publication : sourate, ayah(s), récitateur, riwaya, source.
+/// une description prêts à copier pour la publication : sourate, ayah(s), récitateur et riwaya.
 /// Aucune publication automatique : le fichier sert uniquement à éviter les fautes de saisie.
 /// </summary>
 public sealed class PublicationTextService
 {
     public const string Riwaya = "رواية ورش عن نافع";
-    public const string MushafSource = "صفحات المصحف من البوابة الرسمية لوزارة الشؤون الدينية والأوقاف الجزائرية — مصحف الجزائر الإلكتروني";
 
     private readonly WorkspaceService _workspace;
 
@@ -29,7 +28,8 @@ public sealed class PublicationTextService
         var ayatLabel = startAyah == endAyah
             ? $"الآية {startAyah}"
             : $"الآيات {startAyah} إلى {endAyah}";
-        var reciter = string.IsNullOrWhiteSpace(reciterName) ? null : reciterName.Trim();
+        // La riwaya figure déjà dans le titre : ne garder que le nom du récitateur
+        var reciter = string.IsNullOrWhiteSpace(reciterName) ? null : RecitationCatalogService.CleanReciterName(reciterName);
 
         var title = reciter == null
             ? $"سورة {surahName} - {ayatLabel} | {Riwaya}"
@@ -43,7 +43,6 @@ public sealed class PublicationTextService
         sb.AppendLine($"سورة {surahName} — {ayatLabel}");
         if (reciter != null) sb.AppendLine($"القارئ: {reciter}");
         sb.AppendLine($"الرواية: {Riwaya.Replace("رواية ", string.Empty)}");
-        sb.AppendLine(MushafSource);
         sb.AppendLine();
         sb.AppendLine($"#القرآن_الكريم #رواية_ورش #سورة_{surahName.Replace(' ', '_')}");
         return sb.ToString();

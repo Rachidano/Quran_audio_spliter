@@ -270,7 +270,7 @@ public class CompositionTests : IDisposable
         var publicationText = await File.ReadAllTextAsync(PublicationTextService.GetTextPath(fullVideoPath));
         Assert.Contains("سورة الفاتحة - الآية 1", publicationText);
         Assert.Contains(PublicationTextService.Riwaya, publicationText);
-        Assert.Contains(PublicationTextService.MushafSource, publicationText);
+        Assert.DoesNotContain("البوابة الرسمية", publicationText);
     }
 
     [Fact]

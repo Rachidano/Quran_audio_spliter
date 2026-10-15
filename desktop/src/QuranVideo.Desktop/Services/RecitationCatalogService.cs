@@ -71,6 +71,24 @@ public sealed class RecitationCatalogService(WorkspaceService workspace)
             }
 
             await db.SaveChangesAsync();
+
+            // Noms de récitateurs contenant la riwaya (ancienne version, ou titre recopié à l'enregistrement) :
+            // nom de référence pour le référentiel, sinon nom nettoyé
+            var referenceNames = WarshRecitationReferential.All.ToDictionary(r => r.ReciterId, r => r.NameArabic);
+            foreach (var reciter in await db.Reciters.ToListAsync())
+            {
+                var cleaned = CleanReciterName(reciter.NameArabic);
+                if (cleaned == reciter.NameArabic.Trim()) continue;
+                reciter.NameArabic = referenceNames.GetValueOrDefault(reciter.Id) ?? cleaned;
+            }
+            foreach (var reference in WarshRecitationReferential.All)
+            {
+                // Ancien titre par défaut « المصحف المرتل برواية ورش … » : titre de référence
+                var legacyTitle = "المصحف المرتل%";
+                await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE recitation_collections SET TitleArabic = {reference.TitleArabic} WHERE Id = {reference.CollectionId} AND TitleArabic LIKE {legacyTitle}");
+            }
+            await db.SaveChangesAsync();
+
             // Les espaces créés par une ancienne version pointent vers quranicaudio.com (404) pour الحصري
             var legacyPattern = LegacyHusaryUrlPrefix + "%";
             foreach (var reference in WarshRecitationReferential.All)
@@ -178,9 +196,27 @@ public sealed class RecitationCatalogService(WorkspaceService workspace)
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("أدخل اسم القارئ.");
         using var db = Db();
         var collection = await db.RecitationCollections.Include(c => c.Reciter).SingleAsync(c => c.Id == collectionId);
-        collection.Reciter!.NameArabic = name.Trim();
+        // Le titre affiché peut mentionner la riwaya ; le nom du récitateur ne garde que le nom
+        collection.Reciter!.NameArabic = CleanReciterName(name);
         collection.TitleArabic = name.Trim();
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Retire d'un nom de récitateur les mentions de riwaya ou de mushaf (« (ورش عن نافع) »,
+    /// « المصحف المرتل برواية ورش — … ») pour ne garder que le nom de la personne.
+    /// </summary>
+    public static string CleanReciterName(string name)
+    {
+        var trimmed = (name ?? string.Empty).Trim();
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(
+            trimmed, @"\s*\([^)]*(ورش|رواية|حفص|قالون|نافع)[^)]*\)", string.Empty);
+        var parts = cleaned.Split(new[] { " — ", " – ", " - " }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => p.Trim())
+            .Where(p => p.Length > 0 && !p.Contains("رواية") && !p.Contains("المصحف"))
+            .ToList();
+        var result = string.Join(" — ", parts).Trim();
+        return result.Length > 0 ? result : trimmed;
     }
 
     public static bool IsValidUrl(string url) => Uri.TryCreate(url, UriKind.Absolute, out var uri)

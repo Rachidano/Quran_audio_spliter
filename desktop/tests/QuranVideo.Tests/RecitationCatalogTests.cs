@@ -68,6 +68,45 @@ public sealed class RecitationCatalogTests : IDisposable
         Assert.Equal(RecitationCatalogService.HusaryCollection, collections[1].CollectionId);
     }
 
+    [Theory]
+    [InlineData("المصحف المرتل برواية ورش — محمود خليل الحصري", "محمود خليل الحصري")]
+    [InlineData("القارئ ياسين (ورش عن نافع)", "القارئ ياسين")]
+    [InlineData("الشيخ صابر عبد الحكم (رواية ورش)", "الشيخ صابر عبد الحكم")]
+    [InlineData("الشيخ عمر القزابري", "الشيخ عمر القزابري")]
+    public void CleanReciterName_RemovesRiwayaMentions(string input, string expected)
+    {
+        Assert.Equal(expected, RecitationCatalogService.CleanReciterName(input));
+    }
+
+    [Fact]
+    public async Task PollutedReciterNames_AreRestoredAtStartup_AndSavingTitleKeepsNameClean()
+    {
+        // Noms trouvés dans un espace réel : ancien nom de الحصري et titre recopié dans le nom de ياسين
+        await _catalog.InitializeAsync();
+        using (var db = new AppDbContext(_workspace.GetDatabasePath()))
+        {
+            await db.Database.ExecuteSqlRawAsync("UPDATE reciters SET NameArabic = 'المصحف المرتل برواية ورش — محمود خليل الحصري' WHERE Id = 'husary'");
+            await db.Database.ExecuteSqlRawAsync("UPDATE recitation_collections SET TitleArabic = 'المصحف المرتل برواية ورش — محمود خليل الحصري' WHERE Id = 'husary_murattal_warsh'");
+            await db.Database.ExecuteSqlRawAsync("UPDATE reciters SET NameArabic = 'القارئ ياسين (ورش عن نافع)' WHERE Id = 'yassen_jazairi'");
+        }
+
+        await new RecitationCatalogService(_workspace).InitializeAsync();
+
+        using (var db = new AppDbContext(_workspace.GetDatabasePath()))
+        {
+            Assert.Equal("الشيخ محمود خليل الحصري", (await db.Reciters.SingleAsync(r => r.Id == "husary")).NameArabic);
+            Assert.Equal("القارئ ياسين", (await db.Reciters.SingleAsync(r => r.Id == "yassen_jazairi")).NameArabic);
+        }
+        var husary = (await _catalog.GetCollectionsAsync()).Single(c => c.CollectionId == RecitationCatalogService.HusaryCollection);
+        Assert.Equal("الشيخ محمود خليل الحصري (ورش عن نافع)", husary.Name);
+
+        // La fenêtre « روابط السور » enregistre le titre affiché : le nom du récitateur reste propre
+        await _catalog.RenameAsync("koushi_warsh", "الشيخ العيون الكوشي (ورش عن نافع)");
+        using var verify = new AppDbContext(_workspace.GetDatabasePath());
+        Assert.Equal("الشيخ العيون الكوشي", (await verify.Reciters.SingleAsync(r => r.Id == "laayoun_kouchi")).NameArabic);
+        Assert.Equal("الشيخ العيون الكوشي (ورش عن نافع)", (await verify.RecitationCollections.SingleAsync(c => c.Id == "koushi_warsh")).TitleArabic);
+    }
+
     [Fact]
     public async Task WarshReferential_RenamedReciterAndCustomLinkSurviveReinitialization()
     {

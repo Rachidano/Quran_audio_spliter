@@ -53,8 +53,18 @@ public class PublicationTextTests : IDisposable
         Assert.Contains("سورة البقرة — الآية 255", text);
         Assert.Contains("القارئ: الشيخ محمود خليل الحصري", text);
         Assert.Contains("الرواية: ورش عن نافع", text);
-        Assert.Contains(PublicationTextService.MushafSource, text);
+        Assert.DoesNotContain("البوابة الرسمية", text);
+        Assert.DoesNotContain("مصحف الجزائر", text);
         Assert.Contains("#سورة_البقرة", text);
+    }
+
+    [Fact]
+    public void BuildText_ReciterNameWithRiwaya_DoesNotRepeatRiwaya()
+    {
+        var text = PublicationTextService.BuildText("الفاتحة", 1, 1, "المصحف المرتل برواية ورش — محمود خليل الحصري");
+
+        Assert.Contains("سورة الفاتحة - الآية 1 | محمود خليل الحصري | رواية ورش عن نافع", text);
+        Assert.DoesNotContain("المصحف المرتل", text);
     }
 
     [Fact]
