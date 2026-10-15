@@ -75,7 +75,12 @@ public static class FfmpegVideoGenerator
             string inputImagePath = req.ImagePath;
             string videoFilter;
 
-            if (req.Settings != null && (req.Settings.BackgroundType != BackgroundType.Light || req.Settings.WatermarkType != WatermarkType.None))
+            bool hasEffectiveWatermark = req.Settings != null && (
+                req.Settings.WatermarkType != WatermarkType.None ||
+                !string.IsNullOrWhiteSpace(req.Settings.WatermarkText) ||
+                (!string.IsNullOrWhiteSpace(req.Settings.WatermarkImagePath) && File.Exists(req.Settings.WatermarkImagePath)));
+
+            if (req.Settings != null && (req.Settings.BackgroundType != BackgroundType.Light || hasEffectiveWatermark))
             {
                 var settings = req.Settings with { TargetWidth = targetWidth, TargetHeight = targetHeight };
                 tempComposedFrame = Path.Combine(tempDir, "composed_frame.png");
@@ -397,12 +402,14 @@ public static class FfmpegVideoGenerator
                 return verification;
             }
 
-            // Tolérance de durée : ≤ 0.15s (paquets AAC de 21ms + cadence 30fps)
-            if (Math.Abs(verification.DurationSeconds - expectedDuration) > 0.25)
+            // Tolérance de durée adaptée : paquets AAC de ~21ms + cadence 30fps (~33ms par trame)
+            // Pour les séquences multi-ayat, la tolérance s'adapte au nombre de segments concaténés pour éviter tout rejet injustifié
+            var tolerance = Math.Max(0.25, (req.Timeline?.Count ?? 1) * 0.04);
+            if (Math.Abs(verification.DurationSeconds - expectedDuration) > tolerance)
             {
                 return new VideoVerificationResult(
                     false,
-                    $"المدة الناتجة ({verification.DurationSeconds:F2}s) تختلف عن المتوقع ({expectedDuration:F2}s) بأكثر من التسامح المسموح.",
+                    $"المدة الناتجة ({verification.DurationSeconds:F2}s) تختلف عن المتوقع ({expectedDuration:F2}s) بأكثر من التسامح المسموح ({tolerance:F2}s).",
                     verification.Width,
                     verification.Height,
                     verification.DurationSeconds,

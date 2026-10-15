@@ -61,4 +61,7 @@ playwright-report/
 Thumbs.db
 desktop.ini
 *.zip
+*.exe
+desktop/dist/
+dist/
 docs/UthmanicWarsh1 Ver5*

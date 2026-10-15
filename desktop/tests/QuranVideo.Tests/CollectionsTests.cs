@@ -46,7 +46,7 @@ public class CollectionsTests : IDisposable
         using var db = new AppDbContext(dbPath);
         db.Database.EnsureCreated();
 
-        db.Reciters.Add(new ReciterEntity { Id = "saber_abdelhakam", NameArabic = "الشيخ صابر الحكم", NameLatin = "Saber" });
+        db.Reciters.Add(new ReciterEntity { Id = "saber_abdelhakam", NameArabic = "الشيخ صابر عبد الحكم", NameLatin = "Saber" });
         db.RecitationCollections.Add(new RecitationCollectionEntity
         {
             Id = "saber_abdelhakam_warsh",

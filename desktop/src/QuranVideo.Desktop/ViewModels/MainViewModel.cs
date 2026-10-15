@@ -83,7 +83,6 @@ public sealed partial class MainViewModel : ViewModelBase
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pack"),
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mushaf"),
                     Path.Combine(_workspaceService.WorkspacePath, "pack"),
-                    @"D:\Projets\ITComp\Quran\data\mushaf\editions\marw-newMushaf\20260913-full",
                     Path.GetFullPath("data/mushaf/editions/marw-newMushaf/20260913-full"),
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\data\mushaf\editions\marw-newMushaf\20260913-full")
                 };
@@ -132,6 +131,7 @@ public sealed partial class MainViewModel : ViewModelBase
     private void NavigateToStudioWithTarget(int surahNumber, int ayahNumber)
     {
         StudioVM.SetTarget(surahNumber, ayahNumber);
+        StudioVM.IsFineTuningMode = true;
         SelectStudio();
     }
 

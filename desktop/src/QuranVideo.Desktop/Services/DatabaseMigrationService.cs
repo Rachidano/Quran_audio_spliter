@@ -49,11 +49,33 @@ public sealed class DatabaseMigrationService
                 await db.Database.EnsureCreatedAsync(cancellationToken);
             }
             await connection.OpenAsync(cancellationToken);
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = $"PRAGMA user_version = {CurrentSchemaVersion};";
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
+            }
+            return true;
         }
         else if (currentVersion < CurrentSchemaVersion)
         {
             // 2. Base existante avec données : snapshot de sécurité obligatoire avant migration
             CreatePreMigrationBackup(dbPath);
+        }
+
+        // Vérification et ajout défensif des colonnes additives sur tables existantes
+        if (tableCount > 0)
+        {
+            using var transCheck = connection.BeginTransaction();
+            await EnsureColumnExistsAsync(connection, transCheck, "video_projects", "Status", "TEXT NOT NULL DEFAULT 'Draft'", cancellationToken);
+            await EnsureColumnExistsAsync(connection, transCheck, "video_projects", "OutputVideoPath", "TEXT", cancellationToken);
+            await EnsureColumnExistsAsync(connection, transCheck, "video_projects", "ErrorMessage", "TEXT", cancellationToken);
+            await EnsureColumnExistsAsync(connection, transCheck, "video_projects", "LastRenderedAtUtc", "TEXT", cancellationToken);
+            await EnsureColumnExistsAsync(connection, transCheck, "video_projects", "WatermarkScale", "REAL NOT NULL DEFAULT 1.0", cancellationToken);
+            await EnsureColumnExistsAsync(connection, transCheck, "video_projects", "WatermarkOpacity", "REAL NOT NULL DEFAULT 0.85", cancellationToken);
+            await EnsureColumnExistsAsync(connection, transCheck, "video_projects", "WatermarkPosition", "INTEGER NOT NULL DEFAULT 3", cancellationToken);
+            await EnsureColumnExistsAsync(connection, transCheck, "video_projects", "IsWatermarkEnabled", "INTEGER NOT NULL DEFAULT 1", cancellationToken);
+            await EnsureColumnExistsAsync(connection, transCheck, "recitation_collections", "TimingReadId", "INTEGER", cancellationToken);
+            await transCheck.CommitAsync(cancellationToken);
         }
 
         // Si la base est déjà à jour (version >= 3)
@@ -171,6 +193,9 @@ PRAGMA user_version = 3;
                 await EnsureColumnExistsAsync(connection, transaction, "video_projects", "ErrorMessage", "TEXT", cancellationToken);
                 await EnsureColumnExistsAsync(connection, transaction, "video_projects", "LastRenderedAtUtc", "TEXT", cancellationToken);
                 await EnsureColumnExistsAsync(connection, transaction, "video_projects", "WatermarkScale", "REAL NOT NULL DEFAULT 1.0", cancellationToken);
+                await EnsureColumnExistsAsync(connection, transaction, "video_projects", "WatermarkOpacity", "REAL NOT NULL DEFAULT 0.85", cancellationToken);
+                await EnsureColumnExistsAsync(connection, transaction, "video_projects", "WatermarkPosition", "INTEGER NOT NULL DEFAULT 3", cancellationToken);
+                await EnsureColumnExistsAsync(connection, transaction, "video_projects", "IsWatermarkEnabled", "INTEGER NOT NULL DEFAULT 1", cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
                 return true;
@@ -250,8 +275,15 @@ PRAGMA user_version = 3;
         string columnDefinition,
         CancellationToken cancellationToken)
     {
+        using var checkTableCmd = connection.CreateCommand();
+        if (transaction != null) checkTableCmd.Transaction = transaction;
+        checkTableCmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@tableName;";
+        checkTableCmd.Parameters.AddWithValue("@tableName", tableName);
+        var tableCount = Convert.ToInt32(await checkTableCmd.ExecuteScalarAsync(cancellationToken));
+        if (tableCount == 0) return;
+
         using var checkCmd = connection.CreateCommand();
-        checkCmd.Transaction = transaction;
+        if (transaction != null) checkCmd.Transaction = transaction;
         checkCmd.CommandText = $"PRAGMA table_info({tableName});";
         using var reader = await checkCmd.ExecuteReaderAsync(cancellationToken);
         bool exists = false;
@@ -269,7 +301,7 @@ PRAGMA user_version = 3;
         if (!exists)
         {
             using var alterCmd = connection.CreateCommand();
-            alterCmd.Transaction = transaction;
+            if (transaction != null) alterCmd.Transaction = transaction;
             alterCmd.CommandText = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnDefinition};";
             await alterCmd.ExecuteNonQueryAsync(cancellationToken);
         }

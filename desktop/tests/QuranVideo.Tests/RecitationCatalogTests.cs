@@ -27,13 +27,85 @@ public sealed class RecitationCatalogTests : IDisposable
     {
         await _catalog.InitializeAsync();
         Assert.Equal(RecitationCatalogService.SaberCollection, await _catalog.GetDefaultAsync());
-        Assert.Equal("الشيخ صابر الحكم", (await _catalog.GetCollectionsAsync()).Single().Name);
+        var cols = await _catalog.GetCollectionsAsync();
+        Assert.Equal("الشيخ صابر عبد الحكم", cols.First(c => c.CollectionId == RecitationCatalogService.SaberCollection).Name);
+        Assert.Contains(cols, c => c.CollectionId == RecitationCatalogService.HusaryCollection);
         var links = await _catalog.GetLinksAsync(RecitationCatalogService.SaberCollection);
         Assert.Equal(Enumerable.Range(1, 114), links.Keys.OrderBy(x => x));
         Assert.All(links.Values, url => Assert.StartsWith("https://archive.org/download/z0603_202406x/", url));
         Assert.Contains("001  الفاتحة.mp3", Uri.UnescapeDataString(links[1]));
         Assert.Contains("002  البقرة.mp3", Uri.UnescapeDataString(links[2]));
         Assert.Equal(114, links.Values.Distinct().Count());
+    }
+
+    [Fact]
+    public async Task WarshReferential_AllReciterHave114Mp3QuranLinksAndTimingReadId()
+    {
+        await _catalog.InitializeAsync();
+        var collections = await _catalog.GetCollectionsAsync();
+
+        Assert.Equal(4, WarshRecitationReferential.All.Count);
+        // Minutages vérifiés conformes au compte Warsh : الحصري 120، القزابري 80، الكوشي 16، ياسين 14.
+        Assert.Equal(new int?[] { 120, 80, 16, 14 }, WarshRecitationReferential.All.Select(r => r.TimingReadId));
+        foreach (var reference in WarshRecitationReferential.All)
+        {
+            var choice = Assert.Single(collections, c => c.CollectionId == reference.CollectionId);
+            Assert.Equal(reference.TitleArabic, choice.Name);
+
+            var links = await _catalog.GetLinksAsync(reference.CollectionId);
+            Assert.Equal(Enumerable.Range(1, 114), links.Keys.OrderBy(x => x));
+            Assert.All(links, l => Assert.Equal(string.Format(reference.UrlTemplate, l.Key), l.Value));
+            Assert.All(links.Values, url => Assert.StartsWith("https://cdn.mp3quran.net/audio/", url));
+
+            using var db = new AppDbContext(_workspace.GetDatabasePath());
+            var entity = await db.RecitationCollections.SingleAsync(c => c.Id == reference.CollectionId);
+            Assert.Equal(reference.TimingReadId, entity.TimingReadId);
+            Assert.Equal("warsh", entity.Riwaya);
+        }
+
+        // Saber reste le récitateur par défaut, en tête de liste
+        Assert.Equal(RecitationCatalogService.SaberCollection, collections[0].CollectionId);
+        Assert.Equal(RecitationCatalogService.HusaryCollection, collections[1].CollectionId);
+    }
+
+    [Fact]
+    public async Task WarshReferential_RenamedReciterAndCustomLinkSurviveReinitialization()
+    {
+        await _catalog.InitializeAsync();
+        await _catalog.RenameAsync("qazabri_warsh", "القزابري");
+        await _catalog.SaveLinksAsync("qazabri_warsh", new Dictionary<int, string> { [2] = "https://example.org/baqara.mp3" });
+
+        await new RecitationCatalogService(_workspace).InitializeAsync();
+
+        Assert.Equal("القزابري", (await _catalog.GetCollectionsAsync()).Single(c => c.CollectionId == "qazabri_warsh").Name);
+        var links = await _catalog.GetLinksAsync("qazabri_warsh");
+        Assert.Equal("https://example.org/baqara.mp3", links[2]);
+        Assert.Equal("https://cdn.mp3quran.net/audio/omar-kazabri/r1/001.mp3", links[1]);
+    }
+
+    [Fact]
+    public async Task HusaryLegacyQuranicAudioLinks_AreReplacedByMp3QuranWarsh_ButCustomLinkIsKept()
+    {
+        // Espace créé par une ancienne version : liens quranicaudio.com (aujourd'hui en 404)
+        await _catalog.InitializeAsync();
+        using (var db = new AppDbContext(_workspace.GetDatabasePath()))
+        {
+            var legacy = RecitationCatalogService.LegacyHusaryUrlPrefix;
+            await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE recitation_collections SET BaseUrlTemplate = {legacy + "{0:D3}.mp3"} WHERE Id = {RecitationCatalogService.HusaryCollection}");
+            await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE audio_download_links SET Url = {legacy} || printf('%03d', SurahNumber) || '.mp3' WHERE CollectionId = {RecitationCatalogService.HusaryCollection}");
+        }
+        await _catalog.SaveLinksAsync(RecitationCatalogService.HusaryCollection, new Dictionary<int, string> { [5] = "https://example.org/husary-005.mp3" });
+
+        await new RecitationCatalogService(_workspace).InitializeAsync();
+
+        var links = await _catalog.GetLinksAsync(RecitationCatalogService.HusaryCollection);
+        Assert.Equal("https://cdn.mp3quran.net/audio/mahmoud-husary/r3/001.mp3", links[1]);
+        Assert.Equal("https://cdn.mp3quran.net/audio/mahmoud-husary/r3/114.mp3", links[114]);
+        Assert.Equal("https://example.org/husary-005.mp3", links[5]);
+        Assert.DoesNotContain(links.Values, url => url.Contains("quranicaudio", StringComparison.OrdinalIgnoreCase));
+        using var verify = new AppDbContext(_workspace.GetDatabasePath());
+        var husary = await verify.RecitationCollections.SingleAsync(c => c.Id == RecitationCatalogService.HusaryCollection);
+        Assert.Equal(RecitationCatalogService.HusaryUrlTemplate, husary.BaseUrlTemplate);
     }
 
     [Fact]

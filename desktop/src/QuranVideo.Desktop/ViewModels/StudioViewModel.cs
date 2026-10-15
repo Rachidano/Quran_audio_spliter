@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
 using QuranVideo.Desktop.Data;
 using QuranVideo.Desktop.Models;
 using QuranVideo.Desktop.Services;
@@ -194,7 +195,7 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
     private string _currentReciterId = "saber_abdelhakam";
 
     [ObservableProperty]
-    private string _currentReciterNameArabic = "الشيخ صابر الحكم";
+    private string _currentReciterNameArabic = "الشيخ صابر عبد الحكم";
 
     [ObservableProperty]
     private string _currentCollectionId = "saber_abdelhakam_warsh";
@@ -355,6 +356,7 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
         CurrentReciterId = value.ReciterId;
         CurrentCollectionId = value.CollectionId;
         CurrentReciterNameArabic = value.Name;
+        _ = RefreshReadyTimingsAvailabilityAsync();
         _ = LoadAudioAndPassagesForSurahAsync(CurrentSurah.Number);
     }
 
@@ -428,6 +430,7 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
             RecordedPassages.Add(p);
         }
         OnPropertyChanged(nameof(RecordedPassagesCountDescription));
+        OnPropertyChanged(nameof(ProposedPassagesCount));
         OnPropertyChanged(nameof(HasRecordedPassages));
         OnPropertyChanged(nameof(HasNoRecordedPassages));
         OnPropertyChanged(nameof(HasCurrentPassage));
@@ -825,22 +828,6 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
         StatusMessage = $"تمت إعادة ضبط التوقيتات للآية {CurrentAyahNumber}.";
     }
 
-    // L06-07: Validate current passage (اعتماد المقطع)
-    [RelayCommand]
-    public async Task ValidateCurrentPassageAsync()
-    {
-        var existing = RecordedPassages.FirstOrDefault(p => p.AyahNumber == CurrentAyahNumber);
-        if (existing != null)
-        {
-            IsCurrentPassageValidated = !IsCurrentPassageValidated;
-            await _annotationService.ValidatePassageAsync(existing.Id, IsCurrentPassageValidated);
-            existing.IsValidatedByUser = IsCurrentPassageValidated;
-            StatusMessage = IsCurrentPassageValidated
-                ? $"تم اعتماد المقطع للآية {CurrentAyahNumber} ✔"
-                : $"تم إلغاء اعتماد المقطع للآية {CurrentAyahNumber}";
-        }
-    }
-
     // L06-07: Undo last save (Ctrl+Z)
     [RelayCommand]
     public async Task UndoLastSaveAsync()
@@ -1042,6 +1029,15 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
                 LastGeneratedVideoPath = fullVideoPath;
                 StatusMessage = $"تم إنشاء الفيديو بنجاح ({completedComp.Width}x{completedComp.Height} — {completedComp.DurationSeconds:F1} ثانية) مع إصدار البيان (Manifest)";
                 LoggingService.Instance.LogInfo($"Vidéo générée avec succès : {fullVideoPath}");
+
+                try
+                {
+                    await SaveStudioExportProjectAsync(completedComp, customBg, watermarkLogo);
+                }
+                catch (Exception pEx)
+                {
+                    LoggingService.Instance.LogError("Erreur création entité projet pour vidéo studio", pEx);
+                }
             }
             else
             {
@@ -1185,17 +1181,6 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    public async Task ApproveImageAsync()
-    {
-        var ok = await _imageService.ApproveImageAsync(CurrentSurah.Number, CurrentAyahNumber);
-        if (ok)
-        {
-            CurrentImageStatus = AyahImageStatus.Approved;
-            StatusMessage = "تم اعتماد صورة الآية بنجاح ✔";
-        }
-    }
-
-    [RelayCommand]
     public async Task ToggleImageEditorAsync()
     {
         IsImageEditorOpen = !IsImageEditorOpen;
@@ -1247,6 +1232,83 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
             ComparisonImagePath = await _imageService.GenerateSideBySideComparisonAsync(CurrentSurah.Number, CurrentAyahNumber);
             StatusMessage = "تمت إعادة ضبط هوامش الصورة للاستخراج التلقائي.";
         }
+    }
+
+    /// <summary>
+    /// Enregistre (ou met à jour) l'entrée « فيديوهاتي » d'une vidéo exportée depuis le studio.
+    /// Seul le projet créé par un export studio précédent (vidéo "ayah_...") pour la même
+    /// source audio est réutilisé : les projets du wizard ("project_p...") et ceux d'un
+    /// autre récitateur ne sont jamais écrasés.
+    /// </summary>
+    public async Task SaveStudioExportProjectAsync(VideoCompositionEntity completedComp, string? customBg, string? watermarkLogo)
+    {
+        using var db = new AppDbContext(_workspaceService.GetDatabasePath());
+        var surahNumber = completedComp.SurahNumber;
+        var ayahNumber = completedComp.AyahNumber;
+        var surahName = SurahCatalogService.GetSurah(surahNumber)?.NameArabic ?? $"سورة {surahNumber}";
+
+        var candidates = await db.Projects
+            .Include(p => p.SelectedAyahs)
+            .Where(p =>
+                p.SurahNumber == surahNumber &&
+                p.StartAyahNumber == ayahNumber &&
+                p.EndAyahNumber == ayahNumber &&
+                p.Orientation == completedComp.Orientation &&
+                p.AudioSourceId == completedComp.AudioSourceId)
+            .ToListAsync();
+        var project = candidates.FirstOrDefault(p =>
+            Path.GetFileName(p.OutputVideoPath ?? string.Empty).StartsWith("ayah_", StringComparison.OrdinalIgnoreCase));
+
+        if (project == null)
+        {
+            project = new VideoProjectEntity
+            {
+                SurahNumber = surahNumber,
+                StartAyahNumber = ayahNumber,
+                EndAyahNumber = ayahNumber,
+                Orientation = completedComp.Orientation,
+                CreatedAtUtc = DateTime.UtcNow,
+                SelectedAyahs = new List<ProjectAyahEntity>()
+            };
+            db.Projects.Add(project);
+        }
+
+        project.Title = $"{surahName} — الآية {ayahNumber}";
+        project.ReciterId = CurrentReciterId;
+        project.AudioSourceId = completedComp.AudioSourceId;
+        project.Background = StudioBackground;
+        project.CustomBackgroundPath = customBg;
+        project.Watermark = WizardWatermark;
+        project.WatermarkText = WizardWatermarkText;
+        project.WatermarkImagePath = watermarkLogo;
+        project.WatermarkPosition = WizardWatermarkPosition;
+        project.WatermarkOpacity = WizardWatermarkOpacity;
+        project.WatermarkScale = WizardWatermarkScale;
+        project.IsWatermarkEnabled = WizardWatermark != WatermarkType.None;
+        project.Status = "Completed";
+        project.OutputVideoPath = completedComp.RelativeVideoPath;
+        project.LastRenderedAtUtc = DateTime.UtcNow;
+        project.UpdatedAtUtc = DateTime.UtcNow;
+
+        project.SelectedAyahs ??= new List<ProjectAyahEntity>();
+        project.SelectedAyahs.Clear();
+        project.SelectedAyahs.Add(new ProjectAyahEntity
+        {
+            OrderIndex = 0,
+            SurahNumber = surahNumber,
+            AyahNumber = ayahNumber,
+            AyahId = $"{surahNumber}:{ayahNumber}",
+            PassageId = completedComp.PassageId,
+            PassageRevision = completedComp.PassageRevision,
+            StartTimeSec = completedComp.StartTimeSec,
+            EndTimeSec = completedComp.EndTimeSec,
+            ImageRecipeId = completedComp.ImageRecipeId,
+            ImageRevision = completedComp.ImageRevision,
+            RelativeImagePath = completedComp.ImagePath,
+            JunctionReviewed = true
+        });
+
+        await db.SaveChangesAsync();
     }
 
     public void Dispose()

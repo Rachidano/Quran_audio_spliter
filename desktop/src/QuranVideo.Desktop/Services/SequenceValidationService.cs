@@ -339,13 +339,6 @@ public sealed class SequenceValidationService
                 {
                     item.ChosenPassage = chosen;
 
-                    // Contrôle d'approbation humaine obligatoire
-                    if (!chosen.IsValidatedByUser)
-                    {
-                        item.Errors.Add(
-                            $"تعذّر التصدير: المقطع الصوتي للآية {ayah} لم يتم اعتماده وتدقيقه بعد.");
-                    }
-
                     // Contrôle strict des bornes temporelles
                     if (chosen.StartTimeSec < 0 || chosen.EndTimeSec <= chosen.StartTimeSec)
                     {
@@ -372,13 +365,6 @@ public sealed class SequenceValidationService
             }
             else
             {
-                // Vérifier l'approbation humaine de l'image
-                if (recipe.Status != AyahImageStatus.Approved)
-                {
-                    item.Errors.Add(
-                        $"تعذّر التصدير: صورة الآية {ayah} تتطلب مراجعة واعتماداً قبل التصدير.");
-                }
-
                 var fullImgPath = Path.Combine(_workspaceService.WorkspacePath, recipe.RelativeImagePath);
                 item.ImagePath = fullImgPath;
 
@@ -427,15 +413,18 @@ public sealed class SequenceValidationService
 
             if (cur.ChosenPassage != null && next.ChosenPassage != null)
             {
-                // Vérification du chevauchement temporel interdit
-                if (next.ChosenPassage.StartTimeSec < cur.ChosenPassage.EndTimeSec - 0.05)
+                // Vérification du chevauchement temporel réel (intersection des intervalles audio)
+                bool hasActualOverlap = Math.Max(cur.ChosenPassage.StartTimeSec, next.ChosenPassage.StartTimeSec) <
+                                       Math.Min(cur.ChosenPassage.EndTimeSec, next.ChosenPassage.EndTimeSec) - 0.05;
+
+                if (hasActualOverlap)
                 {
                     next.Errors.Add(
                         $"تعذّر التصدير: يوجد تداخل زمني بين الآية {cur.AyahNumber} والآية {next.AyahNumber} ({next.ChosenPassage.StartTimeSec:F2}s < {cur.ChosenPassage.EndTimeSec:F2}s).");
                 }
-                else
+                else if (next.ChosenPassage.StartTimeSec >= cur.ChosenPassage.EndTimeSec - 0.05)
                 {
-                    // Vérification de l'intervalle / pause
+                    // Vérification de l'intervalle / pause en cas d'enregistrement consécutif
                     var gap = next.ChosenPassage.StartTimeSec - cur.ChosenPassage.EndTimeSec;
                     if (gap > 0.15)
                     {

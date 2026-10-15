@@ -114,6 +114,9 @@ public class RecitationCollectionEntity
     public string Riwaya { get; set; } = "warsh";
     public string BaseUrlTemplate { get; set; } = string.Empty;
 
+    /// <summary>Identifiant "read" des minutages publiés par mp3quran.net (ex. 120 = الحصري ورش), si disponibles.</summary>
+    public int? TimingReadId { get; set; }
+
     [ForeignKey(nameof(ReciterId))]
     public ReciterEntity? Reciter { get; set; }
 }
@@ -179,6 +182,14 @@ public class AyahPassageEntity
 
     [NotMapped]
     public string FormattedRange => $"{TimeSpan.FromSeconds(StartTimeSec):mm\\:ss\\.ff} ➔ {TimeSpan.FromSeconds(EndTimeSec):mm\\:ss\\.ff}";
+
+    /// <summary>Préfixe de <see cref="Notes"/> pour une prise importée depuis des minutages publiés.</summary>
+    public const string ProposedTimingNotePrefix = "mp3quran:";
+
+    /// <summary>Prise importée automatiquement et pas encore réenregistrée par l'utilisateur (« مقترح »).</summary>
+    [NotMapped]
+    public bool IsProposedTiming => !IsValidatedByUser &&
+                                    (Notes ?? string.Empty).StartsWith(ProposedTimingNotePrefix, StringComparison.Ordinal);
 }
 
 public enum AyahImageStatus

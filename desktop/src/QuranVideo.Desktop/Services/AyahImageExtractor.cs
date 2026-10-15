@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
 using QuranVideo.Desktop.Models;
 
 namespace QuranVideo.Desktop.Services;
@@ -17,7 +18,8 @@ public static class AyahImageExtractor
         PixelRect boundingBox,
         Color backgroundColor)
     {
-        using var sourceImage = new Bitmap(sourceImagePath);
+        using var stream = new MemoryStream(File.ReadAllBytes(sourceImagePath));
+        using var sourceImage = new Bitmap(stream);
         var destWidth = Math.Max(1, boundingBox.RoundWidth);
         var destHeight = Math.Max(1, boundingBox.RoundHeight);
 
@@ -31,15 +33,17 @@ public static class AyahImageExtractor
         {
             if (r.Width <= 0 || r.Height <= 0) continue;
 
+            // Rogner au cadre de la page en gardant la position relative (un rectangle élargi
+            // par les marges peut déborder de la page)
             var srcX = Math.Max(0, r.RoundX);
             var srcY = Math.Max(0, r.RoundY);
-            var srcW = Math.Min(sourceImage.Width - srcX, r.RoundWidth);
-            var srcH = Math.Min(sourceImage.Height - srcY, r.RoundHeight);
+            var srcW = Math.Min(sourceImage.Width, r.RoundX + r.RoundWidth) - srcX;
+            var srcH = Math.Min(sourceImage.Height, r.RoundY + r.RoundHeight) - srcY;
 
             if (srcW <= 0 || srcH <= 0) continue;
 
-            var dstX = r.RoundX - boundingBox.RoundX;
-            var dstY = r.RoundY - boundingBox.RoundY;
+            var dstX = srcX - boundingBox.RoundX;
+            var dstY = srcY - boundingBox.RoundY;
 
             var srcRect = new Rectangle(srcX, srcY, srcW, srcH);
             var dstRect = new Rectangle(dstX, dstY, srcW, srcH);
@@ -58,7 +62,8 @@ public static class AyahImageExtractor
         string sourceImagePath,
         IReadOnlyList<PixelRect> rects)
     {
-        var overlayBitmap = new Bitmap(sourceImagePath);
+        using var overlayStream = new MemoryStream(File.ReadAllBytes(sourceImagePath));
+        var overlayBitmap = new Bitmap(overlayStream);
         using var g = Graphics.FromImage(overlayBitmap);
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
@@ -85,7 +90,8 @@ public static class AyahImageExtractor
         IReadOnlyList<PixelRect> rects,
         PixelRect boundingBox)
     {
-        using var original = new Bitmap(sourceImagePath);
+        using var origStream = new MemoryStream(File.ReadAllBytes(sourceImagePath));
+        using var original = new Bitmap(origStream);
         using var overlay = GenerateMaskOverlay(sourceImagePath, rects);
         using var isolated = ExtractIsolatedAyah(sourceImagePath, rects, boundingBox, Color.White);
 

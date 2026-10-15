@@ -41,7 +41,6 @@ public sealed class WizardAyahItemViewModel : ObservableObject
     public int ImageRecipeId { get; set; }
     public int ImageRevision { get; set; }
     public string? ImagePath { get; set; }
-    public bool IsImageApproved { get; set; }
 
     // Gap / Junction review tracking
     private bool _hasGapWithPrevious;
@@ -147,11 +146,9 @@ public sealed class WizardAyahItemViewModel : ObservableObject
     }
 
     public bool IsAudioAnnotated => SelectedTake != null &&
-                                    (SelectedTake.Kind == PassageKind.Full || SelectedTake.Kind == PassageKind.FullRetake) &&
-                                    SelectedTake.IsValidatedByUser;
+                                    (SelectedTake.Kind == PassageKind.Full || SelectedTake.Kind == PassageKind.FullRetake);
 
     public bool IsFullyReady => IsAudioAnnotated &&
-                                IsImageApproved &&
                                 !string.IsNullOrEmpty(ImagePath) &&
                                 File.Exists(ImagePath) &&
                                 (!HasGapWithPrevious || JunctionReviewed) &&
@@ -441,11 +438,9 @@ public sealed partial class StudioViewModel
                 .FirstOrDefaultAsync(r => r.AyahId == ayahId);
 
             string? imagePath = null;
-            bool isApproved = false;
             if (recipe != null)
             {
                 imagePath = _workspaceService.ToAbsolutePath(recipe.RelativeImagePath);
-                isApproved = recipe.Status == AyahImageStatus.Approved;
             }
 
             var item = new WizardAyahItemViewModel
@@ -457,7 +452,6 @@ public sealed partial class StudioViewModel
                 ImageRecipeId = recipe?.Id ?? 0,
                 ImageRevision = recipe?.Revision ?? 0,
                 ImagePath = imagePath,
-                IsImageApproved = isApproved,
                 OnStatusChanged = RecalculateGapsAndStatus
             };
 
@@ -517,12 +511,12 @@ public sealed partial class StudioViewModel
         int end = WizardEndAyah;
         if (IsWizardSequenceValid)
         {
-            WizardValidationSummary = $"جميع الآيات من {start} إلى {end} معتمدة وجاهزة للتصدير.";
+            WizardValidationSummary = $"جميع الآيات من {start} إلى {end} مسجلة وجاهزة للتصدير.";
         }
         else
         {
             var missing = WizardAyatItems.Where(i => !i.IsFullyReady).Select(i => i.AyahNumber);
-            WizardValidationSummary = $"تنبيه: الآيات التالية تتطلب تدقيقاً أو اعتماداً أو اختيار تسجيل: {string.Join("، ", missing)}";
+            WizardValidationSummary = $"تنبيه: الآيات التالية تتطلب تسجيلاً صوتياً أو صورة أو اختيار تسجيل: {string.Join("، ", missing)}";
         }
     }
 

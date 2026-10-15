@@ -49,7 +49,7 @@ Pas de gestion des أوجه, comptes, rôles administratifs, cloud, microservice
 - Images et zones : `data/mushaf/editions/marw-newMushaf/20260913-full/`, depuis la racine du dépôt. Vérifier les empreintes avant réutilisation ; ne pas déplacer les originaux.
 - Le texte `data/reference/warsh-qpc-v10/` est candidat : l’utiliser pour navigation/recherche avec son statut, sans lui attribuer une validation exhaustive ni l’utiliser pour dessiner le Coran dans les vidéos.
 - L’inventaire des 114 sourates audio n’implique pas que les 114 fichiers soient présents ou encore téléchargeables. Vérifier les ressources réelles.
-- Une zone adaptée au clic peut inclure un mot voisin ou couper un signe dans une extraction. Prévoir une correction visuelle simple et une revue humaine.
+- Une zone adaptée au clic peut inclure un mot voisin ou couper un signe dans une extraction. Le découpage et la validation des images et prises sont automatiques par défaut afin de fluidifier la production vidéo, sans imposer de blocage par une revue humaine obligatoire. Une correction visuelle reste possible si nécessaire.
 - Une reprise partielle n’est pas une ayah entière. Un changement de récitateur ne réutilise pas automatiquement les bornes d’un autre enregistrement.
 - Dans l’interface, utiliser `مصدرنا الرسمي` ; conserver l’attribution et le lien exact du ministère dans À propos, conformément à la conception. Conserver les identifiants de provenance en interne.
 - Ne pas modifier le site, sa base ni ses annotations pour les besoins du desktop. Copier/importer des ressources vérifiées. Toute modification hors `desktop/` doit être justifiée par une instruction applicable ou présentée à l’utilisateur avant réalisation.

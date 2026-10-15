@@ -42,7 +42,7 @@ public class AudioTests : IDisposable
 
         var reciter = await db.Reciters.FirstOrDefaultAsync(r => r.Id == "saber_abdelhakam");
         Assert.NotNull(reciter);
-        Assert.Equal("الشيخ صابر الحكم", reciter.NameArabic);
+        Assert.Equal("الشيخ صابر عبد الحكم", reciter.NameArabic);
 
         var collection = await db.RecitationCollections.FirstOrDefaultAsync(c => c.Id == RecitationCatalogService.SaberCollection);
         Assert.NotNull(collection);
@@ -148,7 +148,7 @@ public class AudioTests : IDisposable
         var defaultId = await catalog.GetDefaultAsync();
         var selected = (await catalog.GetCollectionsAsync()).Single(c => c.CollectionId == defaultId);
         Assert.Equal("saber_abdelhakam", selected.ReciterId);
-        Assert.Equal("الشيخ صابر الحكم", selected.Name);
+        Assert.Equal("الشيخ صابر عبد الحكم", selected.Name);
         Assert.Equal(RecitationCatalogService.SaberCollection, selected.CollectionId);
     }
 
@@ -157,10 +157,10 @@ public class AudioTests : IDisposable
     {
         var catalog = new RecitationCatalogService(_workspaceService);
         await catalog.InitializeAsync();
-        await catalog.RenameAsync(RecitationCatalogService.SaberCollection, "الشيخ صابر الحكم (رواية ورش)");
+        await catalog.RenameAsync(RecitationCatalogService.SaberCollection, "الشيخ صابر عبد الحكم (رواية ورش)");
         await catalog.SaveLinksAsync(RecitationCatalogService.SaberCollection, new Dictionary<int,string> { [1] = "https://mycustomserver.org/audio/001.mp3" });
         var reloaded = new RecitationCatalogService(_workspaceService);
-        Assert.Equal("الشيخ صابر الحكم (رواية ورش)", (await reloaded.GetCollectionsAsync()).Single().Name);
+        Assert.Equal("الشيخ صابر عبد الحكم (رواية ورش)", (await reloaded.GetCollectionsAsync()).First(c => c.CollectionId == RecitationCatalogService.SaberCollection).Name);
         Assert.Equal("https://mycustomserver.org/audio/001.mp3", (await reloaded.GetLinksAsync(RecitationCatalogService.SaberCollection))[1]);
     }
 

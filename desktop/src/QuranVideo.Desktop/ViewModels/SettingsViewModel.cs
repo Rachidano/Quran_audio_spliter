@@ -56,7 +56,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         try
         {
             var progress = new Progress<int>(p => BackupStatusMessage = $"جارٍ إنشاء النسخة الاحتياطية ({p}%)...");
-            var res = await _backupService.CreateBackupAsync(saveDialog.FileName, progress);
+            var res = await Task.Run(() => _backupService.CreateBackupAsync(saveDialog.FileName, progress));
 
             if (res.Success)
             {
@@ -97,7 +97,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         try
         {
             var progress = new Progress<int>(p => BackupStatusMessage = $"جارٍ استرجاع الملفات ({p}%)...");
-            var res = await _backupService.RestoreBackupAsync(openDialog.FileName, _workspaceService.WorkspacePath, progress);
+            var res = await Task.Run(() => _backupService.RestoreBackupAsync(openDialog.FileName, _workspaceService.WorkspacePath, progress));
 
             if (res.Success)
             {

@@ -117,15 +117,8 @@
                                HorizontalAlignment="Center" Margin="0,2,0,0"/>
                 </StackPanel>
 
-                <!-- Vignette et bouton de reprise à droite -->
+                <!-- Bouton de reprise à droite -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#f8fafc" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" 
-                            Padding="12,6" Margin="0,0,12,0">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="🖼️" Margin="0,0,6,0"/>
-                            <TextBlock Text="صورة الآية من المصدر الرسمي" FontSize="11" Foreground="#64748b"/>
-                        </StackPanel>
-                    </Border>
                     <Button Command="{Binding ResumeLastWorkCommand}" Background="#15803d" Foreground="White"
                             FontWeight="Bold" FontSize="13" Padding="16,8" BorderThickness="0" Cursor="Hand">
                         <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>

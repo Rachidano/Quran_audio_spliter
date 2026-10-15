@@ -13,6 +13,8 @@ public sealed class AudioPlayerService : IDisposable
     private double _segmentEndSec;
     private bool _isLoopingSegment;
     private bool _isSegmentPlay;
+    private double _playbackBaseTimeSec;
+    private long _playbackStartBytePosition;
 
     public event Action<double>? PositionChanged;
     public event Action? PlaybackStopped;
@@ -45,7 +47,19 @@ public sealed class AudioPlayerService : IDisposable
         {
             lock (_lock)
             {
-                return _reader?.CurrentTime.TotalSeconds ?? 0.0;
+                if (_reader == null) return 0.0;
+                if (_waveOut != null && _waveOut.PlaybackState == PlaybackState.Playing)
+                {
+                    long currentBytes = _waveOut.GetPosition();
+                    long bytesDelta = Math.Max(0, currentBytes - _playbackStartBytePosition);
+                    double bytesPerSec = _reader.WaveFormat.AverageBytesPerSecond;
+                    if (bytesPerSec > 0)
+                    {
+                        double elapsed = bytesDelta / bytesPerSec;
+                        return Math.Min(DurationSec, Math.Max(0, _playbackBaseTimeSec + elapsed));
+                    }
+                }
+                return _playbackBaseTimeSec;
             }
         }
         set => Seek(value);
@@ -77,10 +91,13 @@ public sealed class AudioPlayerService : IDisposable
             _reader?.Dispose();
             _waveOut?.Dispose();
 
+            _playbackBaseTimeSec = 0.0;
+            _playbackStartBytePosition = 0;
+
             _reader = new AudioFileReader(audioFilePath);
             _waveOut = new WaveOutEvent
             {
-                DesiredLatency = 150,
+                DesiredLatency = 100,
                 NumberOfBuffers = 3
             };
             _waveOut.Init(_reader);
@@ -97,6 +114,11 @@ public sealed class AudioPlayerService : IDisposable
         {
             _isLoopingSegment = false;
             _isSegmentPlay = false;
+            if (_reader != null)
+            {
+                _reader.CurrentTime = TimeSpan.FromSeconds(_playbackBaseTimeSec);
+                _playbackStartBytePosition = _waveOut?.GetPosition() ?? 0;
+            }
             _waveOut?.Play();
         }
     }
@@ -105,7 +127,12 @@ public sealed class AudioPlayerService : IDisposable
     {
         lock (_lock)
         {
+            _playbackBaseTimeSec = CurrentTimeSec;
             _waveOut?.Pause();
+            if (_reader != null)
+            {
+                _reader.CurrentTime = TimeSpan.FromSeconds(_playbackBaseTimeSec);
+            }
         }
     }
 
@@ -122,6 +149,8 @@ public sealed class AudioPlayerService : IDisposable
         _isLoopingSegment = false;
         _isSegmentPlay = false;
         _waveOut?.Stop();
+        _playbackBaseTimeSec = 0.0;
+        _playbackStartBytePosition = 0;
         if (_reader != null)
         {
             _reader.CurrentTime = TimeSpan.Zero;
@@ -137,7 +166,9 @@ public sealed class AudioPlayerService : IDisposable
             var max = DurationSec > 0 ? DurationSec : double.MaxValue;
             targetSec = Math.Max(0, timeSec);
             if (targetSec > max) targetSec = max;
+            _playbackBaseTimeSec = targetSec;
             _reader.CurrentTime = TimeSpan.FromSeconds(targetSec);
+            _playbackStartBytePosition = _waveOut?.GetPosition() ?? 0;
         }
         PositionChanged?.Invoke(targetSec);
     }
@@ -154,7 +185,9 @@ public sealed class AudioPlayerService : IDisposable
             _isSegmentPlay = true;
 
             var targetSec = Math.Clamp(_segmentStartSec, 0, DurationSec);
+            _playbackBaseTimeSec = targetSec;
             _reader.CurrentTime = TimeSpan.FromSeconds(targetSec);
+            _playbackStartBytePosition = _waveOut.GetPosition();
             _waveOut.Play();
         }
         PositionChanged?.Invoke(_segmentStartSec);
@@ -182,7 +215,7 @@ public sealed class AudioPlayerService : IDisposable
         {
             if (_reader == null || _waveOut == null || !IsPlaying) return;
 
-            cur = _reader.CurrentTime.TotalSeconds;
+            cur = CurrentTimeSec;
             looping = _isLoopingSegment;
             segEnd = _segmentEndSec;
             segStart = _segmentStartSec;
@@ -190,13 +223,16 @@ public sealed class AudioPlayerService : IDisposable
             if (looping && cur >= segEnd)
             {
                 var targetSec = Math.Clamp(segStart, 0, DurationSec);
+                _playbackBaseTimeSec = targetSec;
                 _reader.CurrentTime = TimeSpan.FromSeconds(targetSec);
+                _playbackStartBytePosition = _waveOut.GetPosition();
                 cur = targetSec;
             }
             else if (!looping && _isSegmentPlay && cur >= segEnd)
             {
                 _isSegmentPlay = false;
                 _waveOut.Pause();
+                _playbackBaseTimeSec = segEnd;
                 _reader.CurrentTime = TimeSpan.FromSeconds(segEnd);
                 cur = segEnd;
                 shouldStop = true;

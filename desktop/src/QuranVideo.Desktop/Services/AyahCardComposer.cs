@@ -61,7 +61,9 @@ public static class AyahCardComposer
         Rectangle cardRect;
         if (File.Exists(ayahImagePath))
         {
-            using var ayahImg = Image.FromFile(ayahImagePath);
+            byte[] bytes = File.ReadAllBytes(ayahImagePath);
+            using var ms = new MemoryStream(bytes);
+            using var ayahImg = Image.FromStream(ms);
             cardRect = DrawAyahCard(g, targetW, targetH, ayahImg, settings);
         }
         else
@@ -69,7 +71,7 @@ public static class AyahCardComposer
             cardRect = new Rectangle(targetW / 4, targetH / 4, targetW / 2, targetH / 2);
         }
 
-        // 3. Draw Watermark if configured, ensuring no overlap with cardRect
+        // 3. Draw Watermark if configured
         if (settings.WatermarkType != WatermarkType.None)
         {
             DrawWatermark(g, targetW, targetH, cardRect, settings);
@@ -87,7 +89,9 @@ public static class AyahCardComposer
         }
 
         using var bmp = ComposeCardBitmap(ayahImagePath, settings);
-        bmp.Save(outputPngPath, ImageFormat.Png);
+        using var ms = new MemoryStream();
+        bmp.Save(ms, ImageFormat.Png);
+        File.WriteAllBytes(outputPngPath, ms.ToArray());
     }
 
     public static BitmapSource ComposeCardToBitmapSource(string ayahImagePath, CardCompositionSettings settings)
@@ -213,7 +217,9 @@ public static class AyahCardComposer
         {
             try
             {
-                using var wmImg = Image.FromFile(settings.WatermarkImagePath);
+                byte[] imgBytes = File.ReadAllBytes(settings.WatermarkImagePath);
+                using var ms = new MemoryStream(imgBytes);
+                using var wmImg = Image.FromStream(ms);
                 int maxWmW = (int)(240 * scaleMultiplier);
                 int maxWmH = (int)(90 * scaleMultiplier);
 
@@ -246,8 +252,8 @@ public static class AyahCardComposer
             float fontSize = (float)Math.Clamp(24f * scaleMultiplier, 10f, 96f);
             using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
             var textSize = g.MeasureString(settings.WatermarkText, font);
-            int textW = (int)Math.Ceiling(textSize.Width);
-            int textH = (int)Math.Ceiling(textSize.Height);
+            int textW = (int)Math.Ceiling(textSize.Width) + 40;
+            int textH = (int)Math.Ceiling(textSize.Height) + 16;
 
             var textRect = CalculateCornerPosition(settings.WatermarkPosition, targetW, targetH, textW, textH, margin);
             textRect.X = Math.Clamp(textRect.X, 0, Math.Max(0, targetW - textW));
@@ -262,7 +268,8 @@ public static class AyahCardComposer
             using var format = new StringFormat
             {
                 Alignment = StringAlignment.Center,
-                LineAlignment = StringAlignment.Center
+                LineAlignment = StringAlignment.Center,
+                FormatFlags = StringFormatFlags.NoWrap
             };
 
             g.DrawString(settings.WatermarkText, font, brush, textRect, format);

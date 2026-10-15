@@ -197,10 +197,6 @@ public class AyahImageTests : IDisposable
         Assert.NotNull(vm.CurrentIsolatedImagePath);
         Assert.Equal(AyahImageStatus.Suggested, vm.CurrentImageStatus);
 
-        // Approve
-        await vm.ApproveImageCommand.ExecuteAsync(null);
-        Assert.Equal(AyahImageStatus.Approved, vm.CurrentImageStatus);
-
         // Nudge
         await vm.NudgeMarginCommand.ExecuteAsync("top+5");
         Assert.Equal(5, vm.MarginTop);

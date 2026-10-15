@@ -61,16 +61,15 @@ public sealed class CompositionService
 
         // 2. Check image recipe (L08-01 & L08-02)
         var (imageOk, imagePath, recipe) = await _imageService.GetOrExtractAyahImageAsync(surahNumber, ayahNumber);
-        if (!imageOk || string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath))
+        if (!imageOk || string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath) || recipe == null)
         {
             return (false, "لم يتم استخراج صورة الآية بنجاح من صفحات المصحف.", null);
         }
 
         // 3. Evaluation de l'éligibilité et du statut (L08-01 & L08-02)
-        bool isCompleteAyah = passage.Kind == PassageKind.Full;
-        bool isPassageValidated = passage.IsValidatedByUser;
-        bool isImageApproved = recipe.Status == AyahImageStatus.Approved;
-        var computedStatus = (isCompleteAyah && isPassageValidated && isImageApproved)
+        bool isCompleteAyah = passage.Kind == PassageKind.Full || passage.Kind == PassageKind.FullRetake;
+        bool isImageAvailable = recipe != null && !string.IsNullOrEmpty(recipe.RelativeImagePath);
+        var computedStatus = (isCompleteAyah && isImageAvailable)
             ? CompositionStatus.Ready
             : CompositionStatus.NeedsReview;
 
@@ -91,7 +90,7 @@ public sealed class CompositionService
                 PassageRevision = passage.Revision,
                 StartTimeSec = passage.StartTimeSec,
                 EndTimeSec = passage.EndTimeSec,
-                ImageRecipeId = recipe.Id,
+                ImageRecipeId = recipe!.Id,
                 ImageRevision = recipe.Revision,
                 ImagePath = imagePath,
                 Orientation = orientationStr,
@@ -103,7 +102,7 @@ public sealed class CompositionService
         else
         {
             // L08-01: Detect if source passage or image revision changed
-            if (comp.PassageRevision != passage.Revision || comp.ImageRevision != recipe.Revision)
+            if (comp.PassageRevision != passage.Revision || comp.ImageRevision != recipe!.Revision)
             {
                 comp.Status = CompositionStatus.NeedsReview;
             }
@@ -116,7 +115,7 @@ public sealed class CompositionService
             comp.PassageRevision = passage.Revision;
             comp.StartTimeSec = passage.StartTimeSec;
             comp.EndTimeSec = passage.EndTimeSec;
-            comp.ImageRecipeId = recipe.Id;
+            comp.ImageRecipeId = recipe!.Id;
             comp.ImageRevision = recipe.Revision;
             comp.ImagePath = imagePath;
         }

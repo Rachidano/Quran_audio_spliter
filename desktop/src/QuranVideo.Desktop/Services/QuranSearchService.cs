@@ -46,7 +46,6 @@ public sealed class QuranSearchService
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pack", "source.json"),
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "source.json"),
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "source.json"),
-            @"D:\Projets\ITComp\Quran\data\reference\warsh-qpc-v10\source.json",
             Path.GetFullPath("data/reference/warsh-qpc-v10/source.json"),
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\data\reference\warsh-qpc-v10\source.json")
         };

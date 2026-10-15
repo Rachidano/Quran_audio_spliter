@@ -34,7 +34,6 @@ public sealed class AyahImageService
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mushaf", $"page-{pageNumber:D3}.png"),
             Path.Combine(_workspaceService.WorkspacePath, "pack", $"page-{pageNumber:D3}.png"),
             Path.GetFullPath($"data/mushaf/editions/marw-newMushaf/20260913-full/page-{pageNumber:D3}.png"),
-            $@"D:\Projets\ITComp\Quran\data\mushaf\editions\marw-newMushaf\20260913-full\page-{pageNumber:D3}.png",
             Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\data\mushaf\editions\marw-newMushaf\20260913-full", $"page-{pageNumber:D3}.png"))
         };
 
@@ -136,16 +135,30 @@ public sealed class AyahImageService
         }
 
         // Apply recipe margin adjustments
-        var boundingBox = AyahGeometry.ComputeEnclosingBoundingBox(rects);
-        var adjustedBox = new PixelRect(
-            boundingBox.X - recipe.MarginLeft,
-            boundingBox.Y - recipe.MarginTop,
-            boundingBox.Width + recipe.MarginLeft + recipe.MarginRight,
-            boundingBox.Height + recipe.MarginTop + recipe.MarginBottom);
+        var adjustedBox = ComputeAdjustedBox(rects, recipe);
+        var adjustedRects = ApplyMarginsToRects(rects, recipe);
 
         // Extract lossless PNG on white background (L07-01 & L07-06)
-        using var isolatedBmp = AyahImageExtractor.ExtractIsolatedAyah(pageImagePath, rects, adjustedBox, Color.White);
-        isolatedBmp.Save(finalPath, ImageFormat.Png);
+        using var isolatedBmp = AyahImageExtractor.ExtractIsolatedAyah(pageImagePath, adjustedRects, adjustedBox, Color.White);
+        using (var ms = new MemoryStream())
+        {
+            isolatedBmp.Save(ms, ImageFormat.Png);
+            File.WriteAllBytes(finalPath, ms.ToArray());
+        }
+
+        // Clean up older revision files for this ayah to prevent disk clutter
+        try
+        {
+            var oldFiles = Directory.GetFiles(imagesDir, $"ayah_{surahNumber:D3}_{ayahNumber:D3}_rev*.png");
+            foreach (var old in oldFiles)
+            {
+                if (!string.Equals(old, finalPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    try { File.Delete(old); } catch { }
+                }
+            }
+        }
+        catch { }
 
         // Calculate SHA-256 and dimensions
         recipe.RelativeImagePath = Path.GetRelativePath(_workspaceService.WorkspacePath, finalPath);
@@ -211,8 +224,11 @@ public sealed class AyahImageService
         var recipe = await db.ImageRecipes.FirstOrDefaultAsync(r => r.AyahId == ayahId);
         if (recipe == null)
         {
-            var res = await GetOrExtractAyahImageAsync(surahNumber, ayahNumber);
-            recipe = res.Recipe;
+            // La recette est créée par un autre contexte : la recharger ici pour que
+            // les marges modifiées ci-dessous soient bien suivies et enregistrées.
+            await GetOrExtractAyahImageAsync(surahNumber, ayahNumber);
+            recipe = await db.ImageRecipes.FirstOrDefaultAsync(r => r.AyahId == ayahId);
+            if (recipe == null) return (false, string.Empty, new AyahImageRecipeEntity { AyahId = ayahId });
         }
 
         recipe.MarginTop = Math.Clamp(recipe.MarginTop + deltaTop, -100, 200);
@@ -276,16 +292,87 @@ public sealed class AyahImageService
 
         if (rects.Count == 0)
         {
-            using var bmp = new Bitmap(pagePath);
+            using var pageStream = new MemoryStream(File.ReadAllBytes(pagePath));
+            using var bmp = new Bitmap(pageStream);
             rects.Add(new PixelRect(50, 100, bmp.Width - 100, 200));
         }
 
+        // L'aperçu doit montrer exactement ce que produira l'extraction, marges comprises
         var box = AyahGeometry.ComputeEnclosingBoundingBox(rects);
+        if (recipe != null && regionEntities.Count > 0)
+        {
+            box = ComputeAdjustedBox(rects, recipe);
+            rects = ApplyMarginsToRects(rects, recipe);
+        }
         using var compBmp = AyahImageExtractor.GenerateSideBySideComparison(pagePath, rects, box);
 
         var compPath = Path.Combine(compDir, $"comp_{surahNumber:D3}_{ayahNumber:D3}.png");
-        compBmp.Save(compPath, ImageFormat.Png);
+        using (var msComp = new MemoryStream())
+        {
+            compBmp.Save(msComp, ImageFormat.Png);
+            File.WriteAllBytes(compPath, msComp.ToArray());
+        }
         return compPath;
+    }
+
+    private static PixelRect ComputeAdjustedBox(IReadOnlyList<PixelRect> rects, AyahImageRecipeEntity recipe)
+    {
+        var boundingBox = AyahGeometry.ComputeEnclosingBoundingBox(rects);
+        return new PixelRect(
+            boundingBox.X - recipe.MarginLeft,
+            boundingBox.Y - recipe.MarginTop,
+            Math.Max(1, boundingBox.Width + recipe.MarginLeft + recipe.MarginRight),
+            Math.Max(1, boundingBox.Height + recipe.MarginTop + recipe.MarginBottom));
+    }
+
+    /// <summary>
+    /// Étend (ou réduit) les rectangles situés sur les bords extérieurs du bloc de l'ayah
+    /// afin que les marges récupèrent les pixels coupés (signes, points). Une taille minimale
+    /// de 1 px est conservée pour qu'une marge négative ne fasse jamais disparaître une ligne.
+    /// </summary>
+    private static List<PixelRect> ApplyMarginsToRects(IReadOnlyList<PixelRect> rects, AyahImageRecipeEntity recipe)
+    {
+        var adjustedRects = new List<PixelRect>();
+        if (rects.Count == 0) return adjustedRects;
+
+        var minY = rects.Min(r => r.RoundY);
+        var maxY = rects.Max(r => r.RoundY + r.RoundHeight);
+        var minX = rects.Min(r => r.RoundX);
+        var maxX = rects.Max(r => r.RoundX + r.RoundWidth);
+
+        foreach (var r in rects)
+        {
+            var x = r.X;
+            var y = r.Y;
+            var w = r.Width;
+            var h = r.Height;
+
+            // Expand top line(s) upward
+            if (rects.Count == 1 || r.RoundY <= minY + 5)
+            {
+                y -= recipe.MarginTop;
+                h += recipe.MarginTop;
+            }
+            // Expand bottom line(s) downward
+            if (rects.Count == 1 || r.RoundY + r.RoundHeight >= maxY - 5)
+            {
+                h += recipe.MarginBottom;
+            }
+            // Expand left/right edges
+            if (rects.Count == 1 || r.RoundX <= minX + 5)
+            {
+                x -= recipe.MarginLeft;
+                w += recipe.MarginLeft;
+            }
+            if (rects.Count == 1 || r.RoundX + r.RoundWidth >= maxX - 5)
+            {
+                w += recipe.MarginRight;
+            }
+
+            adjustedRects.Add(new PixelRect(x, y, Math.Max(1, w), Math.Max(1, h)));
+        }
+
+        return adjustedRects;
     }
 
     private static string ComputeSha256(string filePath)

@@ -193,12 +193,27 @@ public sealed partial class LibraryViewModel : ViewModelBase
         {
             using var db = new AppDbContext(dbPath);
 
-            // 1. Reciter
-            var defaultCollection = await db.RecitationCollections.AsNoTracking().FirstOrDefaultAsync();
-            var collectionId = defaultCollection?.Id ?? "saber";
+            // 1. Reciter: Respect audio_catalog_preferences or default to Saber Abdelhakam
+            string defaultColId = RecitationCatalogService.SaberCollection;
+            try
+            {
+                var prefId = await db.Database.SqlQueryRaw<string>("SELECT DefaultCollectionId AS Value FROM audio_catalog_preferences WHERE Id=1").FirstOrDefaultAsync();
+                if (!string.IsNullOrEmpty(prefId)) defaultColId = prefId;
+            }
+            catch { }
+
+            var defaultCollection = await db.RecitationCollections.AsNoTracking().FirstOrDefaultAsync(c => c.Id == defaultColId)
+                ?? await db.RecitationCollections.AsNoTracking().FirstOrDefaultAsync(c => c.Id == RecitationCatalogService.SaberCollection)
+                ?? await db.RecitationCollections.AsNoTracking().FirstOrDefaultAsync();
+
+            var collectionId = defaultCollection?.Id ?? RecitationCatalogService.SaberCollection;
             if (!string.IsNullOrWhiteSpace(defaultCollection?.TitleArabic))
             {
                 CurrentReciterName = defaultCollection.TitleArabic;
+            }
+            else
+            {
+                CurrentReciterName = "الشيخ صابر عبد الحكم";
             }
 
             // 2. Audio sources

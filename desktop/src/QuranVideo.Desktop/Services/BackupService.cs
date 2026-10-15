@@ -208,9 +208,27 @@ public sealed class BackupService
 
             progress?.Report(50);
 
-            // 2. Déployer vers le workspace cible
+            // 2. Déployer vers le workspace cible en préservant l'intégrité SQLite
             Directory.CreateDirectory(targetWorkspacePath);
-            CopyDirectoryRecursive(tempExtractDir, targetWorkspacePath);
+
+            var targetDbDir = Path.Combine(targetWorkspacePath, "data");
+            Directory.CreateDirectory(targetDbDir);
+            var targetDbPath = Path.Combine(targetDbDir, "quran.db");
+
+            SqliteConnection.ClearAllPools();
+            using (var sourceConn = new SqliteConnection($"Data Source={dbPath};Pooling=False"))
+            {
+                await sourceConn.OpenAsync(cancellationToken);
+                using (var destConn = new SqliteConnection($"Data Source={targetDbPath};Pooling=False"))
+                {
+                    await destConn.OpenAsync(cancellationToken);
+                    sourceConn.BackupDatabase(destConn);
+                }
+            }
+            SqliteConnection.ClearAllPools();
+
+            // Copier les autres fichiers (médias, configs, etc.) en excluant quran.db déjà restauré
+            CopyDirectoryRecursiveExcluding(tempExtractDir, targetWorkspacePath, "quran.db");
 
             var restoredFiles = Directory.GetFiles(targetWorkspacePath, "*.*", SearchOption.AllDirectories);
             progress?.Report(100);
@@ -252,6 +270,25 @@ public sealed class BackupService
         {
             var dest = Path.Combine(targetDir, Path.GetFileName(subDir));
             CopyDirectoryRecursive(subDir, dest);
+        }
+    }
+
+    private static void CopyDirectoryRecursiveExcluding(string sourceDir, string targetDir, string excludeFileName)
+    {
+        Directory.CreateDirectory(targetDir);
+
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var fileName = Path.GetFileName(file);
+            if (string.Equals(fileName, excludeFileName, StringComparison.OrdinalIgnoreCase)) continue;
+            var dest = Path.Combine(targetDir, fileName);
+            File.Copy(file, dest, overwrite: true);
+        }
+
+        foreach (var subDir in Directory.GetDirectories(sourceDir))
+        {
+            var destSub = Path.Combine(targetDir, Path.GetFileName(subDir));
+            CopyDirectoryRecursiveExcluding(subDir, destSub, excludeFileName);
         }
     }
 

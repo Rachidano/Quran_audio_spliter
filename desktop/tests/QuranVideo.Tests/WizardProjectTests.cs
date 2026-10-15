@@ -48,7 +48,7 @@ public class WizardProjectTests : IDisposable
         using var db = new AppDbContext(dbPath);
         db.Database.EnsureCreated();
 
-        db.Reciters.Add(new ReciterEntity { Id = "saber_abdelhakam", NameArabic = "الشيخ صابر الحكم", NameLatin = "Saber" });
+        db.Reciters.Add(new ReciterEntity { Id = "saber_abdelhakam", NameArabic = "الشيخ صابر عبد الحكم", NameLatin = "Saber" });
         db.RecitationCollections.Add(new RecitationCollectionEntity
         {
             Id = "saber_abdelhakam_warsh",
@@ -155,20 +155,22 @@ public class WizardProjectTests : IDisposable
 
         Assert.Equal(2, vm.WizardAyatItems.Count);
         Assert.True(vm.IsWizardSequenceValid);
-        Assert.Contains("معتمدة وجاهزة", vm.WizardValidationSummary);
+        Assert.Contains("مسجلة وجاهزة", vm.WizardValidationSummary);
         Assert.True(vm.WizardAyatItems[0].IsFullyReady);
         Assert.True(vm.WizardAyatItems[1].IsFullyReady);
     }
 
     [Fact]
-    public async Task RefreshWizardSequence_WhenAyahMissingApprovedImage_DetectsNeedsReview()
+    public async Task RefreshWizardSequence_WhenAyahMissingImage_DetectsMissing()
     {
-        // Unapprove ayah 2
+        // Remove image for ayah 2
         var dbPath = Path.Combine(_testWorkspaceDir, "data", "quran.db");
         using (var db = new AppDbContext(dbPath))
         {
             var recipe = db.ImageRecipes.First(r => r.AyahId == "1:2");
-            recipe.Status = AyahImageStatus.NeedsReview;
+            var fullPath = Path.Combine(_testWorkspaceDir, recipe.RelativeImagePath);
+            if (File.Exists(fullPath)) File.Delete(fullPath);
+            recipe.RelativeImagePath = "";
             db.SaveChanges();
         }
 
@@ -188,7 +190,6 @@ public class WizardProjectTests : IDisposable
 
         Assert.Equal(2, vm.WizardAyatItems.Count);
         Assert.False(vm.IsWizardSequenceValid);
-        Assert.Contains("تتطلب تدقيقاً", vm.WizardValidationSummary);
         Assert.False(vm.WizardAyatItems[1].IsFullyReady);
     }
 

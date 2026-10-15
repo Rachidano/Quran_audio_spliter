@@ -114,7 +114,7 @@
                             </Button.Style>
                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="🚀 تصدير المجموعة (MP4)"/>
+                                <TextBlock Text="تصدير كامل المجموعة 🚀"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -207,7 +207,7 @@
             <Border Grid.Row="4" Style="{StaticResource ModernCard}" Margin="0,0,0,16"
                     Visibility="{Binding HasCollections, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel>
-                    <TextBlock Text="➕ إضافة مشروع فيديو محفوظ إلى هذه المجموعة :" FontWeight="Bold" FontSize="15" Foreground="#1e293b" Margin="0,0,0,12"/>
+                    <TextBlock Text="➕ إضافة فيديو محفوظ إلى هذه المجموعة :" FontWeight="Bold" FontSize="15" Foreground="#1e293b" Margin="0,0,0,12"/>
                     <WrapPanel VerticalAlignment="Center">
                         <ComboBox ItemsSource="{Binding AvailableProjectsToAdd}" SelectedItem="{Binding SelectedProjectToAdd}" DisplayMemberPath="Title"
                                   MinWidth="340" Height="38" FontSize="13" VerticalContentAlignment="Center" Margin="0,0,14,6"/>
@@ -218,6 +218,9 @@
                             <TextBlock Text="إضافة للمجموعة ➕"/>
                         </Button>
                     </WrapPanel>
+                    <TextBlock Text="💡 لا توجد مقاطع فيديو إضافية غير مضافة حالياً — يمكنك إنتاج مقطع فيديو جديد من الاستوديو ليتاح إدراجه هنا فوراً."
+                               FontSize="12" Foreground="#64748b" Margin="0,8,0,0"
+                               Visibility="{Binding HasNoAvailableProjects, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 </StackPanel>
             </Border>
 

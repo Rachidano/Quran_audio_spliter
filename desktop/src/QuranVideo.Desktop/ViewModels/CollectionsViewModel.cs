@@ -85,6 +85,8 @@ public sealed partial class CollectionsViewModel : ViewModelBase
     public string CollectionCountDescription => $"{CurrentCollectionItems.Count} فيديو";
     public string ReadyCountDescription => $"{CurrentCollectionItems.Count(i => i.IsReady)} من {CurrentCollectionItems.Count} جاهز";
     public bool IsAllItemsReady => CurrentCollectionItems.Count > 0 && CurrentCollectionItems.All(i => i.IsReady);
+    public bool HasAvailableProjects => AvailableProjectsToAdd.Count > 0;
+    public bool HasNoAvailableProjects => AvailableProjectsToAdd.Count == 0;
 
     public CollectionsViewModel(
         WorkspaceService workspaceService,
@@ -142,11 +144,14 @@ public sealed partial class CollectionsViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasItems));
             OnPropertyChanged(nameof(HasNoItems));
             OnPropertyChanged(nameof(HasCollectionsAndNoItems));
+            OnPropertyChanged(nameof(HasAvailableProjects));
             return;
         }
 
-        var dbPath = _workspaceService.GetDatabasePath();
-        using var db = new AppDbContext(dbPath);
+        try
+        {
+            var dbPath = _workspaceService.GetDatabasePath();
+            using var db = new AppDbContext(dbPath);
 
         var items = await db.CollectionItems
             .Include(i => i.Project)
@@ -191,6 +196,68 @@ public sealed partial class CollectionsViewModel : ViewModelBase
         OnPropertyChanged(nameof(ReadyCountDescription));
         OnPropertyChanged(nameof(IsAllItemsReady));
 
+        // Check for any completed VideoCompositionEntity without a VideoProjectEntity and sync them
+        try
+        {
+            var completedComps = await db.Compositions
+                .Where(c => c.Status == CompositionStatus.Completed && !string.IsNullOrEmpty(c.RelativeVideoPath))
+                .ToListAsync();
+
+            bool hasNewProj = false;
+            foreach (var comp in completedComps)
+            {
+                var alreadyHasProj = await db.Projects.AnyAsync(p => p.OutputVideoPath == comp.RelativeVideoPath ||
+                    (p.SurahNumber == comp.SurahNumber && p.StartAyahNumber == comp.AyahNumber && p.EndAyahNumber == comp.AyahNumber && p.Orientation == comp.Orientation));
+                if (!alreadyHasProj)
+                {
+                    var surah = SurahCatalogService.GetSurah(comp.SurahNumber);
+                    var surahName = surah?.NameArabic ?? $"سورة {comp.SurahNumber}";
+                    db.Projects.Add(new VideoProjectEntity
+                    {
+                        Title = $"{surahName} — الآية {comp.AyahNumber}",
+                        SurahNumber = comp.SurahNumber,
+                        StartAyahNumber = comp.AyahNumber,
+                        EndAyahNumber = comp.AyahNumber,
+                        ReciterId = comp.ReciterId,
+                        AudioSourceId = comp.AudioSourceId,
+                        Orientation = comp.Orientation,
+                        Status = "Completed",
+                        OutputVideoPath = comp.RelativeVideoPath,
+                        LastRenderedAtUtc = comp.RenderedAtUtc ?? DateTime.UtcNow,
+                        CreatedAtUtc = comp.CreatedAtUtc,
+                        UpdatedAtUtc = DateTime.UtcNow,
+                        SelectedAyahs = new List<ProjectAyahEntity>
+                        {
+                            new ProjectAyahEntity
+                            {
+                                OrderIndex = 0,
+                                SurahNumber = comp.SurahNumber,
+                                AyahNumber = comp.AyahNumber,
+                                AyahId = $"{comp.SurahNumber}:{comp.AyahNumber}",
+                                PassageId = comp.PassageId,
+                                PassageRevision = comp.PassageRevision,
+                                StartTimeSec = comp.StartTimeSec,
+                                EndTimeSec = comp.EndTimeSec,
+                                ImageRecipeId = comp.ImageRecipeId,
+                                ImageRevision = comp.ImageRevision,
+                                RelativeImagePath = comp.ImagePath,
+                                JunctionReviewed = true
+                            }
+                        }
+                    });
+                    hasNewProj = true;
+                }
+            }
+            if (hasNewProj)
+            {
+                await db.SaveChangesAsync();
+            }
+        }
+        catch (Exception syncEx)
+        {
+            LoggingService.Instance.LogError("Erreur synchronisation compositions vers projets", syncEx);
+        }
+
         // Load available projects to add
         var existingProjectIds = items.Select(i => i.ProjectId).ToHashSet();
         var allProjects = await db.Projects
@@ -206,6 +273,17 @@ public sealed partial class CollectionsViewModel : ViewModelBase
         }
 
         SelectedProjectToAdd = AvailableProjectsToAdd.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            BatchErrorMessage = $"خطأ في تحميل عناصر ومشاريع المجموعة: {ex.Message}";
+            LoggingService.Instance.LogError("Erreur chargement collection", ex);
+        }
+        finally
+        {
+            OnPropertyChanged(nameof(HasAvailableProjects));
+            OnPropertyChanged(nameof(HasNoAvailableProjects));
+        }
     }
 
     [RelayCommand]
@@ -309,28 +387,48 @@ public sealed partial class CollectionsViewModel : ViewModelBase
     [RelayCommand]
     public async Task AddProjectToCollectionAsync()
     {
-        if (SelectedCollection == null || SelectedProjectToAdd == null) return;
+        BatchErrorMessage = null;
 
-        var dbPath = _workspaceService.GetDatabasePath();
-        using var db = new AppDbContext(dbPath);
-
-        int maxOrder = await db.CollectionItems
-            .Where(i => i.CollectionId == SelectedCollection.Id)
-            .Select(i => (int?)i.OrderIndex)
-            .MaxAsync() ?? 0;
-
-        var item = new CollectionItemEntity
+        if (SelectedCollection == null)
         {
-            CollectionId = SelectedCollection.Id,
-            ProjectId = SelectedProjectToAdd.Id,
-            OrderIndex = maxOrder + 1,
-            AddedAtUtc = DateTime.UtcNow
-        };
+            BatchErrorMessage = "يرجى اختيار أو إنشاء مجموعة أولاً.";
+            return;
+        }
 
-        db.CollectionItems.Add(item);
-        await db.SaveChangesAsync();
+        if (SelectedProjectToAdd == null)
+        {
+            BatchErrorMessage = "يرجى اختيار مشروع أو فيديو من القائمة لإضافته للمجموعة.";
+            return;
+        }
 
-        await LoadCurrentCollectionItemsAsync();
+        try
+        {
+            var dbPath = _workspaceService.GetDatabasePath();
+            using var db = new AppDbContext(dbPath);
+
+            int maxOrder = await db.CollectionItems
+                .Where(i => i.CollectionId == SelectedCollection.Id)
+                .Select(i => (int?)i.OrderIndex)
+                .MaxAsync() ?? 0;
+
+            var item = new CollectionItemEntity
+            {
+                CollectionId = SelectedCollection.Id,
+                ProjectId = SelectedProjectToAdd.Id,
+                OrderIndex = maxOrder + 1,
+                AddedAtUtc = DateTime.UtcNow
+            };
+
+            db.CollectionItems.Add(item);
+            await db.SaveChangesAsync();
+
+            await LoadCurrentCollectionItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            BatchErrorMessage = $"تعذر إضافة الفيديو للمجموعة: {ex.Message}";
+            LoggingService.Instance.LogError("Erreur ajout projet à la collection", ex);
+        }
     }
 
     [RelayCommand]

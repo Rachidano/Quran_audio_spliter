@@ -151,7 +151,7 @@
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="القراء وروابط تحميل السور" FontSize="20" FontWeight="Bold" Foreground="#0f172a"/>
-                    <TextBlock Text="إدارة وتعديل روابط التلاوات لكل قارئ وتنزيل ملفات السور بصيغة MP3 مباشرة. روابط الشيخ صابر الحكم معتمدة ومجهزة مسبقاً."
+                    <TextBlock Text="إدارة وتعديل روابط التلاوات لكل قارئ وتنزيل ملفات السور بصيغة MP3 مباشرة. روابط الشيخ صابر عبد الحكم معتمدة ومجهزة مسبقاً."
                                FontSize="13" Foreground="#64748b" Margin="0,3,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
             </Grid>

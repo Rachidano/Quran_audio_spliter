@@ -90,6 +90,14 @@ public sealed class AnnotationService
                 existing.IsValidatedByUser = passage.IsValidatedByUser;
                 existing.Notes = passage.Notes;
 
+                if (existing.IsSelectedForExport)
+                {
+                    var siblings = await db.Passages
+                        .Where(p => p.AudioSourceId == existing.AudioSourceId && p.AyahId == existing.AyahId && p.Id != existing.Id)
+                        .ToListAsync();
+                    foreach (var s in siblings) s.IsSelectedForExport = false;
+                }
+
                 await db.SaveChangesAsync();
                 return (true, null, existing);
             }
@@ -117,6 +125,14 @@ public sealed class AnnotationService
                 existingMain.IsValidatedByUser = passage.IsValidatedByUser;
                 existingMain.Notes = passage.Notes;
 
+                if (existingMain.IsSelectedForExport)
+                {
+                    var siblings = await db.Passages
+                        .Where(p => p.AudioSourceId == existingMain.AudioSourceId && p.AyahId == existingMain.AyahId && p.Id != existingMain.Id)
+                        .ToListAsync();
+                    foreach (var s in siblings) s.IsSelectedForExport = false;
+                }
+
                 await db.SaveChangesAsync();
                 return (true, null, existingMain);
             }
@@ -125,6 +141,15 @@ public sealed class AnnotationService
         passage.Revision = 1;
         passage.CreatedAtUtc = DateTime.UtcNow;
         db.Passages.Add(passage);
+
+        if (passage.IsSelectedForExport)
+        {
+            var siblings = await db.Passages
+                .Where(p => p.AudioSourceId == passage.AudioSourceId && p.AyahId == passage.AyahId)
+                .ToListAsync();
+            foreach (var s in siblings) s.IsSelectedForExport = false;
+        }
+
         await db.SaveChangesAsync();
 
         _undoStack.Push(new UndoAction(UndoType.Insert, ClonePassage(passage)));
@@ -302,11 +327,13 @@ public sealed class AnnotationService
         }
 
         // L06-09: Reject if audio SHA-256 does not match!
-        if (!string.IsNullOrEmpty(expectedAudioSha256) &&
-            !string.IsNullOrEmpty(model.AudioSha256) &&
-            !string.Equals(model.AudioSha256, expectedAudioSha256, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(expectedAudioSha256))
         {
-            return (false, "الملف غير متطابق: البصمة الصوتية (SHA-256) للتسجيل لا تطابق الملف الحالي.", 0);
+            if (string.IsNullOrEmpty(model.AudioSha256) ||
+                !string.Equals(model.AudioSha256, expectedAudioSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, "الملف غير متطابق: البصمة الصوتية (SHA-256) للتسجيل لا تطابق الملف الحالي أو أنها مفقودة في ملف الاستيراد.", 0);
+            }
         }
 
         if (model.SurahNumber != expectedSurahNumber)
@@ -317,35 +344,58 @@ public sealed class AnnotationService
         using var db = CreateDbContext();
         using var tx = await db.Database.BeginTransactionAsync();
 
-        // Remove existing passages for this source and surah to replace cleanly
+        // Retrieve existing passages to update in place where possible, preserving foreign keys in projects/compositions
         var existing = await db.Passages
             .Where(p => p.AudioSourceId == expectedAudioSourceId && p.SurahNumber == expectedSurahNumber)
             .ToListAsync();
-
-        db.Passages.RemoveRange(existing);
+        var existingQueue = existing.GroupBy(p => p.AyahId).ToDictionary(g => g.Key, g => new Queue<AyahPassageEntity>(g));
 
         int importedCount = 0;
+        var usedExistingIds = new HashSet<int>();
+
         foreach (var item in model.Passages)
         {
             var kind = Enum.TryParse<PassageKind>(item.Kind, out var parsedKind) ? parsedKind : PassageKind.Full;
 
-            var entity = new AyahPassageEntity
+            if (existingQueue.TryGetValue(item.AyahId, out var queue) && queue.Count > 0)
             {
-                AudioSourceId = expectedAudioSourceId,
-                SurahNumber = item.SurahNumber,
-                AyahNumber = item.AyahNumber,
-                AyahId = item.AyahId,
-                StartTimeSec = item.StartTimeSec,
-                EndTimeSec = item.EndTimeSec,
-                Kind = kind,
-                IsSelectedForExport = item.IsSelectedForExport,
-                Revision = item.Revision,
-                IsValidatedByUser = item.IsValidatedByUser,
-                Notes = item.Notes,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-            db.Passages.Add(entity);
+                var existingEntity = queue.Dequeue();
+                usedExistingIds.Add(existingEntity.Id);
+                existingEntity.StartTimeSec = item.StartTimeSec;
+                existingEntity.EndTimeSec = item.EndTimeSec;
+                existingEntity.Kind = kind;
+                existingEntity.IsSelectedForExport = item.IsSelectedForExport;
+                existingEntity.Revision = item.Revision > 0 ? item.Revision : existingEntity.Revision + 1;
+                existingEntity.IsValidatedByUser = item.IsValidatedByUser;
+                existingEntity.Notes = item.Notes;
+            }
+            else
+            {
+                var entity = new AyahPassageEntity
+                {
+                    AudioSourceId = expectedAudioSourceId,
+                    SurahNumber = item.SurahNumber,
+                    AyahNumber = item.AyahNumber,
+                    AyahId = item.AyahId,
+                    StartTimeSec = item.StartTimeSec,
+                    EndTimeSec = item.EndTimeSec,
+                    Kind = kind,
+                    IsSelectedForExport = item.IsSelectedForExport,
+                    Revision = item.Revision,
+                    IsValidatedByUser = item.IsValidatedByUser,
+                    Notes = item.Notes,
+                    CreatedAtUtc = DateTime.UtcNow
+                };
+                db.Passages.Add(entity);
+            }
             importedCount++;
+        }
+
+        // Only remove obsolete unused passages that are not referenced
+        var obsolete = existing.Where(e => !usedExistingIds.Contains(e.Id)).ToList();
+        if (obsolete.Count > 0)
+        {
+            db.Passages.RemoveRange(obsolete);
         }
 
         await db.SaveChangesAsync();

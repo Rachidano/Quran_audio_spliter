@@ -10,7 +10,7 @@ public sealed class LoggingService
     private static LoggingService? _instance;
     public static LoggingService Instance => _instance ??= new LoggingService();
 
-    public const string AppVersion = "3.0.0";
+    public const string AppVersion = "4.0.0";
     private readonly object _lock = new();
     private string? _logFilePath;
 

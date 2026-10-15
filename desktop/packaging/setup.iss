@@ -4,7 +4,7 @@
 ; =====================================================================
 
 #define MyAppName "صانع فيديو القرآن الكريم"
-#define MyAppVersion "3.0.0"
+#define MyAppVersion "4.0.0"
 #define MyAppPublisher "ITComp"
 #define MyAppExeName "QuranVideo.exe"
 

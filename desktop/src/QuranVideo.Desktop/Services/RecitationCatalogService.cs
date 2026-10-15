@@ -12,6 +12,13 @@ public sealed record RecitationChoice(string CollectionId, string ReciterId, str
 public sealed class RecitationCatalogService(WorkspaceService workspace)
 {
     public const string SaberCollection = "saber_abdelhakam_warsh";
+    public const string HusaryCollection = "husary_murattal_warsh";
+    /// <summary>mp3quran.net : minutages ayah par ayah de الحصري، رواية ورش (dossier audio r3, compte Warsh).</summary>
+    public const int HusaryTimingReadId = 120;
+    /// <summary>Fichiers MP3 de الحصري ورش sur mp3quran.net (moshaf 120, « ورش عن نافع - مرتل »).</summary>
+    public const string HusaryUrlTemplate = "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/{0:D3}.mp3";
+    /// <summary>Anciens liens par défaut (quranicaudio.com), retirés par le site : ils renvoient 404.</summary>
+    public const string LegacyHusaryUrlPrefix = "https://download.quranicaudio.com/quran/warsh/mahmood_khaleel_al-husaree_warsh/";
     private static readonly SemaphoreSlim InitializationGate = new(1, 1);
     private AppDbContext Db() => new(workspace.GetDatabasePath());
 
@@ -31,28 +38,75 @@ public sealed class RecitationCatalogService(WorkspaceService workspace)
                 CREATE TABLE IF NOT EXISTS audio_catalog_preferences (
                     Id INTEGER PRIMARY KEY CHECK(Id = 1), DefaultCollectionId TEXT NOT NULL);
                 """);
+            var hasTimingColumn = await db.Database
+                .SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM pragma_table_info('recitation_collections') WHERE name = 'TimingReadId'")
+                .SingleAsync();
+            if (hasTimingColumn == 0)
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE recitation_collections ADD COLUMN TimingReadId INTEGER");
             using var tx = await db.Database.BeginTransactionAsync();
+            await db.Database.ExecuteSqlRawAsync("""
+                UPDATE reciters SET NameArabic = 'الشيخ صابر عبد الحكم' WHERE Id = 'saber_abdelhakam' AND NameArabic = 'الشيخ صابر الحكم';
+                UPDATE recitation_collections SET TitleArabic = 'الشيخ صابر عبد الحكم' WHERE Id = 'saber_abdelhakam_warsh' AND TitleArabic = 'الشيخ صابر الحكم';
+                """);
             if (!await db.Reciters.AnyAsync(r => r.Id == "saber_abdelhakam"))
-                db.Reciters.Add(new ReciterEntity { Id = "saber_abdelhakam", NameArabic = "الشيخ صابر الحكم", NameLatin = "Saber Abdelhakam" });
+                db.Reciters.Add(new ReciterEntity { Id = "saber_abdelhakam", NameArabic = "الشيخ صابر عبد الحكم", NameLatin = "Saber Abdelhakam" });
             if (!await db.RecitationCollections.AnyAsync(c => c.Id == SaberCollection))
-                db.RecitationCollections.Add(new RecitationCollectionEntity { Id = SaberCollection, ReciterId = "saber_abdelhakam", TitleArabic = "الشيخ صابر الحكم", Riwaya = "warsh" });
+                db.RecitationCollections.Add(new RecitationCollectionEntity { Id = SaberCollection, ReciterId = "saber_abdelhakam", TitleArabic = "الشيخ صابر عبد الحكم", Riwaya = "warsh" });
+
+            // Récitations Warsh de référence (mp3quran.net) : ajoutées si absentes, sans écraser un nom renommé
+            foreach (var reference in WarshRecitationReferential.All)
+            {
+                if (!await db.Reciters.AnyAsync(r => r.Id == reference.ReciterId))
+                    db.Reciters.Add(new ReciterEntity { Id = reference.ReciterId, NameArabic = reference.NameArabic, NameLatin = reference.NameLatin });
+                if (!await db.RecitationCollections.AnyAsync(c => c.Id == reference.CollectionId))
+                    db.RecitationCollections.Add(new RecitationCollectionEntity
+                    {
+                        Id = reference.CollectionId,
+                        ReciterId = reference.ReciterId,
+                        TitleArabic = reference.TitleArabic,
+                        Riwaya = "warsh",
+                        BaseUrlTemplate = reference.UrlTemplate,
+                        TimingReadId = reference.TimingReadId
+                    });
+            }
+
             await db.SaveChangesAsync();
+            // Les espaces créés par une ancienne version pointent vers quranicaudio.com (404) pour الحصري
+            var legacyPattern = LegacyHusaryUrlPrefix + "%";
+            foreach (var reference in WarshRecitationReferential.All)
+            {
+                if (reference.TimingReadId is int readId)
+                    await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE recitation_collections SET TimingReadId = {readId} WHERE Id = {reference.CollectionId} AND TimingReadId IS NULL");
+                await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE recitation_collections SET BaseUrlTemplate = {reference.UrlTemplate} WHERE Id = {reference.CollectionId} AND (BaseUrlTemplate = '' OR BaseUrlTemplate LIKE {legacyPattern})");
+            }
+
             await using var resource = typeof(RecitationCatalogService).Assembly.GetManifestResourceStream("QuranVideo.SaberAudioLinks")!;
             var defaults = (await JsonSerializer.DeserializeAsync<List<SeedLink>>(resource))!.ToDictionary(x => x.SurahNumber, x => x.DownloadUrl);
+            var references = WarshRecitationReferential.All.ToDictionary(r => r.CollectionId);
             var collections = await db.RecitationCollections.ToListAsync();
             foreach (var collection in collections)
             {
+                var reference = references.GetValueOrDefault(collection.Id);
                 for (int n = 1; n <= 114; n++)
                 {
                     var url = collection.Id == SaberCollection ? defaults[n] : "";
+                    if (reference != null)
+                    {
+                        url = string.Format(reference.UrlTemplate, n);
+                    }
                     // Preserve old configured collections when their template is usable.
-                    if (url.Length == 0 && !string.IsNullOrEmpty(collection.BaseUrlTemplate))
+                    else if (url.Length == 0 && !string.IsNullOrEmpty(collection.BaseUrlTemplate))
                     {
                         try { url = string.Format(collection.BaseUrlTemplate, n); }
                         catch (FormatException) { }
                         if (!IsValidUrl(url)) url = "";
                     }
                     await db.Database.ExecuteSqlInterpolatedAsync($"INSERT OR IGNORE INTO audio_download_links (CollectionId,SurahNumber,Url) VALUES ({collection.Id},{n},{url})");
+                    if (reference != null)
+                    {
+                        // Remplit les liens vides et remplace les anciens liens morts ; un lien saisi à la main est conservé
+                        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE audio_download_links SET Url={url} WHERE CollectionId={collection.Id} AND SurahNumber={n} AND (Url IS NULL OR Url='' OR Url LIKE {legacyPattern})");
+                    }
                 }
             }
             await db.Database.ExecuteSqlInterpolatedAsync($"INSERT OR IGNORE INTO audio_catalog_preferences (Id,DefaultCollectionId) VALUES (1,{SaberCollection})");
@@ -64,9 +118,10 @@ public sealed class RecitationCatalogService(WorkspaceService workspace)
     public async Task<List<RecitationChoice>> GetCollectionsAsync()
     {
         using var db = Db();
-        return await db.RecitationCollections.Include(c => c.Reciter).OrderBy(c => c.Id == SaberCollection ? 0 : 1)
+        return await db.RecitationCollections.Include(c => c.Reciter)
+            .OrderBy(c => c.Id == SaberCollection ? 0 : (c.Id == HusaryCollection ? 1 : 2))
             .ThenBy(c => c.Reciter!.NameArabic)
-            .Select(c => new RecitationChoice(c.Id, c.ReciterId, c.Reciter!.NameArabic)).ToListAsync();
+            .Select(c => new RecitationChoice(c.Id, c.ReciterId, !string.IsNullOrEmpty(c.TitleArabic) ? c.TitleArabic : c.Reciter!.NameArabic)).ToListAsync();
     }
 
     public async Task<string> GetDefaultAsync()
