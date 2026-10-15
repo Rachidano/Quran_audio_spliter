@@ -130,6 +130,8 @@ public sealed partial class MainViewModel : ViewModelBase
 
     private void NavigateToStudioWithTarget(int surahNumber, int ayahNumber)
     {
+        // Le studio s'ouvre avec le récitateur choisi dans la bibliothèque
+        if (LibraryVM.SelectedReciter is { } reciter) StudioVM.SelectRecitation(reciter.CollectionId);
         StudioVM.SetTarget(surahNumber, ayahNumber);
         StudioVM.IsFineTuningMode = true;
         SelectStudio();

@@ -86,8 +86,23 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
         _ = LoadAyahImageAsync();
     }
 
+    /// <summary>Numéros d'ayah de la sourate courante (sélecteur de l'en-tête du studio).</summary>
+    public IReadOnlyList<int> AyahNumbers => Enumerable.Range(1, CurrentSurah.AyahCount).ToList();
+
+    /// <summary>Sélecteur de sourate du studio : changer de sourate ouvre son ayah 1.</summary>
+    public SurahInfo StudioSurahSelection
+    {
+        get => CurrentSurah;
+        set
+        {
+            if (value != null && value.Number != CurrentSurah.Number) SetTarget(value.Number, 1);
+        }
+    }
+
     partial void OnCurrentSurahChanged(SurahInfo value)
     {
+        OnPropertyChanged(nameof(AyahNumbers));
+        OnPropertyChanged(nameof(StudioSurahSelection));
         CurrentAyahNumber = Math.Clamp(CurrentAyahNumber, 1, value.AyahCount);
         RetakeTargetAyahNumber = CurrentAyahNumber;
         UpdateCurrentPageNumber();
@@ -147,8 +162,7 @@ public sealed partial class StudioViewModel : ViewModelBase, IDisposable
     public static string FormatTime(double seconds)
     {
         if (double.IsNaN(seconds) || seconds < 0) seconds = 0;
-        var ts = TimeSpan.FromSeconds(seconds);
-        return $"{ts.Minutes:D2}:{ts.Seconds:D2}.{ts.Milliseconds / 10:D2}";
+        return AyahPassageEntity.FormatClock(seconds);
     }
 
     public static string FormatPassageKind(PassageKind kind) => kind switch

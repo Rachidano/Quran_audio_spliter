@@ -181,7 +181,35 @@ public class AyahPassageEntity
     public string FormattedDuration => $"{Math.Max(0, EndTimeSec - StartTimeSec).ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ثانية";
 
     [NotMapped]
-    public string FormattedRange => $"{TimeSpan.FromSeconds(StartTimeSec):mm\\:ss\\.ff} ➔ {TimeSpan.FromSeconds(EndTimeSec):mm\\:ss\\.ff}";
+    public string FormattedRange => $"{FormattedStartTime} ➔ {FormattedEndTime}";
+
+    [NotMapped]
+    public string FormattedStartTime => FormatClock(StartTimeSec);
+
+    [NotMapped]
+    public string FormattedEndTime => FormatClock(EndTimeSec);
+
+    /// <summary>État affiché dans le tableau des segments du studio.</summary>
+    [NotMapped]
+    public string StatusLabel => IsProposedTiming ? "مقترح" : Kind switch
+    {
+        PassageKind.FullRetake => "إعادة كاملة",
+        PassageKind.PartialRetake => "إعادة جزئية",
+        PassageKind.Portion => "مقطع جزئي",
+        PassageKind.Continuation => "متابعة",
+        _ => "مسجّل"
+    };
+
+    /// <summary>mm:ss.ff, ou h:mm:ss.ff au-delà d'une heure.</summary>
+    public static string FormatClock(double seconds)
+    {
+        // Arrondi aux centièmes (9,6199999 s -> 09.62) ; les heures pour les longues sourates (Al-Baqara : 4 h)
+        var centi = (long)Math.Round(Math.Max(0, double.IsFinite(seconds) ? seconds : 0) * 100, MidpointRounding.AwayFromZero);
+        long hours = centi / 360_000, minutes = centi / 6_000 % 60, secs = centi / 100 % 60, cs = centi % 100;
+        return hours > 0
+            ? $"{hours}:{minutes:D2}:{secs:D2}.{cs:D2}"
+            : $"{minutes:D2}:{secs:D2}.{cs:D2}";
+    }
 
     /// <summary>Préfixe de <see cref="Notes"/> pour une prise importée depuis des minutages publiés.</summary>
     public const string ProposedTimingNotePrefix = "mp3quran:";

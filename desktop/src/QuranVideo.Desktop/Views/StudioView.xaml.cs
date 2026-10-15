@@ -24,6 +24,10 @@ public partial class StudioView : UserControl
 
         if (DataContext is StudioViewModel vm)
         {
+            vm.PropertyChanged -= OnViewModelPropertyChanged;
+            vm.PropertyChanged += OnViewModelPropertyChanged;
+            vm.RecordedPassages.CollectionChanged -= OnRecordedPassagesChanged;
+            vm.RecordedPassages.CollectionChanged += OnRecordedPassagesChanged;
             _ = vm.LoadSavedProjectsAsync();
             _ = vm.RefreshWizardSequenceAsync();
         }
@@ -31,6 +35,11 @@ public partial class StudioView : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        if (DataContext is StudioViewModel vm)
+        {
+            vm.PropertyChanged -= OnViewModelPropertyChanged;
+            vm.RecordedPassages.CollectionChanged -= OnRecordedPassagesChanged;
+        }
         var window = Window.GetWindow(this);
         if (window != null)
         {
@@ -85,15 +94,40 @@ public partial class StudioView : UserControl
         }
     }
 
-    private void OnWaveformSliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    // Tableau des segments : faire défiler jusqu'à la ligne de l'ayah en cours (sinon la sélection est invisible)
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (DataContext is StudioViewModel vm && sender is Slider slider)
+        if (e.PropertyName == nameof(StudioViewModel.CurrentAyahNumber)) ScrollCurrentAyahIntoView();
+    }
+
+    private void OnRecordedPassagesChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) =>
+        ScrollCurrentAyahIntoView();
+
+    private void ScrollCurrentAyahIntoView()
+    {
+        // Après la mise en page, quand les lignes du tableau existent
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
         {
-            if (slider.IsMouseCaptureWithin || (slider.IsMouseOver && Mouse.LeftButton == MouseButtonState.Pressed))
-            {
-                vm.Seek(e.NewValue);
-            }
-        }
+            if (DataContext is not StudioViewModel vm) return;
+            var passage = vm.RecordedPassages.FirstOrDefault(p => p.AyahNumber == vm.CurrentAyahNumber);
+            if (passage != null && PassagesList.ItemContainerGenerator.ContainerFromItem(passage) is FrameworkElement row)
+                row.BringIntoView();
+        });
+    }
+
+    // Saisie d'un temps (معلومات المقطع) : Entrée valide la valeur, Échap l'annule ; puis le studio
+    // reprend le focus pour que F7 / F8 / Espace fonctionnent de nouveau immédiatement
+    private void OnTimeTextBoxKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox box || (e.Key != Key.Enter && e.Key != Key.Escape)) return;
+
+        var binding = box.GetBindingExpression(TextBox.TextProperty);
+        if (e.Key == Key.Enter) binding?.UpdateSource();
+        else binding?.UpdateTarget();
+
+        Keyboard.ClearFocus();
+        Focus();
+        e.Handled = true;
     }
 
     // Clic sur le fond assombri (hors de la fenêtre) : fermer la fenêtre de réglages

@@ -81,11 +81,13 @@ public sealed partial class StudioViewModel
     partial void OnStartTimeSecChanged(double value)
     {
         OnPropertyChanged(nameof(FormattedStartTime));
+        RaiseSegmentTextsChanged();
     }
 
     partial void OnEndTimeSecChanged(double value)
     {
         OnPropertyChanged(nameof(FormattedEndTime));
+        RaiseSegmentTextsChanged();
     }
 
     partial void OnCurrentPlaybackTimeSecChanged(double value)
@@ -112,6 +114,13 @@ public sealed partial class StudioViewModel
         CurrentReciterNameArabic = value.Name;
         _ = RefreshReadyTimingsAvailabilityAsync();
         _ = LoadAudioAndPassagesForSurahAsync(CurrentSurah.Number);
+    }
+
+    /// <summary>Choisit le récitateur du studio (ex. : celui sélectionné dans la bibliothèque).</summary>
+    public void SelectRecitation(string collectionId)
+    {
+        var choice = Reciters.FirstOrDefault(r => r.CollectionId == collectionId);
+        if (choice != null && choice != SelectedRecitation) SelectedRecitation = choice;
     }
 
     public async Task RefreshRecitersAsync(bool selectDefault = false)
@@ -153,7 +162,10 @@ public sealed partial class StudioViewModel
                 Player.Load(path);
                 CurrentAudioSha256 = source!.Sha256;
                 AudioDurationSec = Player.DurationSec;
-                var peaks = await _waveformService.GetWaveformPeaksAsync(path, source!.Sha256);
+                // Premier chargement d'une longue sourate : le calcul de l'onde peut prendre une minute (ensuite en cache)
+                StatusMessage = "جارٍ تحليل الموجة الصوتية للتلاوة...";
+                var peaks = await _waveformService.GetWaveformPeaksAsync(path, source!.Sha256,
+                    totalPoints: WaveformService.PointsForDuration(AudioDurationSec));
                 if (version != _audioLoadVersion) return;
                 WaveformPeaks = peaks;
                 StatusMessage = $"تم تحميل تلاوة {CurrentReciterNameArabic} ({FormattedTotalDuration})";

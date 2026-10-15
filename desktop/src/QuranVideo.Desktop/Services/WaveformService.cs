@@ -12,6 +12,13 @@ public sealed class WaveformService
         _workspaceService = workspaceService;
     }
 
+    /// <summary>Résolution de l'onde du studio : 50 points par seconde (20 ms), pour couper au plus juste.</summary>
+    public const int PeaksPerSecond = 50;
+
+    /// <summary>Nombre de points pour une durée donnée (au moins 800, au plus 1 000 000 ≈ 5 h 30).</summary>
+    public static int PointsForDuration(double durationSec) =>
+        (int)Math.Clamp(Math.Ceiling(Math.Max(0, durationSec) * PeaksPerSecond), 800, 1_000_000);
+
     public async Task<float[]> GetWaveformPeaksAsync(
         string audioFilePath,
         string sha256,

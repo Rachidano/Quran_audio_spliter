@@ -61,5 +61,6 @@ public sealed partial class StudioViewModel
         OnPropertyChanged(nameof(IsWatermarkText));
         OnPropertyChanged(nameof(IsWatermarkLogo));
         OnPropertyChanged(nameof(WatermarkLogoFileName));
+        OnPropertyChanged(nameof(WatermarkIndex));
     }
 }

@@ -38,12 +38,12 @@
             <!-- Récitateur & Champ de recherche -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- Sélecteur / Badge Récitateur -->
-                <Border Background="White" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,0,12,0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="🎙️" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding CurrentReciterName}" FontWeight="SemiBold" Foreground="#334155" FontSize="13" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <TextBlock Text="🎙️" FontSize="15" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                    <ComboBox ItemsSource="{Binding Reciters}" SelectedItem="{Binding SelectedReciter}" DisplayMemberPath="Name"
+                              MinWidth="260" Height="38" FontSize="13" FontWeight="SemiBold" VerticalContentAlignment="Center"
+                              ToolTip="القارئ: تُعرض حالة السور (التنزيل والمقاطع المحضّرة) لهذا القارئ، ويُفتح الاستوديو به"/>
+                </StackPanel>
 
                 <!-- Champ de recherche stylisé -->
                 <Border Background="White" BorderBrush="#cbd5e1" BorderThickness="1" CornerRadius="8" Width="300" Padding="4">

@@ -68,6 +68,47 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty]
     private string _currentReciterName = "الشيخ صابر عبد الحكم";
 
+    /// <summary>Récitateurs disponibles : la bibliothèque affiche l'état des sourates pour celui qui est choisi.</summary>
+    public ObservableCollection<RecitationChoice> Reciters { get; } = new();
+
+    [ObservableProperty]
+    private RecitationChoice? _selectedReciter;
+
+    private bool _isLoadingReciters;
+
+    partial void OnSelectedReciterChanged(RecitationChoice? value)
+    {
+        if (_isLoadingReciters || value == null) return;
+        _ = RefreshSurahStatusAsync();
+    }
+
+    /// <summary>Recharge la liste (noms renommés, récitateurs ajoutés) en gardant le choix courant ;
+    /// au premier affichage, le récitateur par défaut des paramètres est choisi.</summary>
+    private async Task LoadRecitersAsync()
+    {
+        if (_workspaceService == null) return;
+        var catalog = new RecitationCatalogService(_workspaceService);
+        var choices = await catalog.GetCollectionsAsync();
+        var keepId = SelectedReciter?.CollectionId;
+        if (keepId == null)
+        {
+            try { keepId = await catalog.GetDefaultAsync(); }
+            catch { keepId = RecitationCatalogService.SaberCollection; }
+        }
+
+        _isLoadingReciters = true;
+        try
+        {
+            Reciters.Clear();
+            foreach (var choice in choices) Reciters.Add(choice);
+            SelectedReciter = Reciters.FirstOrDefault(c => c.CollectionId == keepId) ?? Reciters.FirstOrDefault();
+        }
+        finally
+        {
+            _isLoadingReciters = false;
+        }
+    }
+
     [ObservableProperty]
     private SurahItemViewModel? _selectedSurahItem;
 
@@ -193,28 +234,17 @@ public sealed partial class LibraryViewModel : ViewModelBase
         {
             using var db = new AppDbContext(dbPath);
 
-            // 1. Reciter: Respect audio_catalog_preferences or default to Saber Abdelhakam
-            string defaultColId = RecitationCatalogService.SaberCollection;
+            // 1. Récitateur choisi dans la liste (récitateur par défaut des paramètres au premier affichage)
             try
             {
-                var prefId = await db.Database.SqlQueryRaw<string>("SELECT DefaultCollectionId AS Value FROM audio_catalog_preferences WHERE Id=1").FirstOrDefaultAsync();
-                if (!string.IsNullOrEmpty(prefId)) defaultColId = prefId;
+                await LoadRecitersAsync();
             }
-            catch { }
-
-            var defaultCollection = await db.RecitationCollections.AsNoTracking().FirstOrDefaultAsync(c => c.Id == defaultColId)
-                ?? await db.RecitationCollections.AsNoTracking().FirstOrDefaultAsync(c => c.Id == RecitationCatalogService.SaberCollection)
-                ?? await db.RecitationCollections.AsNoTracking().FirstOrDefaultAsync();
-
-            var collectionId = defaultCollection?.Id ?? RecitationCatalogService.SaberCollection;
-            if (!string.IsNullOrWhiteSpace(defaultCollection?.TitleArabic))
+            catch (Exception ex)
             {
-                CurrentReciterName = defaultCollection.TitleArabic;
+                LoggingService.Instance.LogWarning($"Liste des récitateurs indisponible : {ex.Message}");
             }
-            else
-            {
-                CurrentReciterName = "الشيخ صابر عبد الحكم";
-            }
+            var collectionId = SelectedReciter?.CollectionId ?? RecitationCatalogService.SaberCollection;
+            CurrentReciterName = SelectedReciter?.Name ?? "الشيخ صابر عبد الحكم";
 
             // 2. Audio sources
             var audioSources = await db.AudioSources.AsNoTracking()
@@ -222,8 +252,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
                 .ToListAsync();
             var audioDict = audioSources.ToDictionary(a => a.SurahNumber);
 
-            // 3. Prepared ayahs counts (distinct ayah passages)
+            // 3. Ayat préparées pour CE récitateur (les sources audio sont nommées « collection:NNN »)
+            var sourcePrefix = collectionId + ":";
             var passagesGrouped = await db.Passages.AsNoTracking()
+                .Where(p => p.AudioSourceId.StartsWith(sourcePrefix))
                 .GroupBy(p => p.SurahNumber)
                 .Select(g => new { SurahNumber = g.Key, Prepared = g.Select(p => p.AyahNumber).Distinct().Count() })
                 .ToListAsync();
