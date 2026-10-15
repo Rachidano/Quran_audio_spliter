@@ -35,6 +35,7 @@ public sealed partial class StudioViewModel
     partial void OnIsHorizontalChanged(bool value)
     {
         OnPropertyChanged(nameof(IsVertical));
+        OnPropertyChanged(nameof(OrientationSummary));
     }
 
     [ObservableProperty]
@@ -55,11 +56,13 @@ public sealed partial class StudioViewModel
         OnPropertyChanged(nameof(IsStudioBackgroundLight));
         OnPropertyChanged(nameof(IsStudioBackgroundDark));
         OnPropertyChanged(nameof(IsStudioBackgroundCustom));
+        OnPropertyChanged(nameof(BackgroundSummary));
     }
 
     partial void OnStudioCustomBackgroundPathChanged(string? value)
     {
         OnPropertyChanged(nameof(StudioCustomBackgroundFileName));
+        OnPropertyChanged(nameof(BackgroundSummary));
     }
 
     [RelayCommand]

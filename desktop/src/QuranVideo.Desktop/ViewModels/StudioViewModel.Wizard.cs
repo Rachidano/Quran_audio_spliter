@@ -243,6 +243,7 @@ public sealed partial class StudioViewModel
 
     partial void OnWizardWatermarkTextChanged(string value)
     {
+        OnPropertyChanged(nameof(WatermarkSummary));
         UpdateWizardPreview();
     }
 

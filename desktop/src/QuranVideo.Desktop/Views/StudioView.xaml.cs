@@ -46,6 +46,18 @@ public partial class StudioView : UserControl
 
         if (DataContext is not StudioViewModel vm) return;
 
+        // Fenêtre « تهيئة الفيديو » ouverte : Échap la ferme, et aucun raccourci du studio ne doit
+        // agir en arrière-plan (Entrée enregistrerait sinon la fin de l'ayah)
+        if (vm.IsVideoSettingsOpen)
+        {
+            if (e.Key == Key.Escape)
+            {
+                vm.CloseVideoSettingsCommand.Execute(null);
+                e.Handled = true;
+            }
+            return;
+        }
+
         if (e.Key == Key.Space)
         {
             vm.TogglePlayPauseCommand.Execute(null);
@@ -81,6 +93,16 @@ public partial class StudioView : UserControl
             {
                 vm.Seek(e.NewValue);
             }
+        }
+    }
+
+    // Clic sur le fond assombri (hors de la fenêtre) : fermer la fenêtre de réglages
+    private void OnVideoSettingsBackdropMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (ReferenceEquals(e.OriginalSource, VideoSettingsBackdrop) && DataContext is StudioViewModel vm)
+        {
+            vm.CloseVideoSettingsCommand.Execute(null);
+            e.Handled = true;
         }
     }
 
