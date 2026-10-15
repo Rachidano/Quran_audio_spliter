@@ -461,6 +461,9 @@ public sealed partial class MyVideosViewModel : ViewModelBase
         try
         {
             File.Delete(target.FullPath);
+            // Supprimer aussi le texte de publication (titre/description) écrit à côté de la vidéo
+            var publicationText = PublicationTextService.GetTextPath(target.FullPath);
+            if (target.IsMp4 && File.Exists(publicationText)) File.Delete(publicationText);
             StatusMessage = $"تم حذف الملف بنجاح: {target.FileName}";
             RefreshVideos();
         }

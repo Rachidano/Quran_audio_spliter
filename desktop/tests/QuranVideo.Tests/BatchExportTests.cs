@@ -290,6 +290,10 @@ public class BatchExportTests : IDisposable
             Assert.NotEmpty(job.RelativeVideoPath);
             Assert.NotEmpty(job.VideoSha256);
             Assert.True(File.Exists(Path.Combine(_testWorkspaceDir, job.RelativeVideoPath)));
+
+            // Titre et description de publication écrits à côté de la vidéo
+            var textPath = PublicationTextService.GetTextPath(Path.Combine(_testWorkspaceDir, job.RelativeVideoPath));
+            Assert.Contains($"الآية {job.AyahNumber}", await File.ReadAllTextAsync(textPath));
         }
     }
 

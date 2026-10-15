@@ -19,3 +19,19 @@ artifacts/
 Thumbs.db
 *.tmp
 *.log
+
+# Fichier temporaire de compilation WPF
+*_wpftmp.csproj
+
+# Recettes et audits : espaces de travail et médias générés (preuves conservées en local,
+# les rapports .md et results.json restent versionnés)
+doc/validation/**/*.png
+!doc/validation/audio-catalog-2026-10-12/smoke-render/audio-sources.png
+doc/validation/**/*.db
+doc/validation/**/*.db-shm
+doc/validation/**/*.db-wal
+doc/validation/**/*.mp3
+doc/validation/**/*.mp4
+doc/validation/**/*.wav
+doc/validation/**/*.bak
+doc/validation/**/*.trx

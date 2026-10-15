@@ -132,17 +132,13 @@ public sealed class RecitationLibraryService
     private sealed record AudioMetadata(double Duration, int SampleRate, int Channels);
     private static async Task<AudioMetadata?> ProbeAudioAsync(string path, CancellationToken ct)
     {
-        var psi = new ProcessStartInfo(FfmpegVideoGenerator.GetFfprobePath())
-        { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
-        foreach (var arg in new[] { "-v", "error", "-show_format", "-show_streams", "-of", "json", path }) psi.ArgumentList.Add(arg);
-        using var process = Process.Start(psi)!;
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var stderr = process.StandardError.ReadToEndAsync();
-        try { await process.WaitForExitAsync(ct); }
-        catch (OperationCanceledException) { process.Kill(true); throw; }
-        var json = await stdout; await stderr;
-        if (process.ExitCode != 0) return null;
-        using var doc = JsonDocument.Parse(json);
+        var probe = await ExternalProcessRunner.RunAsync(
+            FfmpegVideoGenerator.GetFfprobePath(),
+            new[] { "-v", "error", "-show_format", "-show_streams", "-of", "json", path },
+            ExternalProcessRunner.FfprobeInactivityTimeout,
+            ct);
+        if (!probe.Success) return null;
+        using var doc = JsonDocument.Parse(probe.StandardOutput);
         foreach (var audio in doc.RootElement.GetProperty("streams").EnumerateArray())
         {
             if (audio.GetProperty("codec_type").GetString() != "audio") continue;

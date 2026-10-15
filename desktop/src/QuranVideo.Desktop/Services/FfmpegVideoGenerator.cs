@@ -127,7 +127,7 @@ public static class FfmpegVideoGenerator
                 return new VideoVerificationResult(false, $"FFmpeg failed: {error}", 0, 0, 0, null, null, 0);
             }
 
-            var verification = await ProbeVideoAsync(tempOutput);
+            var verification = await ProbeVideoAsync(tempOutput, cancellationToken);
             if (!verification.Success)
             {
                 return verification;
@@ -396,7 +396,7 @@ public static class FfmpegVideoGenerator
             progress?.Report(90);
 
             // 3. Verification & probe
-            var verification = await ProbeVideoAsync(tempFinal);
+            var verification = await ProbeVideoAsync(tempFinal, cancellationToken);
             if (!verification.Success)
             {
                 return verification;
@@ -483,32 +483,18 @@ public static class FfmpegVideoGenerator
         return (true, null);
     }
 
-    public static async Task<VideoVerificationResult> ProbeVideoAsync(string videoPath)
+    public static async Task<VideoVerificationResult> ProbeVideoAsync(string videoPath, CancellationToken cancellationToken = default)
     {
-        var psi = new ProcessStartInfo(GetFfprobePath())
+        var probe = await ExternalProcessRunner.RunAsync(
+            GetFfprobePath(),
+            new[] { "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", videoPath },
+            ExternalProcessRunner.FfprobeInactivityTimeout,
+            cancellationToken);
+        var stdout = probe.StandardOutput;
+
+        if (!probe.Success)
         {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-
-        psi.ArgumentList.Add("-v");
-        psi.ArgumentList.Add("quiet");
-        psi.ArgumentList.Add("-print_format");
-        psi.ArgumentList.Add("json");
-        psi.ArgumentList.Add("-show_format");
-        psi.ArgumentList.Add("-show_streams");
-        psi.ArgumentList.Add(videoPath);
-
-        using var process = new Process { StartInfo = psi };
-        process.Start();
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        await process.WaitForExitAsync();
-
-        if (process.ExitCode != 0)
-        {
-            return new VideoVerificationResult(false, "FFprobe failed", 0, 0, 0, null, null, 0);
+            return new VideoVerificationResult(false, probe.TimedOut ? probe.StandardError : "FFprobe failed", 0, 0, 0, null, null, 0);
         }
 
         try
@@ -554,39 +540,12 @@ public static class FfmpegVideoGenerator
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken)
     {
-        var psi = new ProcessStartInfo(GetFfmpegPath())
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-
-        foreach (var arg in arguments)
-        {
-            psi.ArgumentList.Add(arg);
-        }
-
-        using var process = new Process { StartInfo = psi };
-        process.Start();
-
-        try
-        {
-            var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
-
-            await process.WaitForExitAsync(cancellationToken);
-
-            var stdout = await stdoutTask;
-            var stderr = await stderrTask;
-
-            return (process.ExitCode == 0, stdout, stderr);
-        }
-        catch (OperationCanceledException)
-        {
-            try { process.Kill(entireProcessTree: true); } catch { }
-            throw;
-        }
+        var run = await ExternalProcessRunner.RunAsync(
+            GetFfmpegPath(),
+            arguments,
+            ExternalProcessRunner.FfmpegInactivityTimeout,
+            cancellationToken);
+        return (run.Success, run.StandardOutput, run.StandardError);
     }
 
     public static string GetFfmpegPath()

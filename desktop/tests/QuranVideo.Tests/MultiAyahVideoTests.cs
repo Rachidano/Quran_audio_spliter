@@ -348,6 +348,10 @@ public class MultiAyahVideoTests : IDisposable
         var fullOutPath = Path.Combine(_testWorkspaceDir, renderedProject.OutputVideoPath);
         Assert.True(File.Exists(fullOutPath));
         Assert.True(new FileInfo(fullOutPath).Length > 1000);
+
+        // Titre et description de publication couvrant tout l'intervalle d'ayat
+        var publicationText = await File.ReadAllTextAsync(PublicationTextService.GetTextPath(fullOutPath));
+        Assert.Contains($"الآيات {renderedProject.StartAyahNumber} إلى {renderedProject.EndAyahNumber}", publicationText);
     }
 
     [Fact]

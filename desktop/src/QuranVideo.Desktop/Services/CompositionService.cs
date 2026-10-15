@@ -232,6 +232,8 @@ public sealed class CompositionService
         };
 
         await File.WriteAllTextAsync(manifestPath, JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }), cancellationToken);
+        await new PublicationTextService(_workspaceService).WriteForVideoAsync(
+            finalVideoPath, comp.SurahNumber, comp.AyahNumber, comp.AyahNumber, comp.AudioSourceId, cancellationToken);
 
         // Update composition entity
         comp.Status = CompositionStatus.Completed;
@@ -361,6 +363,9 @@ public sealed class CompositionService
             await db.SaveChangesAsync(cancellationToken);
             return (false, result.ErrorMessage, project);
         }
+
+        await new PublicationTextService(_workspaceService).WriteForVideoAsync(
+            finalVideoPath, project.SurahNumber, project.StartAyahNumber, project.EndAyahNumber, project.AudioSourceId, cancellationToken);
 
         project.Status = "Completed";
         project.OutputVideoPath = Path.GetRelativePath(_workspaceService.WorkspacePath, finalVideoPath);

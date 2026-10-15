@@ -265,6 +265,12 @@ public class CompositionTests : IDisposable
         Assert.Equal("libx264", manifest.Ffmpeg.VideoCodec);
         Assert.Equal("aac", manifest.Ffmpeg.AudioCodec);
         Assert.Equal(renderedComp.VideoSha256, manifest.VideoSha256);
+
+        // Titre et description de publication écrits à côté de la vidéo
+        var publicationText = await File.ReadAllTextAsync(PublicationTextService.GetTextPath(fullVideoPath));
+        Assert.Contains("سورة الفاتحة - الآية 1", publicationText);
+        Assert.Contains(PublicationTextService.Riwaya, publicationText);
+        Assert.Contains(PublicationTextService.MushafSource, publicationText);
     }
 
     [Fact]

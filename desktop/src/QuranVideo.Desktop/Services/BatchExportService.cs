@@ -359,6 +359,8 @@ public sealed class BatchExportService : IDisposable
 
                     // L09-05: Écrire le manifeste sidecar JSON
                     await WriteJobManifestAsync(job, result.Width, result.Height, sha, cancellationToken);
+                    await new PublicationTextService(_workspaceService).WriteForVideoAsync(
+                        finalVideoPath, job.SurahNumber, job.AyahNumber, job.AyahNumber, job.AudioSourceId, cancellationToken);
                 }
                 else
                 {
